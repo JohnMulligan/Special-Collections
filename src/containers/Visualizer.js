@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Tabs } from "antd";
 
-import { TableOutlined, VideoCameraAddOutlined } from "@ant-design/icons";
+import { TableOutlined, VideoCameraAddOutlined, PartitionOutlined } from "@ant-design/icons";
 import TableView from "../components/TableView";
 import CardView from "../components/CardView";
+import NetworkView from "../components/NetworkView";
 
 const { TabPane } = Tabs;
 
@@ -32,6 +33,19 @@ const Visualizer = (props) => {
       >
         <CardView activeProperties={props.activeProperties} />
       </TabPane>
+      
+      <TabPane
+        tab={
+          <span>
+            <PartitionOutlined />
+            Network
+          </span>
+        }
+        key={3}
+      >
+        <NetworkView activeProperties={props.activeProperties} />
+      </TabPane>
+
     </Tabs>
   );
 };
