@@ -22,8 +22,9 @@ const NetworkView = (props) => {
             .force("charge_force", d3.forceManyBody())
             .force("center_force", d3.forceCenter(width / 2, height / 2));
 
+        const g = svg.append("g");
         const radius = 5;
-        const node = svg.append("g")
+        const node = g
             .attr("class", "nodes")
             .selectAll("circle")
             .data(data)
@@ -31,11 +32,26 @@ const NetworkView = (props) => {
             .append("circle")
             .attr("r", radius)
             .attr("fill", "blue");
+
+        const textElements = g
+            .selectAll('text')
+            .data(data)
+            .enter().append('text')
+              .text(node => node["o:title"])
+              .attr('font-size', 8)
+              .attr("font-family", "Nunito")
+              .attr("fill", "#555")
+              .attr('dx', 10)
+              .attr('dy', 4);
         
         const tickActions = () => {
             node
                 .attr("cx", d => Math.max(radius, Math.min(width - radius, d.x)))
                 .attr("cy", d => Math.max(radius, Math.min(height - radius, d.y)));
+
+            textElements
+                .attr("x", d => Math.max(radius, Math.min(width - radius, d.x)))
+                .attr("y", d => Math.max(radius, Math.min(height - radius, d.y)));
         };
 
         simulation.on("tick", tickActions );
