@@ -31,8 +31,7 @@ export const fetch = async (
     key: each["o:id"],
   }));
   
-  console.log(data.slice(0, limit))
-  console.log(JSON.stringify(data.slice(0, limit)));
+  //console.log(data.slice(0, limit))
 
   return data.slice(0, limit);
 };
