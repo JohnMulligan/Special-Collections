@@ -10,7 +10,10 @@ const NetworkView = (props) => {
 
     // Get dummy data
     var json = require("../POCdata.json")
+    console.log("Length")
+    console.log(json.length)
     const data = JSON.parse(JSON.stringify(json));
+    console.log(data.length)
     console.log(data);
     
     useEffect(() => {
