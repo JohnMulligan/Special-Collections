@@ -32,7 +32,7 @@ export const fetch = async (
   }));
   
   console.log(data.slice(0, limit))
-  // console.log(JSON.stringify(data))
+  console.log(JSON.stringify(data))
 
   return data.slice(0, limit);
 };
