@@ -9,26 +9,32 @@ const NetworkView = (props) => {
     const d3Container = useRef(null);
 
     // Get dummy data
-    var json = require("../POCdata.json")
-    console.log("Length")
-    console.log(json.length)
-    const data = JSON.parse(JSON.stringify(json));
-    console.log(data.length)
+    var data_json = require("../POCdata.json")
+
+    const data = JSON.parse(JSON.stringify(data_json));
     console.log(data);
     
     useEffect(() => {
-        const svg = d3.select(d3Container.current);
+        // create links
+        const links = data.flatMap(node => {
+            const isPartOf = node["dcterms:isPartOf"] ?? [];
+            const hasPart = node["dcterms:hasPart"] ?? [];
 
+            return isPartOf.concat(hasPart)
+                .map(item => ({source: node["o:id"], target: item["value_resource_id"]}));
+        });
+
+        const svg = d3.select(d3Container.current);
+        const color = d3.scaleOrdinal(d3.schemeCategory10);
 
         const simulation = d3.forceSimulation()
             .nodes(data)
             .force("charge_force", d3.forceManyBody())
+            .force("links", d3.forceLink(links).id( d => d["o:id"]))
             .force("center_force", d3.forceCenter(width / 2, height / 2));
-        
-        
 
         const g =  svg.append("g");
-        const radius = 12;
+        const radius = 5;
         const node = g
             .attr("class", "nodes")
             .selectAll("circle")
@@ -37,12 +43,18 @@ const NetworkView = (props) => {
             .append("circle")
             .attr("r", radius)
             .on("click", function (d, i) {
-                console.log(d)
-                console.log(i)
-                console.log(this)
-                d3.select(this).style("fill", "#ffd1dc")
+                d3.select(this).style("fill", "#ffd1dc");
             })
-            .attr("fill", "#05a0fa");
+            .attr("fill", d => color(d["@type"][1]));
+
+        const link = g
+            .attr("class", "links")
+            .selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .attr("stroke-width", 1)
+            .attr("stroke", "#999")
+            .attr("stroke-opacity", 1);
 
         const textElements = g
             .selectAll('text')
@@ -60,6 +72,12 @@ const NetworkView = (props) => {
                 .attr("cx", d => Math.max(radius, Math.min(width - radius, d.x)))
                 .attr("cy", d => Math.max(radius, Math.min(height - radius, d.y)));
 
+            link
+                .attr("x1", function(d) { return d.source.x; })
+                .attr("y1", function(d) { return d.source.y; })
+                .attr("x2", function(d) { return d.target.x; })
+                .attr("y2", function(d) { return d.target.y; });
+
             textElements
                 .attr("x", d => Math.max(radius, Math.min(width - radius, d.x)))
                 .attr("y", d => Math.max(radius, Math.min(height - radius, d.y)));
@@ -70,29 +88,6 @@ const NetworkView = (props) => {
         svg.call(d3.zoom().extent([[0, 0], [2*width, 2*height]])
                 .scaleExtent([1, 8])
                 .on("zoom", (e) => g.attr("transform", e.transform)));
-
-    //     svg.call(d3.zoom()
-    //   .extent([[0, 0], [width, height]])
-    //   .scaleExtent([-10, 80])
-    //   .on("zoom", zoomed));
-
-    //   function zoomed() {
-    //     let e = d3.event
-        
-    //     // if(e.transform.k > 2 && lastK != e.transform.k){
-    //     //   lastK = e.transform.k;
-    //     //   console.log("zoomed");
-    //     //   zoomLvl = Math.log2(e.transform.k);
-    //     //   g.append("g").attr("stroke-width", 1.5/zoomLvl );
-    //     //   link.attr("stroke-width",  d => Math.sqrt(d.value)/(zoomLvl));
-    //     //   textElements.attr('font-size', 10/zoomLvl);
-    //     //   textElements.attr('dx',10/zoomLvl);
-    //     //   textElements.attr('dy',5/zoomLvl);
-    //     // }
-       
-    //     g.attr("transform", e.transform);
-    //   }
-
 
     }, [data]);
 
