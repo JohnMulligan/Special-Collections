@@ -78,25 +78,18 @@ const NetworkView = (props) => {
             .selectAll('text')
             .data(data)
             .enter().append('text')
-              .text(node => node["o:title"])
+              .text(node => node["o:title"] ? (node["o:title"].length > 20 ? node["o:title"].substring(0, 20) + "..." : node["o:title"]) : "")
               .attr('font-size', 12)
               .attr("font-family", "Nunito")
               .attr("fill", "#555")
               .attr("x", node => node.x + 40)
               .attr("y", node => node.y + 10)
               .on("click", function(d, i) {
-                console.log(d);
-                console.log(i);
             });
-            //   .attr('dx', 10)
-            //   .attr('dy', 4);
             
               
         
         function tickActions() {
-            
-            console.log("ticked")
-
             node
                 .attr("cx", d => Math.max(radius, Math.min(width - radius, d.x)))
                 .attr("cy", d => Math.max(radius, Math.min(height - radius, d.y)));
@@ -108,8 +101,6 @@ const NetworkView = (props) => {
                 .attr("y2", function(d) { return d.target.y; });
 
             textElements
-                // .attr("x", d => Math.max(radius, Math.min(width - radius, d.x)))
-                // .attr("y", d => Math.max(radius, Math.min(height - radius, d.y)));
                 .attr("x", node => node["x"] + 10)
                 .attr("y", node => node["y"] + 4)
                 
@@ -144,6 +135,7 @@ const NetworkView = (props) => {
             className="d3-component"
             width={width}
             height={height}
+            style={{"background-color": "white"}}
             ref={d3Container}
         />
     );
