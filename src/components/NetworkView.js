@@ -45,9 +45,19 @@ const NetworkView = (props) => {
             .append("circle")
             .attr("r", radius)
             .on("dblclick", function (d, i) {
-                //d3.select(this).style("fill", "#ffd1dc");
-                console.log(d)
-                console.log(i)
+                var [r,g,b,opacity] = d3.select(this).style("fill").split(", ")
+                //Trim off rgb( and ) respectively from r and b
+                r = r.substring(r.indexOf("(") + 1)
+                console.log(r)
+                b = b.substring(0, b.length-1)
+                if(!opacity | opacity === 1) {
+                    d3.select(this).style("fill", "rgba("+r+", " + g + ", "  + b + ", 0.4)");
+                }
+                else {
+                    console.log(r)
+                    console.log("rgba("+r+", " + g + ", "  + b + ", 1)")
+                    d3.select(this).style("fill", "rgba("+r+", " + g + ", "  + b + ", 1)");
+                }
             })
             .call(d3.drag()
                 .on("start", dragstarted)
