@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import * as d3 from "d3";
+import { Button } from "antd";
+import AddNoteButton from "./AddNoteButton";
 
 
 
@@ -8,16 +10,19 @@ const NetworkView = (props) => {
     const width = 1500;
 
     const d3Container = useRef(null);
+    const color = d3.scaleOrdinal(d3.schemeCategory10);
 
     // Get dummy data
     var data_json = require("../POCdata.json")
 
     const data = JSON.parse(JSON.stringify(data_json));
-    // console.log(data);
-    
+
+    const linksToBeAdded = [];
+    var onNodes = [];
     useEffect(() => {
         // create links
-        const links = data.flatMap(node => {
+
+        var links = data.flatMap(node => {
             const isPartOf = node["dcterms:isPartOf"] ?? [];
             const hasPart = node["dcterms:hasPart"] ?? [];
 
@@ -25,8 +30,19 @@ const NetworkView = (props) => {
                 .map(item => ({source: node["o:id"], target: item["value_resource_id"]}));
         });
 
+        // console.log("links")
+        // console.log(links)
+        // console.log(linksToBeAdded)
+
+        if( linksToBeAdded !== undefined && linksToBeAdded.length > 1) {
+            for(link in linksToBeAdded){
+                links.push({source: link[0]["o:id"], target: link[1]["o:id"]})
+            }
+            console.log(links)
+        }
+
         const svg = d3.select(d3Container.current);
-        const color = d3.scaleOrdinal(d3.schemeCategory10);
+        
 
         const simulation = d3.forceSimulation()
             .nodes(data)
@@ -46,25 +62,33 @@ const NetworkView = (props) => {
             .attr("r", radius)
             .on("dblclick", function (d, i) {
                 var [r,g,b,opacity] = d3.select(this).style("fill").split(", ")
-                //Trim off rgb( and ) respectively from r and b
                 r = r.substring(r.indexOf("(") + 1)
-                console.log(r)
-                b = b.substring(0, b.length-1)
-                if(!opacity | opacity === 1) {
-                    d3.select(this).style("fill", "rgba("+r+", " + g + ", "  + b + ", 0.4)");
+                if (b[b.length-1] === ")"){
+                    b = b.substring(0, b.length-1)
                 }
-                else {
-                    console.log(r)
-                    console.log("rgba("+r+", " + g + ", "  + b + ", 1)")
-                    d3.select(this).style("fill", "rgba("+r+", " + g + ", "  + b + ", 1)");
-                }
-            })
+
+                if(!opacity || opacity === 1){
+                    onNodes.push(i)
+                    d3.select(this).style("fill", "rgba(" + r + ", " + g + ", " + b + ", 0.4)")
+
+                } else {
+                    onNodes.splice(i, 1)
+                    d3.select(this).style("fill", "rgba(" + r + ", " + g + ", " + b + ", 1)")
+                    
+            }})
             .call(d3.drag()
                 .on("start", dragstarted)
                 .on("drag", dragged)
                 .on("end", dragended))
             .attr("fill", d => color(d["@type"][1]));
-
+            // .each(function(d, i) {
+            //     var [r,g,b] = d3.select(this).style("fill").split(", ")
+            //     r = r.substring(r.indexOf("(") + 1)
+            //     if (b[b.length-1] === ")"){
+            //         b = b.substring(0, b.length-1)
+            //     }
+            //     d3.select(this).style("fill", "rgba("+r+", " + g + ", "  + b + ", 0.4)")
+            // })
         const link = g
             .attr("class", "links")
             .selectAll("line")
@@ -85,9 +109,7 @@ const NetworkView = (props) => {
               .attr("x", node => node.x + 40)
               .attr("y", node => node.y + 10)
               .on("click", function(d, i) {
-            });
-            
-              
+            });     
         
         function tickActions() {
             node
@@ -126,19 +148,49 @@ const NetworkView = (props) => {
         svg.call(d3.zoom().extent([[0, 0], [2*width, 2*height]])
                 .scaleExtent([1, 8])
                 .on("zoom", (e) => g.attr("transform", e.transform)))
+                .on("dblclick.zoom", null);
 
 
-    }, [data]);
+    }, [data, linksToBeAdded]);
+
+    const onNoteAdd = () => {
+        console.log(data)
+        // let win = window.open(
+        //   PATH_PREFIX + "/note/" + JSON.stringify(data),
+        //   "_blank"
+        // );
+        // win.focus();
+    
+        for(var i = 0; i < onNodes.length-1; i++){
+          for(var j = i+1; j < onNodes.length; j++){
+            linksToBeAdded.push([data[i],data[j]])
+          }
+        }
+    
+        console.log(linksToBeAdded)
+      };
+
+    const resetNodes = () => {
+        const svg = d3.select(d3Container.current);
+        let selection = svg.selectAll("circle").style("fill", d => color(d["@type"][1]))
+        onNodes = []
+    }
 
     return(
-        <svg
-            className="d3-component"
-            width={width}
-            height={height}
-            style={{"background-color": "white"}}
-            ref={d3Container}
-        />
-    );
+        <div>
+            <Button onClick = {onNoteAdd} >Add Links</Button>
+            <Button onClick = {resetNodes}>Reset Nodes</Button>
+            <AddNoteButton targets = {onNodes} />
+            <svg
+                className="d3-component"
+                width={width}
+                height={height}
+                style={{"background-color": "white"}}
+                ref={d3Container}
+                >
+            </svg>
+        </div>
+        );
 }
 
 export default NetworkView
