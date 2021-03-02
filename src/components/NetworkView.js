@@ -113,8 +113,8 @@ const NetworkView = (props) => {
         
         function tickActions() {
             node
-                .attr("cx", d => Math.max(radius, Math.min(width - radius, d.x)))
-                .attr("cy", d => Math.max(radius, Math.min(height - radius, d.y)));
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
 
             link
                 .attr("x1", function(d) { return d.source.x; })
