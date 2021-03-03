@@ -46,14 +46,14 @@ const NetworkView = (props) => {
         const links = data.flatMap(node => {
             const isPartOf = node["dcterms:isPartOf"] ?? [];
             const hasPart = node["dcterms:hasPart"] ?? [];
+            const isReferencedBy = node["dcterms:isReferencedBy"] ?? [];
 
             return isPartOf.concat(hasPart)
-                .map(item => ({source: node["o:id"], target: item["value_resource_id"]}));
+                .map(item => ({source: node["o:id"], target: item["value_resource_id"]}))
+                .concat(isReferencedBy.map(item => ({source: node["o:id"], target: item["value_resource_id"]})));
         });
 
-        // console.log("links")
-        // console.log(links)
-
+        console.log(links)
         const svg = d3.select(d3Container.current);
 
         const simulation = d3.forceSimulation()
@@ -73,6 +73,7 @@ const NetworkView = (props) => {
             .append("circle")
             .attr("r", radius)
             .on("dblclick", function (d, i) {
+                console.log(i)
                 var [r,g,b,_opacity] = d3.select(this).style("fill").split(", ")
                 r = r.substring(r.indexOf("(") + 1)
                 if (b[b.length-1] === ")"){
@@ -81,7 +82,7 @@ const NetworkView = (props) => {
 
                 if (onNodeKeys.includes(i.key)) {
                     onNodeKeys = onNodeKeys.filter(node => node !== i.key);
-
+                    console.log(onNodeKeys)
                     d3.select(this).style("fill", "rgba(" + r + ", " + g + ", " + b + ", 1)");
                 } else {
                     onNodeKeys.push(i.key);
@@ -162,7 +163,8 @@ const NetworkView = (props) => {
     const resetNodes = () => {
         const svg = d3.select(d3Container.current);
         let selection = svg.selectAll("circle").style("fill", d => color(d["@type"][1]))
-        onNodeKeys = []
+        onNodeKeys.length = 0
+
     }
 
     return(
