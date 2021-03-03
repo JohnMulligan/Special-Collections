@@ -2,20 +2,43 @@ import React, { useEffect, useState, useRef } from "react";
 import * as d3 from "d3";
 import { Button } from "antd";
 import AddNoteButton from "./AddNoteButton";
+import { useCookies } from "react-cookie";
+import {fetch} from "../utils/OmekaS"
+
 
 
 
 const NetworkView = (props) => {
+    const [cookies] = useCookies(["userInfo"]);
+
     const height = 1000;
     const width = 1500;
 
     const d3Container = useRef(null);
     const color = d3.scaleOrdinal(d3.schemeCategory10);
 
-    // Get dummy data
-    var data = require("../POCdata.json")
 
+    // Get dummy data
+    // var data = require("../POCdata.json");
+    const [data, setData] = useState([]);
     let onNodeKeys = [];
+
+    useEffect(() => {
+        const fetchInitial = async () => {
+            const res = await fetch(
+                cookies.userInfo.host,
+                "items",
+                -1,
+                {},
+                0,
+                200
+            )
+            console.log(res);
+            setData(res);
+        };
+
+        fetchInitial();
+    }, [cookies]);
 
     useEffect(() => {
 
@@ -134,7 +157,7 @@ const NetworkView = (props) => {
                 .on("dblclick.zoom", null);
 
 
-    }, []);
+    }, [data]);
 
     const resetNodes = () => {
         const svg = d3.select(d3Container.current);
