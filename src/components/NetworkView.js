@@ -41,7 +41,6 @@ const NetworkView = (props) => {
     }, [cookies]);
 
     useEffect(() => {
-
         // create links
         const links = data.flatMap(node => {
             const isPartOf = node["dcterms:isPartOf"] ?? [];
@@ -52,6 +51,11 @@ const NetworkView = (props) => {
                 .map(item => ({source: node["o:id"], target: item["value_resource_id"]}))
                 .concat(isReferencedBy.map(item => ({source: node["o:id"], target: item["value_resource_id"]})));
         });
+
+        const radiusFactor = 2;
+        const radii = Object.fromEntries(
+            data.map(d => [d["o:id"], (links.filter(link => link.source === d["o:id"]).length + 1) * radiusFactor])
+        );
 
         console.log(links)
         const svg = d3.select(d3Container.current);
@@ -64,14 +68,23 @@ const NetworkView = (props) => {
             .on("tick", tickActions);
 
         const g =  svg.append("g");
-        const radius = 5;
+
+        const link = g
+            .attr("class", "links")
+            .selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .attr("stroke-width", 1)
+            .attr("stroke", "#999")
+            .attr("stroke-opacity", 1);
+
         const node = g
             .attr("class", "nodes")
             .selectAll("circle")
             .data(data)
             .enter()
             .append("circle")
-            .attr("r", radius)
+            .attr("r", d => radii[d["o:id"]])
             .on("dblclick", function (d, i) {
                 console.log(i)
                 var [r,g,b,_opacity] = d3.select(this).style("fill").split(", ")
@@ -95,15 +108,6 @@ const NetworkView = (props) => {
                 .on("drag", dragged)
                 .on("end", dragended))
             .attr("fill", d => color(d["@type"][1]));
-
-        const link = g
-            .attr("class", "links")
-            .selectAll("line")
-            .data(links)
-            .enter().append("line")
-            .attr("stroke-width", 1)
-            .attr("stroke", "#999")
-            .attr("stroke-opacity", 1);
 
         const textElements = g
             .selectAll('text')
