@@ -57,7 +57,6 @@ const NetworkView = (props) => {
             data.map(d => [d["o:id"], (links.filter(link => link.source === d["o:id"]).length + 1) * radiusFactor])
         );
 
-        console.log(links)
         const svg = d3.select(d3Container.current);
 
         const simulation = d3.forceSimulation()
@@ -109,6 +108,8 @@ const NetworkView = (props) => {
                 .on("end", dragended))
             .attr("fill", d => color(d["@type"][1]));
 
+        const minRadiusForLabel = 2;
+        
         const textElements = g
             .selectAll('text')
             .data(data)
@@ -119,8 +120,7 @@ const NetworkView = (props) => {
               .attr("fill", "#555")
               .attr("x", node => node.x + 40)
               .attr("y", node => node.y + 10)
-              .on("click", function(d, i) {
-            });     
+              .style("opacity", node => radii[node["o:id"]] > minRadiusForLabel ? 1 : 0);     
         
         function tickActions() {
             node
@@ -158,7 +158,15 @@ const NetworkView = (props) => {
 
         svg.call(d3.zoom().extent([[0, 0], [2*width, 2*height]])
                 .scaleExtent([1, 8])
-                .on("zoom", (e) => g.attr("transform", e.transform)))
+                .on("zoom", (e) => {
+                    g.attr("transform", e.transform);
+                    g.selectAll('text')
+                        .data(data)
+                        .style("opacity", (d) => {
+                            console.log(e.transform.k * radii[d["o:id"]]);
+                            return e.transform.k * radii[d["o:id"]] > minRadiusForLabel ? 1 : 0;
+                        })
+                }))
                 .on("dblclick.zoom", null);
 
 
