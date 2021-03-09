@@ -4,6 +4,7 @@ import { Button } from "antd";
 import AddNoteButton from "./AddNoteButton";
 import { useCookies } from "react-cookie";
 import {fetch} from "../utils/OmekaS"
+import { connect } from "react-redux";
 
 
 
@@ -51,6 +52,7 @@ const NetworkView = (props) => {
                 .map(item => ({source: node["o:id"], target: item["value_resource_id"]}))
                 .concat(isReferencedBy.map(item => ({source: node["o:id"], target: item["value_resource_id"]})));
         });
+        
 
         const radiusFactor = 2;
         const radii = Object.fromEntries(
@@ -73,6 +75,7 @@ const NetworkView = (props) => {
             .selectAll("line")
             .data(links)
             .enter().append("line")
+            .style("visibility", "visible")
             .attr("stroke-width", 1)
             .attr("stroke", "#999")
             .attr("stroke-opacity", 1);
@@ -84,8 +87,19 @@ const NetworkView = (props) => {
             .enter()
             .append("circle")
             .attr("r", d => radii[d["o:id"]])
+            .on("mouseover", function(d, i) {
+               link.filter(item => i["o:id"] != item.source["o:id"] && i["o:id"] != item.target["o:id"]).style("visibility", "hidden")
+               var connectedLinks = link.filter(item => i["o:id"] === item.source["o:id"] || i["o:id"] === item.target["o:id"])["_groups"][0]
+                                    .map(item => [item["__data__"].source["o:id"], item["__data__"].target["o:id"]]).flat()
+                node.filter(item => connectedLinks.indexOf(item["o:id"]) === -1).style("visibility", "hidden")
+
+            })
+            .on("mouseout", function(d) {
+                link.style("visibility", "visible")
+                node.style("visibility", "visible")
+            })
             .on("dblclick", function (d, i) {
-                console.log(i)
+                // console.log(i)
                 var [r,g,b,_opacity] = d3.select(this).style("fill").split(", ")
                 r = r.substring(r.indexOf("(") + 1)
                 if (b[b.length-1] === ")"){
@@ -94,7 +108,6 @@ const NetworkView = (props) => {
 
                 if (onNodeKeys.includes(i.key)) {
                     onNodeKeys = onNodeKeys.filter(node => node !== i.key);
-                    console.log(onNodeKeys)
                     d3.select(this).style("fill", "rgba(" + r + ", " + g + ", " + b + ", 1)");
                 } else {
                     onNodeKeys.push(i.key);
@@ -163,7 +176,7 @@ const NetworkView = (props) => {
                     g.selectAll('text')
                         .data(data)
                         .style("opacity", (d) => {
-                            console.log(e.transform.k * radii[d["o:id"]]);
+                            // console.log(e.transform.k * radii[d["o:id"]]);
                             return e.transform.k * radii[d["o:id"]] > minRadiusForLabel ? 1 : 0;
                         })
                 }))
