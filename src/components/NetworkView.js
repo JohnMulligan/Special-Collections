@@ -5,6 +5,7 @@ import AddNoteButton from "./AddNoteButton";
 import { useCookies } from "react-cookie";
 import {fetch} from "../utils/OmekaS"
 import { connect } from "react-redux";
+import { text } from "d3";
 
 
 
@@ -92,11 +93,14 @@ const NetworkView = (props) => {
                var connectedLinks = link.filter(item => i["o:id"] === item.source["o:id"] || i["o:id"] === item.target["o:id"])["_groups"][0]
                                     .map(item => [item["__data__"].source["o:id"], item["__data__"].target["o:id"]]).flat()
                 node.filter(item => connectedLinks.indexOf(item["o:id"]) === -1).style("visibility", "hidden")
+                textElements.filter(node => connectedLinks.indexOf(node["o:id"]) === -1).style("visibility", "hidden")
+                
 
             })
             .on("mouseout", function(d) {
                 link.style("visibility", "visible")
                 node.style("visibility", "visible")
+                textElements.style("visibility", "visible")
             })
             .on("dblclick", function (d, i) {
                 // console.log(i)
@@ -134,6 +138,8 @@ const NetworkView = (props) => {
               .attr("x", node => node.x + 40)
               .attr("y", node => node.y + 10)
               .style("opacity", node => radii[node["o:id"]] > minRadiusForLabel ? 1 : 0);     
+        console.log("text")
+        console.log(textElements)
         
         function tickActions() {
             node
