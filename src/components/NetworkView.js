@@ -7,6 +7,7 @@ import {fetch} from "../utils/OmekaS"
 import { connect } from "react-redux";
 import { svg, text } from "d3";
 import { Slider, Grid, Typography, makeStyles } from "@material-ui/core";
+import * as d3Legend from "d3-svg-legend";
 
 
 
@@ -28,12 +29,44 @@ const NetworkView = () => {
     const d3Container = useRef(null);
     const color = d3.scaleOrdinal(d3.schemeCategory10);
 
-
     // Get dummy data
     // var data = require("../POCdata.json");
     const [data, setData] = useState([]);
-    const [simulationForce, setSimulationForce] = useState(-30)
     let onNodeKeys = [];
+
+    const forceProperties = {
+        center: {
+            x: 0.5,
+            y: 0.5
+        },
+        charge: {
+            enabled: true,
+            strength: -30,
+            distanceMin: 1,
+            distanceMax: 2000
+        },
+        collide: {
+            enabled: true,
+            strength: .7,
+            iterations: 1,
+            radius: 5
+        },
+        forceX: {
+            enabled: false,
+            strength: .1,
+            x: .5
+        },
+        forceY: {
+            enabled: false,
+            strength: .1,
+            y: .5
+        },
+        link: {
+            enabled: true,
+            distance: 30,
+            iterations: 1
+        }
+    }
 
     useEffect(() => {
         const fetchInitial = async () => {
@@ -52,7 +85,8 @@ const NetworkView = () => {
         fetchInitial();
     }, [cookies]);
 
-    useEffect(() => {
+
+
         // create links
         const links = data.flatMap(node => {
             const isPartOf = node["dcterms:isPartOf"] ?? [];
@@ -63,11 +97,7 @@ const NetworkView = () => {
                 .map(item => ({source: node["o:id"], target: item["value_resource_id"]}))
                 .concat(isReferencedBy.map(item => ({source: node["o:id"], target: item["value_resource_id"]})));
         });
-
-        console.log("here")
-        console.log(simulationForce)
         
-
         const radiusFactor = 2;
         const radii = Object.fromEntries(
             data.map(d => [d["o:id"], (links.filter(link => link.source === d["o:id"]).length + 1) * radiusFactor])
@@ -75,16 +105,58 @@ const NetworkView = () => {
 
         const svg = d3.select(d3Container.current);
 
+        // const simulation = d3.forceSimulation()
+        //     .nodes(data)
+        //     .force("charge_force", d3.forceManyBody().strength(simulationForce))
+        //     .force("links", d3.forceLink(links).id( d => d["o:id"]))
+        //     .force("center_force", d3.forceCenter(width / 2, height / 2 ))
+        //     .on("tick", tickActions);
+        
         const simulation = d3.forceSimulation()
-            .nodes(data)
-            .force("charge_force", d3.forceManyBody().strength(simulationForce))
-            .force("links", d3.forceLink(links).id( d => d["o:id"]))
-            .force("center_force", d3.forceCenter(width / 2, height / 2 ))
-            .on("tick", tickActions);
-
         const g =  svg.append("g");
+        const minRadiusForLabel = 4;
 
-        const link = g
+        //initializeDisplay();
+        initializeSimulation();
+        
+        function initializeSimulation() {
+            simulation 
+                .nodes(data)
+                .on("tick", tickActions)
+            initializeForces()
+        }
+
+        function initializeForces() {
+            simulation 
+                .force("charge_force", d3.forceManyBody().strength(forceProperties.charge.strength))
+                .force("links", d3.forceLink(links).id( d => d["o:id"]))
+                .force("center_force", d3.forceCenter(width / 2, height / 2))
+                .force("collide", d3.forceCollide())
+            updateForces();
+        }
+
+        function updateForces() {
+            simulation.force("center_force")
+                .x(width * forceProperties.center.x)
+                .y(height * forceProperties.center.y)
+            simulation.force("charge_force")
+                .strength(forceProperties.charge.strength)
+                .distanceMin(forceProperties.charge.distanceMin)
+                .distanceMax(forceProperties.charge.distanceMax)
+            simulation.force("links")
+                .id(function(d) {return d.id;})
+                .distance(forceProperties.link.distance)
+                .iterations(forceProperties.link.iterations)
+            simulation.force("collide")
+                .strength(forceProperties.collide.strength)
+                .radius(forceProperties.collide.radius)
+                .iterations(forceProperties.collide.iterations)
+
+            simulation.alpha(1).restart()
+
+        }
+
+            const link = g
             .attr("class", "links")
             .selectAll("line")
             .data(links)
@@ -94,7 +166,7 @@ const NetworkView = () => {
             .attr("stroke", "#999")
             .attr("stroke-opacity", 1);
 
-        const node = g
+            const node = g
             .attr("class", "nodes")
             .selectAll("circle")
             .data(data)
@@ -107,8 +179,7 @@ const NetworkView = () => {
                                     .map(item => [item["__data__"].source["o:id"], item["__data__"].target["o:id"]]).flat()
                 node.filter(item => connectedLinks.indexOf(item["o:id"]) === -1 && item["o:id"] !== i["o:id"]).style("visibility", "hidden")
                 textElements.filter(node => connectedLinks.indexOf(node["o:id"]) === -1 && node["o:id"] !== i["o:id"]).style("visibility", "hidden")
-                
-
+            
             })
             .on("mouseout", function(d) {
                 link.style("visibility", "visible")
@@ -116,7 +187,6 @@ const NetworkView = () => {
                 textElements.style("visibility", "visible")
             })
             .on("dblclick", function (d, i) {
-                // console.log(i)
                 var [r,g,b,_opacity] = d3.select(this).style("fill").split(", ")
                 r = r.substring(r.indexOf("(") + 1)
                 if (b[b.length-1] === ")"){
@@ -137,22 +207,36 @@ const NetworkView = () => {
                 .on("drag", dragged)
                 .on("end", dragended))
             .attr("fill", d => color(d["@type"][1]));
+            
+            const textElements = g
+                .selectAll('text')
+                .data(data)
+                .enter().append('text')
+                .text(node => node["o:title"] ? (node["o:title"].length > 20 ? node["o:title"].substring(0, 20) + "..." : node["o:title"]) : "")
+                .attr('font-size', 12)
+                .attr("font-family", "Nunito")
+                .attr("fill", "#555")
+                .attr("x", node => node.x + 40 + 3*node.r)
+                .attr("y", node => node.y + 10 + node.r)
+                .style("opacity", node => radii[node["o:id"]] > minRadiusForLabel ? 1 : 0);   
+              
+            svg.append("g")
+                .attr("class", "legendOrdinal")
+                .attr("transform", "translate(20,20)");
+            
+            const legendOrdinal = d3Legend.legendColor()
+                .shape("path", d3.symbol().type(d3.symbolCircle).size(150)())
+                .shapePadding(10)
+                .cellFilter(function(d){ return d.label !== "e"})
+                .scale(color)
 
-        const minRadiusForLabel = 4;
-        
-        const textElements = g
-            .selectAll('text')
-            .data(data)
-            .enter().append('text')
-              .text(node => node["o:title"] ? (node["o:title"].length > 20 ? node["o:title"].substring(0, 20) + "..." : node["o:title"]) : "")
-              .attr('font-size', 12)
-              .attr("font-family", "Nunito")
-              .attr("fill", "#555")
-              .attr("x", node => node.x + 40 + 3*node.r)
-              .attr("y", node => node.y + 10 + node.r)
-              .style("opacity", node => radii[node["o:id"]] > minRadiusForLabel ? 1 : 0);     
+            svg.select(".legendOrdinal")
+                .call(legendOrdinal)
+
 
         
+
+                
         function tickActions() {
             node
                 .attr("cx", d => d.x)
@@ -167,7 +251,7 @@ const NetworkView = () => {
             textElements
                 .attr("x", node => node["x"] + 10)
                 .attr("y", node => node["y"] + 4)
-                
+
         };
 
         function dragstarted() {
@@ -200,10 +284,6 @@ const NetworkView = () => {
                 }))
                 .on("dblclick.zoom", null);
 
-        console.log(svg)
-
-
-    }, [data, simulationForce]);
 
     const resetNodes = () => {
         const svg = d3.select(d3Container.current);
@@ -212,12 +292,18 @@ const NetworkView = () => {
 
     }
 
-    const handleNewForce = (e, newValue) => {
-        // const svg = d3.select("svg")
-        // svg.selectAll("*").remove();
-        // d3.selectAll("svg > *").remove();
+    const changeCharge = (d, i) => {
+        // d3.select("svg").remove();
+        // setSimulationForce(newValue);
+        d3.select('#charge_StrengthSliderOutput').text('(' + i + ')')
+        forceProperties.charge.strength = i
+        updateForces();
+    }
 
-        setSimulationForce(newValue)
+    const changeLinkDistance = (d, i) => {
+        d3.select('#link_DistanceSliderOutput').text('(' + i + ')')
+        forceProperties.link.distance = i
+        updateForces();
     }
 
     return(
@@ -225,27 +311,28 @@ const NetworkView = () => {
             <Button onClick = {resetNodes}>Reset Nodes</Button>
             <AddNoteButton targets = {onNodeKeys} />
             <div className = {classes.root} >
-                <Typography id = "discrete-slider-small-steps">
-                    Node separation
-                </Typography>
-                <Grid item xs>
-                    <Typography>
-                        Farther apart
-                    </Typography>
-
-                    <Slider 
-                    value = {simulationForce} 
-                    onChange = {handleNewForce} 
-                    aria-labelledby="discrete-slider-small-steps"
-                    step = {10}
-                    marks
-                    min = {-60}
-                    max = {-20} />
-                    <Typography>
-                        Closer together
-                    </Typography>
-                </Grid>
+            <label title = "Negative strength Repels nodes. Positive Strength attracts nodes" >
+                strength
+                <output id="charge_StrengthSliderOutput">(-30)</output>
+                <Slider 
+                    defaultValue = {forceProperties.charge.strength} 
+                    onChange = {changeCharge}
+                    aria-labelledby = "continuous-slider"
+                    min = {-100}
+                    max = {0}  /> 
+            </label>
+            <label title = "Set link length">
+                distance
+                <output id="link_DistanceSliderOutput">(30)</output>
+                <Slider 
+                    defaultValue = {forceProperties.link.distance}
+                    onChange = {changeLinkDistance}
+                    aria-labelledby = "continuous slider"
+                    min = {0}
+                    max = {100} />
+            </label>
             </div>
+
             <svg
                 className="d3-component"
                 width={width}
