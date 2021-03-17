@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Layout, Menu } from "antd";
 import { MainpageRouter } from "../route/Routers";
 import { withRouter } from "react-router-dom";
-import { FolderOutlined, FolderAddOutlined } from "@ant-design/icons";
+import { FolderOutlined, FolderAddOutlined, PartitionOutlined } from "@ant-design/icons";
 import "antd/dist/antd.css";
 import { PATH_PREFIX } from "../utils/Utils";
 import { Link } from "react-router-dom";
@@ -30,6 +30,9 @@ const MainPage = () => {
         </Menu.Item>
         <Menu.Item key="everything" icon={<FolderAddOutlined />}>
           <Link to={PATH_PREFIX + "/admin/datalist"}>Everything</Link>
+        </Menu.Item>
+        <Menu.Item key="network" icon={<PartitionOutlined />}>
+          <Link to={PATH_PREFIX + "/admin/network"}>Network</Link>
         </Menu.Item>
       </Menu>
       <MainpageRouter />

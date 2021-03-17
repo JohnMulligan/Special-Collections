@@ -11,7 +11,7 @@ import { Slider, Grid, Typography, makeStyles } from "@material-ui/core";
 
 
 
-const NetworkView = (props) => {
+const NetworkView = () => {
     const [cookies] = useCookies(["userInfo"]);
 
     const useStyles = makeStyles({

@@ -43,7 +43,7 @@ const Visualizer = (props) => {
         }
         key={3}
       >
-        <NetworkView activeProperties={props.activeProperties} />
+        <NetworkView />
       </TabPane>
 
     </Tabs>

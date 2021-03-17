@@ -15,6 +15,7 @@ import ItemView from "../containers/ItemView";
 import RelationGraph from "../components/RelationGraph";
 import { useCookies } from "react-cookie";
 import { PATH_PREFIX } from "../utils/Utils";
+import NetworkContainer from "../containers/NetworkContainer";
 
 function PrivateRoute({ children, ...rest }) {
   const [cookies] = useCookies(["userInfo"]);
@@ -45,6 +46,9 @@ export const MainpageRouter = () => {
       </PrivateRoute>
       <PrivateRoute path={PATH_PREFIX + "/admin/home"}>
         <Home />
+      </PrivateRoute>
+      <PrivateRoute path={PATH_PREFIX + "/admin/network"}>
+        <NetworkContainer />
       </PrivateRoute>
       <Redirect to={PATH_PREFIX + "/admin/home"} />
     </Switch>
