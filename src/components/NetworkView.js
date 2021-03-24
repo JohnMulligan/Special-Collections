@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import * as d3 from "d3";
-import { Button } from "antd";
+import { Button, Modal } from "antd";
 import AddNoteButton from "./AddNoteButton";
 import { useCookies } from "react-cookie";
-import {fetch} from "../utils/OmekaS"
+import {fetch, fetchOne} from "../utils/OmekaS"
 import { connect } from "react-redux";
 import { svg, text } from "d3";
 import { Slider, Grid, Typography, makeStyles } from "@material-ui/core";
@@ -191,18 +191,51 @@ const NetworkView = () => {
                 textElements.style("visibility", "visible")
             })
             .on("dblclick", function (d, i) {
-                var [r,g,b,_opacity] = d3.select(this).style("fill").split(", ")
-                r = r.substring(r.indexOf("(") + 1)
-                if (b[b.length-1] === ")"){
-                    b = b.substring(0, b.length-1)
-                }
+                // if shifting select the node, else display modal
+                if (d.shiftKey) {
+                    let [r,g,b,_opacity] = d3.select(this).style("fill").split(", ")
+                    r = r.substring(r.indexOf("(") + 1)
+                    if (b[b.length-1] === ")"){
+                        b = b.substring(0, b.length-1)
+                    }
 
-                if (onNodeKeys.includes(i.key)) {
-                    onNodeKeys = onNodeKeys.filter(node => node !== i.key);
-                    d3.select(this).style("fill", "rgba(" + r + ", " + g + ", " + b + ", 1)");
+                    if (onNodeKeys.includes(i.key)) {
+                        onNodeKeys = onNodeKeys.filter(node => node !== i.key);
+                        d3.select(this).style("fill", "rgba(" + r + ", " + g + ", " + b + ", 1)");
+                    } else {
+                        onNodeKeys.push(i.key);
+                        d3.select(this).style("fill", "rgba(" + r + ", " + g + ", " + b + ", 0.4)")
+                    }
                 } else {
-                    onNodeKeys.push(i.key);
-                    d3.select(this).style("fill", "rgba(" + r + ", " + g + ", " + b + ", 0.4)")
+                    console.log(i);
+
+                    const spawn_modal = async () => {
+                        let thumbnailUrl = "";
+                        if (i["o:media"].length !== 0) {
+                        const media = await fetchOne(
+                            cookies.userInfo.host,
+                            "media",
+                            i["o:media"][0]["o:id"]
+                        );
+
+                        thumbnailUrl = media["o:thumbnail_urls"].square;
+                        console.log(thumbnailUrl);
+                        }
+
+                        Modal.info({
+                            title: i["o:title"],
+                            content: (
+                            <div>
+                                {thumbnailUrl ? <img alt="example" src={thumbnailUrl} /> : null}
+                                <p>{i["bibo:abstract"] ? i["bibo:abstract"][0]["@value"] : null}</p>
+                            </div>
+                            ),
+                            onOk() {},
+                        });
+                    };
+
+                    spawn_modal();
+
                 }
                     
             })
@@ -292,7 +325,7 @@ const NetworkView = () => {
     const resetNodes = () => {
         const svg = d3.select(d3Container.current);
         let selection = svg.selectAll("circle").style("fill", d => color(d["@type"][1]))
-        onNodeKeys.length = 0
+        onNodeKeys = [];
 
     }
 
