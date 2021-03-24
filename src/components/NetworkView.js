@@ -85,17 +85,21 @@ const NetworkView = () => {
         fetchInitial();
     }, [cookies]);
 
-
+        const ids = data.map(item => item["o:id"])
 
         // create links
         const links = data.flatMap(node => {
             const isPartOf = node["dcterms:isPartOf"] ?? [];
             const hasPart = node["dcterms:hasPart"] ?? [];
             const isReferencedBy = node["dcterms:isReferencedBy"] ?? [];
+            const references = node["dcterms:references"] ?? [];
 
             return isPartOf.concat(hasPart)
                 .map(item => ({source: node["o:id"], target: item["value_resource_id"]}))
-                .concat(isReferencedBy.map(item => ({source: node["o:id"], target: item["value_resource_id"]})));
+                .concat(isReferencedBy.map(item => ({source: node["o:id"], target: item["value_resource_id"]})))
+                .concat(references.map(item => ({source: node["o:id"], target: item["value_resource_id"]})))
+                .filter(pair => ids.includes(pair.source) && ids.includes(pair.target));
+
         });
         
         const radiusFactor = 2;
@@ -296,13 +300,13 @@ const NetworkView = () => {
         // d3.select("svg").remove();
         // setSimulationForce(newValue);
         d3.select('#charge_StrengthSliderOutput').text('(' + i + ')')
-        forceProperties.charge.strength = i
+        forceProperties.charge.strength = -1*i
         updateForces();
     }
 
     const changeLinkDistance = (d, i) => {
         d3.select('#link_DistanceSliderOutput').text('(' + i + ')')
-        forceProperties.link.distance = i
+        forceProperties.link.distance = -1*i
         updateForces();
     }
 
@@ -312,24 +316,24 @@ const NetworkView = () => {
             <AddNoteButton targets = {onNodeKeys} />
             <div className = {classes.root} >
             <label title = "Negative strength Repels nodes. Positive Strength attracts nodes" >
-                strength
-                <output id="charge_StrengthSliderOutput">(-30)</output>
+                Repulsion
+                <output id="charge_StrengthSliderOutput">({-1*forceProperties.charge.strength})</output>
                 <Slider 
-                    defaultValue = {forceProperties.charge.strength} 
+                    defaultValue = {-1*forceProperties.charge.strength} 
                     onChange = {changeCharge}
                     aria-labelledby = "continuous-slider"
-                    min = {-100}
-                    max = {0}  /> 
+                    min = {0}
+                    max = {100}  /> 
             </label>
             <label title = "Set link length">
-                distance
+                Attraction
                 <output id="link_DistanceSliderOutput">(30)</output>
                 <Slider 
-                    defaultValue = {forceProperties.link.distance}
+                    defaultValue = {-1*forceProperties.link.distance}
                     onChange = {changeLinkDistance}
                     aria-labelledby = "continuous slider"
-                    min = {0}
-                    max = {100} />
+                    min = {-50}
+                    max = {50} />
             </label>
             </div>
 
