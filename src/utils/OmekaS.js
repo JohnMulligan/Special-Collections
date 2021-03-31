@@ -60,6 +60,13 @@ export const fetchItemSets = async (baseAddress) => {
   return res.data;
 };
 
+export const fetchResourceTemplates = async (baseAddress) => {
+  const res = await axios.get(
+    `http://${baseAddress}/api/resource_templates?per_page=${PER_PAGE}`
+  );
+  return res.data;
+}
+
 export const fetchOne = async (baseAddress, endpoint, id) => {
   const res = await axios.get(`http://${baseAddress}/api/${endpoint}/${id}`);
   return res.data;

@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import * as d3 from "d3";
-import { Button, Modal } from "antd";
+import { Button, Modal, Descriptions } from "antd";
 import AddNoteButton from "./AddNoteButton";
 import { useCookies } from "react-cookie";
-import {fetch, fetchOne} from "../utils/OmekaS"
+import {fetch, fetchOne, fetchResourceTemplates} from "../utils/OmekaS"
 import { connect } from "react-redux";
 import { svg, text } from "d3";
 import { Slider, Grid, Typography, makeStyles } from "@material-ui/core";
@@ -32,6 +32,7 @@ const NetworkView = () => {
     // Get dummy data
     // var data = require("../POCdata.json");
     const [data, setData] = useState([]);
+    const [resourceTemplateProperties, setResourceTemplateProperties] = useState({});
     let onNodeKeys = [];
 
     const forceProperties = {
@@ -78,8 +79,26 @@ const NetworkView = () => {
                 0,
                 200
             )
-            console.log(res);
             setData(res);
+
+            console.log(res.filter(r => r["o:resource_template"]))
+
+            const templates = await fetchResourceTemplates(cookies.userInfo.host);
+            const template2properties = await Promise.all(
+                templates.map(
+                    async (template) => {
+                        const properties = await Promise.all(
+                            template["o:resource_template_property"].map(
+                                async (property) => await fetchOne(cookies.userInfo.host, "properties", property["o:property"]["o:id"])
+                            )
+                        )
+
+                        return [template["o:id"], properties];
+                    }
+                )
+            );
+
+            setResourceTemplateProperties(Object.fromEntries(template2properties));
         };
 
         fetchInitial();
@@ -212,22 +231,43 @@ const NetworkView = () => {
                     const spawn_modal = async () => {
                         let thumbnailUrl = "";
                         if (i["o:media"].length !== 0) {
-                        const media = await fetchOne(
-                            cookies.userInfo.host,
-                            "media",
-                            i["o:media"][0]["o:id"]
-                        );
+                            const media = await fetchOne(
+                                cookies.userInfo.host,
+                                "media",
+                                i["o:media"][0]["o:id"]
+                            );
 
-                        thumbnailUrl = media["o:thumbnail_urls"].square;
-                        console.log(thumbnailUrl);
+                            thumbnailUrl = media["o:thumbnail_urls"].square;
                         }
+
+                        const properties = i["o:resource_template"] ? resourceTemplateProperties[i["o:resource_template"]["o:id"]] : [];
+                        console.log(properties);
+                        console.log(properties.map(
+                            property => 
+                                <Descriptions.Item label={property["o:local_name"]}>
+                                    {i[property["o:term"]]}
+                                </Descriptions.Item>
+                        ))
 
                         Modal.info({
                             title: i["o:title"],
                             content: (
                             <div>
                                 {thumbnailUrl ? <img alt="example" src={thumbnailUrl} /> : null}
-                                <p>{i["bibo:abstract"] ? i["bibo:abstract"][0]["@value"] : null}</p>
+                                <Descriptions column={1} bordered>
+                                    {
+                                        properties.map(
+                                            property => {
+                                                const value = i[property["o:term"]] ? i[property["o:term"]][0] ? i[property["o:term"]][0]["@value"] : "" : "";
+                                                return value ? 
+                                                    <Descriptions.Item label={property["o:local_name"]}>
+                                                    {value}
+                                                    </Descriptions.Item>
+                                                    : null;
+                                            }
+                                        )
+                                    }
+                                </Descriptions>
                             </div>
                             ),
                             onOk() {},
@@ -374,7 +414,7 @@ const NetworkView = () => {
                 className="d3-component"
                 width={width}
                 height={height}
-                style={{"background-color": "white"}}
+                style={{"backgroundColor": "white"}}
                 ref={d3Container}
                 >
             </svg>
