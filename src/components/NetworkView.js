@@ -375,6 +375,9 @@ const NetworkView = () => {
     .cellFilter(function (d) {
       return d.label !== "e";
     })
+    .labels(d => {
+      return d.generatedLabels[d.i].split(':').pop();
+    })
     .scale(color);
 
   svg.select(".legendOrdinal").call(legendOrdinal);
