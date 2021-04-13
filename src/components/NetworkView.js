@@ -293,6 +293,7 @@ const NetworkView = () => {
             thumbnailUrl = media["o:thumbnail_urls"].square;
           }
 
+          // TODO: IFF no template get class ID and search template library for use of class (pick first if multiple)
           const properties = i["o:resource_template"]
             ? resourceTemplateProperties[i["o:resource_template"]["o:id"]]
             : [];
@@ -468,6 +469,7 @@ const NetworkView = () => {
     updateForces();
   };
 
+  console.log(d3Container)
   return (
     <div>
       <Button onClick={resetNodes}>Reset Nodes</Button>
