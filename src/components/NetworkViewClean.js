@@ -158,6 +158,7 @@ const NetworkView = () => {
               "rgba(" + r + ", " + g + ", " + b + ", 0.4)"
             );
           }
+          console.log(onNodeKeys)
         })
         .call(
           d3
@@ -188,6 +189,25 @@ const NetworkView = () => {
         .attr("y", (node) => node.y + 10 + node.r)
         .style("opacity", 1)
     );
+
+    g
+      .append("g")
+      .attr("class", "legendOrdinal")
+      .attr("transform", "translate(20,20)")
+    
+    const legendOrdinal = d3Legend
+    .legendColor()
+    .shape("path", d3.symbol().type(d3.symbolCircle).size(150)())
+    .shapePadding(10)
+    .cellFilter(function (d) {
+      return d.label !== "e";
+    })
+    .labels(d => {
+      return d.generatedLabels[d.i].split(':').pop();
+    })
+    .scale(color);
+  
+  g.select(".legendOrdinal").call(legendOrdinal);
 
     function dragstarted() {
       simulation.tick();
@@ -284,7 +304,13 @@ const NetworkView = () => {
     }));
   }, [nodeData]);
 
-  const resetNodes = () => {};
+  const resetNodes = () => {
+    const svg = d3.select(d3Container.current);
+    let selection = svg
+      .selectAll("circle")
+      .style("fill", (d) => color(d["@type"][1]));
+    onNodeKeys = [];
+  };
   //const onNodeKeys = () => {};
 
   return (
