@@ -33,18 +33,6 @@ const Visualizer = (props) => {
       >
         <CardView activeProperties={props.activeProperties} />
       </TabPane>
-      
-      <TabPane
-        tab={
-          <span>
-            <PartitionOutlined />
-            Network
-          </span>
-        }
-        key={3}
-      >
-        <NetworkView />
-      </TabPane>
 
     </Tabs>
   );

@@ -25,12 +25,6 @@ const MainPage = () => {
         <Menu.Item key="home" icon={<FolderOutlined />}>
           <Link to={PATH_PREFIX + "/admin/home"}>Archive</Link>
         </Menu.Item>
-        <Menu.Item key="projects" icon={<FolderAddOutlined />}>
-          <Link to={PATH_PREFIX + "/admin/items"}>Projects</Link>
-        </Menu.Item>
-        <Menu.Item key="everything" icon={<FolderAddOutlined />}>
-          <Link to={PATH_PREFIX + "/admin/datalist"}>Everything</Link>
-        </Menu.Item>
         <Menu.Item key="network" icon={<PartitionOutlined />}>
           <Link to={PATH_PREFIX + "/admin/network"}>Network</Link>
         </Menu.Item>
