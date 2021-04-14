@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import * as d3 from "d3";
-import { Button, Modal, Descriptions } from "antd";
+import { Slider, Button, Modal, Descriptions } from "antd";
 import AddNoteButton from "./AddNoteButton";
 import { useCookies } from "react-cookie";
 import { fetch, fetchOne, fetchResourceTemplates } from "../utils/OmekaS";
 import { connect } from "react-redux";
 import { svg, text } from "d3";
-import { Slider, Grid, Typography, makeStyles } from "@material-ui/core";
 import * as d3Legend from "d3-svg-legend";
 
 const NetworkView = () => {
@@ -27,11 +26,14 @@ const NetworkView = () => {
   const [simulation, setSimulation] = useState(null);
   const [nodeData, setNodeData] = useState([]);
   const [linkData, setLinkData] = useState([]);
-  const [textElements, setTextElements] = useState([]);
+
+  const [linkDistance, setLinkDistance] = useState(30);
+  const [repulsion, setRepulsion] = useState(-150);
 
   const [g, setG] = useState(null);
   const [node, setNode] = useState(null);
   const [link, setLink] = useState(null);
+  const [textElements, setTextElements] = useState([]);
 
   // Initialize simulation
   useEffect(() => {
@@ -41,7 +43,6 @@ const NetworkView = () => {
     setG(svg.append("g"));
 
     setSimulation(d3.forceSimulation());
-
 
     const tickActions = () => {
       if (node !== null) {
@@ -65,18 +66,21 @@ const NetworkView = () => {
 
     if (nodeData.length > 0) {
       simulation
-      .nodes(nodeData)
-      .force(
-        "link",
-        d3.forceLink(linkData).id((d) => d["o:id"])
-      )
-      .force("center_force", d3.forceCenter(width / 2, height / 2))
-      .force("charge", d3.forceManyBody().strength(-150))
-      .force("x", d3.forceX())
-      .force("y", d3.forceY())
-      .on("tick", tickActions);
+        .nodes(nodeData)
+        .force(
+          "link",
+          d3
+            .forceLink(linkData)
+            .id((d) => d["o:id"])
+            .distance(linkDistance)
+        )
+        .force("center_force", d3.forceCenter(width / 2, height / 2))
+        .force("charge", d3.forceManyBody().strength(repulsion))
+        .force("x", d3.forceX())
+        .force("y", d3.forceY())
+        .on("tick", tickActions);
     }
-  }, [node]);
+  }, [node, linkDistance, repulsion]);
 
   // Update nodes and links
   useEffect(() => {
@@ -96,7 +100,6 @@ const NetworkView = () => {
         .attr("stroke-width", 1)
         .attr("stroke", "#999")
         .attr("stroke-opacity", 1)
-
     );
 
     setNode(
@@ -134,8 +137,8 @@ const NetworkView = () => {
         //         item["o:id"] !== i["o:id"]
         //     )
         //     .style("visibility", "hidden");
-        // } 
-        //  }) 
+        // }
+        //  })
         .on("dblclick", function (d, i) {
           // if shifting select the node, else display modal
           console.log(i);
@@ -158,7 +161,7 @@ const NetworkView = () => {
               "rgba(" + r + ", " + g + ", " + b + ", 0.4)"
             );
           }
-          console.log(onNodeKeys)
+          console.log(onNodeKeys);
         })
         .call(
           d3
@@ -190,24 +193,23 @@ const NetworkView = () => {
         .style("opacity", 1)
     );
 
-    g
-      .append("g")
+    g.append("g")
       .attr("class", "legendOrdinal")
-      .attr("transform", "translate(20,20)")
-    
+      .attr("transform", "translate(20,20)");
+
     const legendOrdinal = d3Legend
-    .legendColor()
-    .shape("path", d3.symbol().type(d3.symbolCircle).size(150)())
-    .shapePadding(10)
-    .cellFilter(function (d) {
-      return d.label !== "e";
-    })
-    .labels(d => {
-      return d.generatedLabels[d.i].split(':').pop();
-    })
-    .scale(color);
-  
-  g.select(".legendOrdinal").call(legendOrdinal);
+      .legendColor()
+      .shape("path", d3.symbol().type(d3.symbolCircle).size(150)())
+      .shapePadding(10)
+      .cellFilter(function (d) {
+        return d.label !== "e";
+      })
+      .labels((d) => {
+        return d.generatedLabels[d.i].split(":").pop();
+      })
+      .scale(color);
+
+    g.select(".legendOrdinal").call(legendOrdinal);
 
     function dragstarted() {
       simulation.tick();
@@ -227,11 +229,7 @@ const NetworkView = () => {
       d3.select(this).attr("stroke", null);
       g.attr("cursor", null);
     }
-
-
   }, [linkData]);
-
-
 
   // get full data and resource templates (should run once)
   useEffect(() => {
@@ -273,35 +271,37 @@ const NetworkView = () => {
     const ids = nodeData.map((item) => item["o:id"]);
     console.log("Links created");
 
-    setLinkData(nodeData.flatMap((node) => {
-      const isPartOf = node["dcterms:isPartOf"] ?? [];
-      const hasPart = node["dcterms:hasPart"] ?? [];
-      const isReferencedBy = node["dcterms:isReferencedBy"] ?? [];
-      const references = node["dcterms:references"] ?? [];
+    setLinkData(
+      nodeData.flatMap((node) => {
+        const isPartOf = node["dcterms:isPartOf"] ?? [];
+        const hasPart = node["dcterms:hasPart"] ?? [];
+        const isReferencedBy = node["dcterms:isReferencedBy"] ?? [];
+        const references = node["dcterms:references"] ?? [];
 
-      return isPartOf
-        .concat(
-          hasPart.map((item) => ({
-            source: node["o:id"],
-            target: item["value_resource_id"],
-          }))
-        )
-        .concat(
-          isReferencedBy.map((item) => ({
-            source: node["o:id"],
-            target: item["value_resource_id"],
-          }))
-        )
-        .concat(
-          references.map((item) => ({
-            source: node["o:id"],
-            target: item["value_resource_id"],
-          }))
-        )
-        .filter(
-          (pair) => ids.includes(pair.source) && ids.includes(pair.target)
-        );
-    }));
+        return isPartOf
+          .concat(
+            hasPart.map((item) => ({
+              source: node["o:id"],
+              target: item["value_resource_id"],
+            }))
+          )
+          .concat(
+            isReferencedBy.map((item) => ({
+              source: node["o:id"],
+              target: item["value_resource_id"],
+            }))
+          )
+          .concat(
+            references.map((item) => ({
+              source: node["o:id"],
+              target: item["value_resource_id"],
+            }))
+          )
+          .filter(
+            (pair) => ids.includes(pair.source) && ids.includes(pair.target)
+          );
+      })
+    );
   }, [nodeData]);
 
   const resetNodes = () => {
@@ -313,10 +313,38 @@ const NetworkView = () => {
   };
   //const onNodeKeys = () => {};
 
+  const onAfterRepulsionChange = (value) => {
+    setRepulsion(-1 * value);
+  };
+
+  const onAfterLinkDistanceChange = (value) => {
+    setLinkDistance(value);
+  };
+
+  const sliderStyle = {
+    width: 400,
+  };
+
   return (
     <div>
       <Button onClick={resetNodes}>Reset Nodes</Button>
       <AddNoteButton targets={onNodeKeys} />
+      <h4>Repulsion ({-1 * repulsion})</h4>
+      <Slider
+        style={sliderStyle}
+        defaultValue={-1 * repulsion}
+        min={50}
+        max={500}
+        onAfterChange={onAfterRepulsionChange}
+      />
+      <h4>Link Distance ({linkDistance})</h4>
+      <Slider
+        style={sliderStyle}
+        defaultValue={linkDistance}
+        min={0}
+        max={200}
+        onAfterChange={onAfterLinkDistanceChange}
+      />
       <svg
         className="d3-component"
         width={width}
