@@ -65,6 +65,15 @@ const NetworkView = () => {
       }
     };
 
+    const radii = Object.fromEntries(
+      nodeData.map((d) => [
+        d["o:id"],
+        Math.sqrt(
+          linkData.filter((link) => link.source === d["o:id"]).length + 1
+        ) * radiusCoefficient,
+      ])
+    );
+
     if (nodeData.length > 0) {
       simulation
         .nodes(nodeData)
@@ -79,6 +88,10 @@ const NetworkView = () => {
         .force("charge", d3.forceManyBody().strength(repulsion))
         .force("x", d3.forceX())
         .force("y", d3.forceY())
+        .force(
+          "collide",
+          d3.forceCollide((d) => radii[d["o:id"]])
+        )
         .on("tick", tickActions);
     }
   }, [node, linkDistance, repulsion]);
