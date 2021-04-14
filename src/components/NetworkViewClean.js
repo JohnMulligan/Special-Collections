@@ -13,6 +13,7 @@ const NetworkView = () => {
 
   const height = 1000;
   const width = 1500;
+  const radiusCoefficient = 8;
 
   let onNodeKeys = [];
 
@@ -102,6 +103,15 @@ const NetworkView = () => {
         .attr("stroke-opacity", 1)
     );
 
+    const radii = Object.fromEntries(
+      nodeData.map((d) => [
+        d["o:id"],
+        Math.sqrt(
+          linkData.filter((link) => link.source === d["o:id"]).length + 1
+        ) * radiusCoefficient,
+      ])
+    );
+
     setNode(
       g
         .attr("class", "nodes")
@@ -109,7 +119,7 @@ const NetworkView = () => {
         .data(nodeData)
         .enter()
         .append("circle")
-        .attr("r", (d) => 10)
+        .attr("r", (d) => radii[d["o:id"]])
         .attr("fill", (d) => color(d["@type"][1]))
         // .on("mouseover", function (d, i) {
         //   link
