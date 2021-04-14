@@ -41,17 +41,20 @@ const NetworkView = () => {
     setG(svg.append("g"));
 
     setSimulation(d3.forceSimulation());
-    //console.log(linkData)
+
 
     const tickActions = () => {
       if (node !== null) {
-        console.log("nodes not null in tick actions");
         node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
+
+        if (textElements !== null) {
+          textElements
+            .attr("x", (node) => node["x"] + 10)
+            .attr("y", (node) => node["y"] + 4);
+        }
       }
 
       if (link !== null) {
-        console.log("links not null in tick actions");
-
         link
           .attr("x1", (d) => d.source.x)
           .attr("y1", (d) => d.source.y)
@@ -73,7 +76,7 @@ const NetworkView = () => {
       .force("y", d3.forceY())
       .on("tick", tickActions);
     }
-  }, [node, link]);
+  }, [node]);
 
   // Update nodes and links
   useEffect(() => {
@@ -81,6 +84,20 @@ const NetworkView = () => {
       return;
     }
     console.log("Updating states");
+
+    setLink(
+      g
+        .attr("class", "links")
+        .selectAll("line")
+        .data(linkData)
+        .enter()
+        .append("line")
+        .style("visibility", "visible")
+        .attr("stroke-width", 1)
+        .attr("stroke", "#999")
+        .attr("stroke-opacity", 1)
+
+    );
 
     setNode(
       g
@@ -108,7 +125,8 @@ const NetworkView = () => {
         //       item["__data__"].source["o:id"],
         //       item["__data__"].target["o:id"],
         //     ])
-        //     .flat();
+        //     .flat()
+        //   if(node !== null) {
         //   node
         //     .filter(
         //       (item) =>
@@ -116,7 +134,8 @@ const NetworkView = () => {
         //         item["o:id"] !== i["o:id"]
         //     )
         //     .style("visibility", "hidden");
-        // })
+        // } 
+        //  }) 
         .on("dblclick", function (d, i) {
           // if shifting select the node, else display modal
           console.log(i);
@@ -147,19 +166,6 @@ const NetworkView = () => {
             .on("drag", dragged)
             .on("end", dragended)
         )
-    );
-
-    setLink(
-      g
-        .attr("class", "links")
-        .selectAll("line")
-        .data(linkData)
-        .enter()
-        .append("line")
-        .style("visibility", "visible")
-        .attr("stroke-width", 1)
-        .attr("stroke", "#999")
-        .attr("stroke-opacity", 1)
     );
 
     setTextElements(
@@ -201,7 +207,11 @@ const NetworkView = () => {
       d3.select(this).attr("stroke", null);
       g.attr("cursor", null);
     }
+
+
   }, [linkData]);
+
+
 
   // get full data and resource templates (should run once)
   useEffect(() => {
