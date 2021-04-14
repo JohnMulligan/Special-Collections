@@ -140,13 +140,6 @@ const NetworkView = () => {
 
   const svg = d3.select(d3Container.current);
 
-  // const simulation = d3.forceSimulation()
-  //     .nodes(data)
-  //     .force("charge_force", d3.forceManyBody().strength(simulationForce))
-  //     .force("links", d3.forceLink(links).id( d => d["o:id"]))
-  //     .force("center_force", d3.forceCenter(width / 2, height / 2 ))
-  //     .on("tick", tickActions);
-
   const simulation = d3.forceSimulation();
   const g = svg.append("g");
   const minRadiusForLabel = 4;
@@ -343,6 +336,8 @@ const NetworkView = () => {
     )
     .attr("fill", (d) => color(d["@type"][1]));
 
+    console.log(svg.selectAll('circle')["_groups"][0])
+
   const textElements = g
     .selectAll("text")
     .data(data)
@@ -469,7 +464,8 @@ const NetworkView = () => {
     updateForces();
   };
 
-  console.log(d3Container)
+  console.log(svg.selectAll('circle'))
+
   return (
     <div>
       <Button onClick={resetNodes}>Reset Nodes</Button>

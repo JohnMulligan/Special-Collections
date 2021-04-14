@@ -15,6 +15,8 @@ const NetworkView = () => {
   const height = 1000;
   const width = 1500;
 
+  let onNodeKeys = [];
+
   const d3Container = useRef(null);
   const color = d3.scaleOrdinal(d3.schemeCategory10);
 
@@ -25,6 +27,7 @@ const NetworkView = () => {
   const [simulation, setSimulation] = useState(null);
   const [nodeData, setNodeData] = useState([]);
   const [linkData, setLinkData] = useState([]);
+  const [textElements, setTextElements] = useState([]);
 
   const [g, setG] = useState(null);
   const [node, setNode] = useState(null);
@@ -38,6 +41,38 @@ const NetworkView = () => {
     setG(svg.append("g"));
 
     setSimulation(d3.forceSimulation());
+    //console.log(linkData)
+
+    const tickActions = () => {
+      if (node !== null) {
+        console.log("nodes not null in tick actions");
+        node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
+      }
+
+      if (link !== null) {
+        console.log("links not null in tick actions");
+
+        link
+          .attr("x1", (d) => d.source.x)
+          .attr("y1", (d) => d.source.y)
+          .attr("x2", (d) => d.target.x)
+          .attr("y2", (d) => d.target.y);
+      }
+    };
+
+    if (nodeData.length > 0) {
+      simulation
+      .nodes(nodeData)
+      .force(
+        "link",
+        d3.forceLink(linkData).id((d) => d["o:id"])
+      )
+      .force("center_force", d3.forceCenter(width / 2, height / 2))
+      .force("charge", d3.forceManyBody().strength(-150))
+      .force("x", d3.forceX())
+      .force("y", d3.forceY())
+      .on("tick", tickActions);
+    }
   }, [node, link]);
 
   // Update nodes and links
@@ -45,9 +80,7 @@ const NetworkView = () => {
     if (simulation === null) {
       return;
     }
-
-    console.log("Updating simulation");
-    console.log(linkData);
+    console.log("Updating states");
 
     setNode(
       g
@@ -58,6 +91,62 @@ const NetworkView = () => {
         .append("circle")
         .attr("r", (d) => 10)
         .attr("fill", (d) => color(d["@type"][1]))
+        // .on("mouseover", function (d, i) {
+        //   link
+        //     .filter(
+        //       (item) =>
+        //         i["o:id"] != item.source["o:id"] && i["o:id"] != item.target["o:id"]
+        //     )
+        //     .style("visibility", "hidden");
+        //   var connectedLinks = link
+        //     .filter(
+        //       (item) =>
+        //         i["o:id"] === item.source["o:id"] ||
+        //         i["o:id"] === item.target["o:id"]
+        //     )
+        //     ["_groups"][0].map((item) => [
+        //       item["__data__"].source["o:id"],
+        //       item["__data__"].target["o:id"],
+        //     ])
+        //     .flat();
+        //   node
+        //     .filter(
+        //       (item) =>
+        //         connectedLinks.indexOf(item["o:id"]) === -1 &&
+        //         item["o:id"] !== i["o:id"]
+        //     )
+        //     .style("visibility", "hidden");
+        // })
+        .on("dblclick", function (d, i) {
+          // if shifting select the node, else display modal
+          console.log(i);
+          let [r, g, b, _opacity] = d3.select(this).style("fill").split(", ");
+          r = r.substring(r.indexOf("(") + 1);
+          if (b[b.length - 1] === ")") {
+            b = b.substring(0, b.length - 1);
+          }
+
+          if (onNodeKeys.includes(i.key)) {
+            onNodeKeys = onNodeKeys.filter((node) => node !== i.key);
+            d3.select(this).style(
+              "fill",
+              "rgba(" + r + ", " + g + ", " + b + ", 1)"
+            );
+          } else {
+            onNodeKeys.push(i.key);
+            d3.select(this).style(
+              "fill",
+              "rgba(" + r + ", " + g + ", " + b + ", 0.4)"
+            );
+          }
+        })
+        .call(
+          d3
+            .drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended)
+        )
     );
 
     setLink(
@@ -73,31 +162,46 @@ const NetworkView = () => {
         .attr("stroke-opacity", 1)
     );
 
-    const tickActions = () => {
-      if (node !== null) {
-        node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
-      }
+    setTextElements(
+      g
+        .selectAll("text")
+        .data(nodeData)
+        .enter()
+        .append("text")
+        .text((node) =>
+          node["o:title"]
+            ? node["o:title"].length > 20
+              ? node["o:title"].substring(0, 20) + "..."
+              : node["o:title"]
+            : ""
+        )
+        .attr("font-size", 12)
+        .attr("font-family", "Nunito")
+        .attr("fill", "#555")
+        .attr("x", (node) => node.x + 40 + 3 * node.r)
+        .attr("y", (node) => node.y + 10 + node.r)
+        .style("opacity", 1)
+    );
 
-      if(link !== null) {
-        link
-          .attr("x1", (d) => d.source.x)
-          .attr("y1", (d) => d.source.y)
-          .attr("x2", (d) => d.target.x)
-          .attr("y2", (d) => d.target.y);
-      }
-    };
+    function dragstarted() {
+      simulation.tick();
+      d3.select(this).raise();
+      d3.select(this).attr("stroke", "black");
+      g.attr("cursor", "grabbing");
+    }
 
-    simulation
-      .nodes(nodeData)
-      .force(
-        "link",
-        d3.forceLink(linkData).id((d) => d.id)
-      )
-      .force("charge", d3.forceManyBody().strength(-150))
-      .force("x", d3.forceX())
-      .force("y", d3.forceY())
-      .on("tick", tickActions);
-  }, [nodeData, linkData]);
+    function dragged(event, d) {
+      simulation.restart();
+      d3.select(this)
+        .attr("cx", (d.x = event.x))
+        .attr("cy", (d.y = event.y));
+    }
+
+    function dragended() {
+      d3.select(this).attr("stroke", null);
+      g.attr("cursor", null);
+    }
+  }, [linkData]);
 
   // get full data and resource templates (should run once)
   useEffect(() => {
@@ -135,41 +239,43 @@ const NetworkView = () => {
   }, [cookies]);
 
   useEffect(() => {
+    if (nodeData.length === 0) return;
     const ids = nodeData.map((item) => item["o:id"]);
-      setLinkData(
-        nodeData.flatMap((node) => {
-          const isPartOf = node["dcterms:isPartOf"] ?? [];
-          const hasPart = node["dcterms:hasPart"] ?? [];
-          const isReferencedBy = node["dcterms:isReferencedBy"] ?? [];
-          const references = node["dcterms:references"] ?? [];
+    console.log("Links created");
 
-          return isPartOf
-            .concat(hasPart)
-            .map((item) => ({
-              source: node["o:id"],
-              target: item["value_resource_id"],
-            }))
-            .concat(
-              isReferencedBy.map((item) => ({
-                source: node["o:id"],
-                target: item["value_resource_id"],
-              }))
-            )
-            .concat(
-              references.map((item) => ({
-                source: node["o:id"],
-                target: item["value_resource_id"],
-              }))
-            )
-            .filter(
-              (pair) => ids.includes(pair.source) && ids.includes(pair.target)
-            );
-        })
-      );
+    setLinkData(nodeData.flatMap((node) => {
+      const isPartOf = node["dcterms:isPartOf"] ?? [];
+      const hasPart = node["dcterms:hasPart"] ?? [];
+      const isReferencedBy = node["dcterms:isReferencedBy"] ?? [];
+      const references = node["dcterms:references"] ?? [];
+
+      return isPartOf
+        .concat(
+          hasPart.map((item) => ({
+            source: node["o:id"],
+            target: item["value_resource_id"],
+          }))
+        )
+        .concat(
+          isReferencedBy.map((item) => ({
+            source: node["o:id"],
+            target: item["value_resource_id"],
+          }))
+        )
+        .concat(
+          references.map((item) => ({
+            source: node["o:id"],
+            target: item["value_resource_id"],
+          }))
+        )
+        .filter(
+          (pair) => ids.includes(pair.source) && ids.includes(pair.target)
+        );
+    }));
   }, [nodeData]);
 
   const resetNodes = () => {};
-  const onNodeKeys = () => {};
+  //const onNodeKeys = () => {};
 
   return (
     <div>
