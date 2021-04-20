@@ -16,7 +16,9 @@ const PropertySelector = (props) => {
         ))
       );
 
-      setValue(props.availableProperties.map((property) => property["o:label"]));
+      setValue(
+        props.availableProperties.map((property) => property["o:label"])
+      );
     }
   }, [props.availableProperties]);
 

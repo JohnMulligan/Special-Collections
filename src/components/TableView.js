@@ -131,7 +131,16 @@ const TableView = (props) => {
     title: "Thumbnail",
     dataIndex: "thumbnail",
     render: (text, record) => (
-      <img width={80} height = {80} alt="" src={record["thumbnail_display_urls"]["square"] ? record["thumbnail_display_urls"]["square"] : PlaceHolder}></img>
+      <img
+        width={80}
+        height={80}
+        alt=""
+        src={
+          record["thumbnail_display_urls"]["square"]
+            ? record["thumbnail_display_urls"]["square"]
+            : PlaceHolder
+        }
+      ></img>
     ),
     width: 100,
   };

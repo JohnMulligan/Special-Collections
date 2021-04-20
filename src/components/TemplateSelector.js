@@ -65,8 +65,8 @@ const TemplateSelector = (props) => {
     // console.log("query before")
     // console.log(props.query)
 
-    const search = {}
-    search["resource_class_id"] = template["o:resource_class"]["o:id"]
+    const search = {};
+    search["resource_class_id"] = template["o:resource_class"]["o:id"];
     props.setQuery("items", search, 99999);
 
     // console.log("query after")

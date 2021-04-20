@@ -336,7 +336,7 @@ const NetworkView = () => {
     )
     .attr("fill", (d) => color(d["@type"][1]));
 
-    console.log(svg.selectAll('circle')["_groups"][0])
+  console.log(svg.selectAll("circle")["_groups"][0]);
 
   const textElements = g
     .selectAll("text")
@@ -371,8 +371,8 @@ const NetworkView = () => {
     .cellFilter(function (d) {
       return d.label !== "e";
     })
-    .labels(d => {
-      return d.generatedLabels[d.i].split(':').pop();
+    .labels((d) => {
+      return d.generatedLabels[d.i].split(":").pop();
     })
     .scale(color);
 
@@ -464,7 +464,7 @@ const NetworkView = () => {
     updateForces();
   };
 
-  console.log(svg.selectAll('circle'))
+  console.log(svg.selectAll("circle"));
 
   return (
     <div>

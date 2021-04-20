@@ -15,7 +15,7 @@ const NetworkView = () => {
   const width = 1500;
   const radiusCoefficient = 8;
 
-  let onNodeKeys = [];
+  const QUERY_LIMIT = 200;
 
   const d3Container = useRef(null);
   const color = d3.scaleOrdinal(d3.schemeCategory10);
@@ -35,6 +35,8 @@ const NetworkView = () => {
   const [node, setNode] = useState(null);
   const [link, setLink] = useState(null);
   const [textElements, setTextElements] = useState([]);
+
+  const [onNodeKeys, setOnNodeKeys] = useState([]);
 
   // Initialize simulation
   useEffect(() => {
@@ -164,27 +166,84 @@ const NetworkView = () => {
         //  })
         .on("dblclick", function (d, i) {
           // if shifting select the node, else display modal
-          console.log(i);
-          let [r, g, b, _opacity] = d3.select(this).style("fill").split(", ");
-          r = r.substring(r.indexOf("(") + 1);
-          if (b[b.length - 1] === ")") {
-            b = b.substring(0, b.length - 1);
-          }
+          if (d.shiftKey) {
+            let [r, g, b, _opacity] = d3.select(this).style("fill").split(", ");
+            r = r.substring(r.indexOf("(") + 1);
+            if (b[b.length - 1] === ")") {
+              b = b.substring(0, b.length - 1);
+            }
 
-          if (onNodeKeys.includes(i.key)) {
-            onNodeKeys = onNodeKeys.filter((node) => node !== i.key);
-            d3.select(this).style(
-              "fill",
-              "rgba(" + r + ", " + g + ", " + b + ", 1)"
-            );
+            if (onNodeKeys.includes(i.key)) {
+              setOnNodeKeys(onNodeKeys.filter((node) => node !== i.key));
+              d3.select(this).style(
+                "fill",
+                "rgba(" + r + ", " + g + ", " + b + ", 1)"
+              );
+            } else {
+              setOnNodeKeys([...onNodeKeys, i.key]);
+              // onNodeKeys.push(i.key);
+              d3.select(this).style(
+                "fill",
+                "rgba(" + r + ", " + g + ", " + b + ", 0.4)"
+              );
+            }
           } else {
-            onNodeKeys.push(i.key);
-            d3.select(this).style(
-              "fill",
-              "rgba(" + r + ", " + g + ", " + b + ", 0.4)"
-            );
+            console.log(i);
+
+            const spawn_modal = async () => {
+              let thumbnailUrl = "";
+              if (i["o:media"].length !== 0) {
+                const media = await fetchOne(
+                  cookies.userInfo.host,
+                  "media",
+                  i["o:media"][0]["o:id"]
+                );
+
+                thumbnailUrl = media["o:thumbnail_urls"].square;
+              }
+
+              // TODO: IFF no template get class ID and search template library for use of class (pick first if multiple)
+              const properties = i["o:resource_template"]
+                ? resourceTemplateProperties[i["o:resource_template"]["o:id"]]
+                : [];
+              console.log(properties);
+              console.log(
+                properties.map((property) => (
+                  <Descriptions.Item label={property["o:local_name"]}>
+                    {i[property["o:term"]]}
+                  </Descriptions.Item>
+                ))
+              );
+
+              Modal.info({
+                title: i["o:title"],
+                content: (
+                  <div>
+                    {thumbnailUrl ? (
+                      <img alt="example" src={thumbnailUrl} />
+                    ) : null}
+                    <Descriptions column={1} bordered>
+                      {properties.map((property) => {
+                        const value = i[property["o:term"]]
+                          ? i[property["o:term"]][0]
+                            ? i[property["o:term"]][0]["@value"]
+                            : ""
+                          : "";
+                        return value ? (
+                          <Descriptions.Item label={property["o:local_name"]}>
+                            {value}
+                          </Descriptions.Item>
+                        ) : null;
+                      })}
+                    </Descriptions>
+                  </div>
+                ),
+                onOk() {},
+              });
+            };
+
+            spawn_modal();
           }
-          console.log(onNodeKeys);
         })
         .call(
           d3
@@ -281,7 +340,14 @@ const NetworkView = () => {
     };
 
     const getData = async () => {
-      const res = await fetch(cookies.userInfo.host, "items", -1, {}, 0, 200);
+      const res = await fetch(
+        cookies.userInfo.host,
+        "items",
+        -1,
+        {},
+        0,
+        QUERY_LIMIT
+      );
       setNodeData(res);
     };
 
@@ -332,9 +398,8 @@ const NetworkView = () => {
     let selection = svg
       .selectAll("circle")
       .style("fill", (d) => color(d["@type"][1]));
-    onNodeKeys = [];
+    setOnNodeKeys([]);
   };
-  //const onNodeKeys = () => {};
 
   const onAfterRepulsionChange = (value) => {
     setRepulsion(-1 * value);

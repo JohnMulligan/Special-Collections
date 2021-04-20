@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Tabs } from "antd";
 
-import { TableOutlined, VideoCameraAddOutlined, PartitionOutlined } from "@ant-design/icons";
+import {
+  TableOutlined,
+  VideoCameraAddOutlined,
+  PartitionOutlined,
+} from "@ant-design/icons";
 import TableView from "../components/TableView";
 import CardView from "../components/CardView";
 import NetworkView from "../components/NetworkView";
@@ -33,7 +37,6 @@ const Visualizer = (props) => {
       >
         <CardView activeProperties={props.activeProperties} />
       </TabPane>
-
     </Tabs>
   );
 };

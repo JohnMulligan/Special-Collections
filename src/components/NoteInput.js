@@ -33,7 +33,7 @@ const NoteInput = (props) => {
     const params2 = {
       local_name: "note",
     };
-    
+
     searchResourceClasses(cookies.userInfo.host, params1).then((response) => {
       console.log(response);
       console.log(params1);
