@@ -8,6 +8,21 @@ import { connect } from "react-redux";
 import { svg, text } from "d3";
 import * as d3Legend from "d3-svg-legend";
 
+/*
+ * Note: In the future we will want this view to dynamically load nodes. The
+ * best way to do this in my mind will be to change nodeData to a set, set its
+ * initial state through props (perhaps as the response to some user defined
+ * query), create a function that will take a node x, individually fetch each
+ * node referenced by x, and add them to the set of loaded nodes. From here you
+ * will be able to either create a button that calls this on every node in the
+ * set (load nodes "1 hop out"), call the function on any node the user double
+ * clicks, etc. It will be important to also update the edge list whenever new
+ * nodes are added, and to check whether neighbors of x are already loaded in
+ * order to avoid infinite fetching loops (the data in omeka is NOT acyclic).
+ * 
+ * Good luck! -miles olson
+ */
+
 const NetworkView = () => {
   const [cookies] = useCookies(["userInfo"]);
 
