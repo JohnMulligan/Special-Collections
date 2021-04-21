@@ -1,6 +1,5 @@
 import React from "react";
 import { Layout } from "antd";
-import NetworkViewClean from "../components/NetworkViewClean";
 import NetworkView from "../components/NetworkView";
 
 const { Content } = Layout;
@@ -14,7 +13,7 @@ const NetworkContainer = () => {
     >
       <Layout style={{ padding: 24 }}>
         <Content>
-          <NetworkViewClean />
+          <NetworkView />
         </Content>
       </Layout>
     </Layout>
