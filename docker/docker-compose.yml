@@ -9,7 +9,7 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - ./data2/mysql/:/var/lib/mysql
+      - ./data/mysql/:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: q1w2e3
       MYSQL_DATABASE: special_collections

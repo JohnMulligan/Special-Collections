@@ -2,3 +2,4 @@
 /omeka/files/*
 /omeka/modules/*
 /omeka/themes/*
+!.gitkeep
