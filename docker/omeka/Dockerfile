@@ -36,31 +36,54 @@ RUN unzip -q /var/www/latest_omeka_s.zip -d /var/www/ \
 &&  rm -rf /var/www/html/ \
 &&  mv /var/www/omeka-s/ /var/www/html/
 
+# Add Omeka-S Theme default module
+# RUN wget --no-verbose "https://github.com/omeka-s-themes/default/releases/download/v1.6.0/theme-default-v1.6.0.zip" -O /var/www/html/theme-default-v1.6.0.zip
+# RUN unzip -q /var/www/html/theme-default-v1.6.0.zip -d /var/www/html/modules/ \
+# &&  rm /var/www/html/theme-default-v1.6.0.zip
+
+# Add Omeka-S Custom Ontology module
+RUN wget --no-verbose "https://github.com/Daniel-KM/Omeka-S-module-CustomOntology/archive/refs/tags/3.3.5.zip" -O /var/www/html/Custom-Ontology-3.3.5.zip
+RUN unzip -q /var/www/html/Custom-Ontology-3.3.5.zip -d /var/www/html/modules/ \
+&&  mv /var/www/html/modules/Omeka-S-module-CustomOntology-3.3.5 /var/www/html/modules/CustomOntology \
+&&  rm /var/www/html/Custom-Ontology-3.3.5.zip
+
+# Add Omeka-S Iiif Server module
+RUN wget --no-verbose "https://github.com/Daniel-KM/Omeka-S-module-IiifServer/releases/download/3.6.3.0/IiifServer-3.6.3.0.zip" -O /var/www/html/IiifServer-3.6.3.0.zip
+RUN unzip -q /var/www/html/IiifServer-3.6.3.0.zip -d /var/www/html/modules/ \
+&&  rm /var/www/html/IiifServer-3.6.3.0.zip
+
+# Add Omeka-S Image Server module
+RUN wget --no-verbose "https://github.com/Daniel-KM/Omeka-S-module-ImageServer/releases/download/3.6.5.3/ImageServer-3.6.5.3.zip" -O /var/www/html/ImageServer-3.6.5.3.zip
+RUN unzip -q /var/www/html/ImageServer-3.6.5.3.zip -d /var/www/html/modules/ \
+&&  rm /var/www/html/ImageServer-3.6.5.3.zip
+
+# Add Omeka-S Mapping module
+RUN wget --no-verbose "https://github.com/omeka-s-modules/Mapping/releases/download/v1.4.0/Mapping-1.4.0.zip" -O /var/www/html/Mapping-1.4.0.zip
+RUN unzip -q /var/www/html/Mapping-1.4.0.zip -d /var/www/html/modules/ \
+&&  rm /var/www/html/Mapping-1.4.0.zip
+
+# Add Omeka-S Numeric Data Types module
+RUN wget --no-verbose "https://github.com/omeka-s-modules/NumericDataTypes/releases/download/v1.5.0/NumericDataTypes-1.5.0.zip" -O /var/www/html/NumericDataTypes-1.5.0.zip
+RUN unzip -q /var/www/html/NumericDataTypes-1.5.0.zip -d /var/www/html/modules/ \
+&&  rm /var/www/html/NumericDataTypes-1.5.0.zip
+
+# Add Omeka-S Universal Viewer module
+RUN wget --no-verbose "https://github.com/Daniel-KM/Omeka-S-module-UniversalViewer/releases/download/3.6.3.2/UniversalViewer-3.6.3.2.zip" -O /var/www/html/UniversalViewer-3.6.3.2.zip
+RUN unzip -q /var/www/html/UniversalViewer-3.6.3.2.zip -d /var/www/html/modules/ \
+&&  rm /var/www/html/UniversalViewer-3.6.3.2.zip
+
+# Add Omeka-S Zotero Import module
+RUN wget --no-verbose "https://github.com/omeka-s-modules/ZoteroImport/releases/download/v1.2.0/ZoteroImport-1.2.0.zip" -O /var/www/html/ZoteroImport-1.2.0.zip
+RUN unzip -q /var/www/html/ZoteroImport-1.2.0.zip -d /var/www/html/modules/ \
+&&  rm /var/www/html/ZoteroImport-1.2.0.zip
+
 COPY ./imagemagick-policy.xml /etc/ImageMagick-6/policy.xml
-COPY ./.htaccess /var/www/html/.htaccess
 
+RUN rm /var/www/html/.htaccess \
+&& rm /var/www/html/config/database.ini \
+&& rm /var/www/html/config/local.config.php
 
-# Create one volume for files, config, themes and modules
-# RUN mkdir -p /var/www/html/volume/config/ && mkdir -p /var/www/html/volume/files/ && mkdir -p /var/www/html/volume/modules/ && mkdir -p /var/www/html/volume/themes/
+RUN chown -R www-data:www-data /var/www/html/
 
-COPY ./config/database.ini /var/www/html/volume/config/
-COPY ./config/local.config.php /var/www/html/volume/config/
-RUN rm /var/www/html/config/database.ini \
-&& ln -s /var/www/html/volume/config/database.ini /var/www/html/config/database.ini \
-&& rm /var/www/html/config/local.config.php \
-&& ln -s /var/www/html/volume/config/local.config.php /var/www/html/config/local.config.php \
-&& rm -Rf /var/www/html/files/ \
-&& ln -s /var/www/html/volume/files/ /var/www/html/files \
-&& rm -Rf /var/www/html/modules/ \
-&& ln -s /var/www/html/volume/modules/ /var/www/html/modules \
-&& rm -Rf /var/www/html/themes/ \
-&& ln -s /var/www/html/volume/themes/ /var/www/html/themes \
-&& chown -R www-data:www-data /var/www/html/ \
-&& chmod 600 /var/www/html/volume/config/database.ini \
-&& chmod 600 /var/www/html/volume/config/local.config.php \
-&& chmod 600 /var/www/html/.htaccess
-
-VOLUME /var/www/html/volume/
-\
 CMD echo "ServerName localhost" >> /etc/apache2/apache2.conf
 CMD ["apache2-foreground"]
