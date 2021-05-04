@@ -18,9 +18,7 @@ services:
     container_name: omeka_app
     restart: unless-stopped
     volumes:
-      - ./omeka/.htaccess:/var/www/html/.htaccess
-      - ./omeka/config/database.ini:/var/www/html/config/database.ini
-      - ./omeka/config/local.config.php:/var/www/html/config/local.config.php
+      - ./omeka/config:/config
       - ./omeka/files:/var/www/html/files
     build: ./omeka
     depends_on:

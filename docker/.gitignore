@@ -1,5 +1,4 @@
 /data
-/omeka/.htaccess
 /omeka/config/database.ini
 /omeka/config/local.config.php
 /omeka/files/*

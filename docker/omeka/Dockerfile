@@ -83,6 +83,10 @@ RUN rm /var/www/html/.htaccess \
 && rm /var/www/html/config/database.ini \
 && rm /var/www/html/config/local.config.php
 
+RUN ln -s /config/.htaccess /var/www/html/.htaccess \
+&& ln -s /config/database.ini /var/www/html/config/database.ini \
+&& ln -s /config/local.config.php /var/www/html/config/local.config.php
+
 RUN chown -R www-data:www-data /var/www/html/
 
 CMD echo "ServerName localhost" >> /etc/apache2/apache2.conf
