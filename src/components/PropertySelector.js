@@ -1,19 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { Select } from "antd";
-const { Option } = Select;
+
+import { MultiSelect } from 'primereact/multiselect';
+import '../assets/css/MultiSelect.css';
 
 const PropertySelector = (props) => {
+  const [selectedProperties, setSelectedProperties] = useState(null);
   const [options, setOptions] = useState([]);
   const [value, setValue] = useState([]);
+
+  const onPropertyChange = async (e) => {
+      const propertySelected = (e == undefined) ? null : e.value;
+      setSelectedProperties(propertySelected);
+  }
 
   useEffect(() => {
     if (props.availableProperties) {
       setOptions(
-        props.availableProperties.map((property) => (
-          <Option key={property["o:label"]} value={property["o:label"]}>
-            {property["o:label"]}
-          </Option>
-        ))
+        props.availableProperties.map((property) => {
+          let option = {
+            property: property['o:label'],
+          };
+          return option;
+        })
       );
 
       setValue(
@@ -23,6 +31,7 @@ const PropertySelector = (props) => {
   }, [props.availableProperties]);
 
   useEffect(() => {
+    setSelectedProperties(null);
     props.setActiveProperties(
       props.availableProperties
         ? props.availableProperties.filter((property) =>
@@ -32,26 +41,12 @@ const PropertySelector = (props) => {
     );
   }, [props.setActiveProperties, props.availableProperties, value]);
 
-  const handleChange = (value) => {
-    setValue(value);
-    props.setActiveProperties(
-      props.availableProperties.filter((property) =>
-        value.includes(property["o:id"])
-      )
-    );
-  };
-
   return (
-    <Select
-      mode="multiple"
-      allowClear
-      style={{ width: "100%" }}
-      placeholder="Please select fields"
-      value={value}
-      onChange={handleChange}
-    >
-      {options}
-    </Select>
+    <div className="multiselect-component">
+        <div className="card">
+            <MultiSelect value={selectedProperties} options={options} onChange={onPropertyChange} optionLabel="property" placeholder="Select fields" display="chip" />
+        </div>
+    </div>    
   );
 };
 

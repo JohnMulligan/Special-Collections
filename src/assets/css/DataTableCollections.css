@@ -1,0 +1,84 @@
+.datatable-doc-demo .p-paginator .p-paginator-current {
+    margin-left: auto;
+}
+
+.datatable-doc-demo .p-progressbar {
+    height: .5rem;
+    background-color: #D8DADC;
+}
+
+.datatable-doc-demo .p-progressbar .p-progressbar-value {
+    background-color: #607D8B;
+}
+
+.datatable-doc-demo .table-header {
+    display: flex;
+    justify-content: space-between;
+}
+
+.datatable-doc-demo .p-datepicker {
+    min-width: 25rem;
+}
+
+.datatable-doc-demo .p-datepicker td {
+    font-weight: 400;
+}
+
+.datatable-doc-demo .p-datatable.p-datatable-collections .p-datatable-header {
+    padding: 1rem;
+    text-align: left;
+    font-size: 1.5rem;
+}
+
+.datatable-doc-demo .p-datatable.p-datatable-collections .p-paginator {
+    padding: 1rem;
+}
+
+.datatable-doc-demo .p-datatable.p-datatable-collections .p-datatable-thead > tr > th {
+    text-align: left;
+}
+
+.datatable-doc-demo .p-datatable.p-datatable-collections .p-datatable-tbody > tr > td {
+    cursor: auto;
+}
+
+.datatable-doc-demo .p-datatable.p-datatable-collections .p-dropdown-label:not(.p-placeholder) {
+    text-transform: uppercase;
+}
+
+.datatable-doc-demo .p-datatable-collections .p-datatable-tbody > tr > td .p-column-title {
+    display: none;
+}
+
+@media screen and (max-width: 960px) {
+    .datatable-doc-demo .p-datatable.p-datatable-collections .p-datatable-thead > tr > th,
+    .datatable-doc-demo .p-datatable.p-datatable-collections .p-datatable-tfoot > tr > td {
+        display: none !important;
+    }
+
+    .datatable-doc-demo .p-datatable.p-datatable-collections .p-datatable-tbody > tr {
+        border-bottom: 1px solid var(--layer-2);
+    }
+
+    .datatable-doc-demo .p-datatable.p-datatable-collections .p-datatable-tbody > tr > td {
+        text-align: left;
+        display: block;
+        border: 0 none !important;
+        width: 100% !important;
+        float: left;
+        clear: left;
+        border: 0 none;
+    }
+
+    .datatable-doc-demo .p-datatable.p-datatable-collections .p-datatable-tbody > tr > td .p-column-title {
+        padding: .4rem;
+        min-width: 30%;
+        display: inline-block;
+        margin: -.4rem 1rem -.4rem -.4rem;
+        font-weight: bold;
+    }
+
+    .datatable-doc-demo .p-datatable.p-datatable-collections .p-datatable-tbody > tr > td .p-progressbar {
+        margin-top: .5rem;
+    }
+}

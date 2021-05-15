@@ -6,6 +6,14 @@ import * as serviceWorker from "./serviceWorker";
 import { Provider } from "react-redux";
 import store from "./redux/store";
 
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
+import 'primereact/resources/themes/mdc-light-indigo/theme.css';
+
+import PrimeReact from 'primereact/api';
+
+PrimeReact.ripple = true;
+
 ReactDOM.render(
   <Provider store={store}>
     <MainRouter />

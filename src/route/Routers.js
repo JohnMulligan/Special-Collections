@@ -10,6 +10,7 @@ import TranscriptView from "../containers/TranscriptView";
 import NoteView from "../containers/NoteView";
 import Welcome from "../containers/Welcome";
 import Home from "../containers/Home";
+import DataViewContainer from "../containers/DataView";
 import HomeLegacy from "../containers/HomeLegacy";
 import ProjectsPage from "../containers/ProjectsPage";
 import ItemView from "../containers/ItemView";
@@ -50,6 +51,9 @@ export const MainpageRouter = () => {
       </PrivateRoute>
       <PrivateRoute path={PATH_PREFIX + "/admin/home-legacy"}>
         <HomeLegacy />
+      </PrivateRoute>
+      <PrivateRoute path={PATH_PREFIX + "/admin/dataview-example"}>
+        <DataViewContainer />
       </PrivateRoute>
       <PrivateRoute path={PATH_PREFIX + "/admin/network"}>
         <NetworkContainer />

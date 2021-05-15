@@ -22,7 +22,7 @@ import {
   getPropertyList,
   getPropertiesInResourceTemplate,
 } from "../utils/Utils";
-import Explorer from "./Explorer";
+import ExplorerLegacy from "./ExplorerLegacy";
 
 const { Sider, Content } = Layout;
 const { TabPane } = Tabs;
@@ -104,7 +104,7 @@ const HomeLegacy = () => {
     >
       <Layout style={{ padding: 24 }}>
         <Content>
-          <Explorer />
+          <ExplorerLegacy />
         </Content>
       </Layout>
     </Layout>

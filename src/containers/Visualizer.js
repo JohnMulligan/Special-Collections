@@ -8,11 +8,11 @@ import {
 } from "@ant-design/icons";
 import TableView from "../components/TableView";
 import CardView from "../components/CardView";
-import NetworkView from "../components/NetworkView";
 
 const { TabPane } = Tabs;
 
 const Visualizer = (props) => {
+  
   return (
     <Tabs defaultActiveKey={1} type="card">
       <TabPane
