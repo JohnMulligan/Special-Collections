@@ -15,6 +15,7 @@ import Visualizer from "./Visualizer";
 
 const Explorer = (props) => {
   const [cookies] = useCookies(["userInfo"]);
+  const [activeTemplate, setActiveTemplate] = useState(null);
   const [availableProperties, setAvailableProperties] = useState();
   const [activeProperties, setActiveProperties] = useState([]);
 
@@ -27,7 +28,7 @@ const Explorer = (props) => {
     <>
       <Row gutter={[HORIZONTAL_GUTTER, VERTICAL_GUTTER]}>
         <Col span={LEFT_SPAN}>
-          <TemplateSelector setAvailableProperties={setAvailableProperties} />
+          <TemplateSelector setActiveTemplate={setActiveTemplate} setAvailableProperties={setAvailableProperties} />
         </Col>
         <Col span={10}>
           <PropertySelector
@@ -35,23 +36,11 @@ const Explorer = (props) => {
             setActiveProperties={setActiveProperties}
           />
         </Col>
-        {/*<Col span={10}>
-          <PropertySelectorLegacy
-            availableProperties={availableProperties}
-            setActiveProperties={setActiveProperties}
-          />
-        </Col>*/}
       </Row>
-
-      {/*<Row gutter={[HORIZONTAL_GUTTER, VERTICAL_GUTTER]}>
-        <Col span={LEFT_SPAN + RIGHT_SPAN}>
-          <Visualizer activeProperties={activeProperties} />
-        </Col>
-      </Row>*/}
 
       <Row gutter={[HORIZONTAL_GUTTER, VERTICAL_GUTTER]}>
         <Col span={LEFT_SPAN + RIGHT_SPAN}>
-          <DataTableContainer activeProperties={activeProperties} />
+          <DataTableContainer activeTemplate={activeTemplate} activeProperties={activeProperties} />
         </Col>
       </Row>
     </>

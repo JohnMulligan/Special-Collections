@@ -1,5 +1,7 @@
 import axios from "axios";
 
+const PER_PAGE = 1000;
+
 const headers = {
   "Content-Type": "application/json",
 };
@@ -20,7 +22,7 @@ export const getItems = (baseAddress, items) => {
 };
 
 export const searchItems = (baseAddress, params) => {
-  return axios.get("http://" + baseAddress + "/api/items?per_page=1000", {
+  return axios.get(`http://${baseAddress}/api/items?per_page=${PER_PAGE}`, {
     params: params,
   });
 };
@@ -36,7 +38,7 @@ export const createItem = (userInfo, payload) => {
 };
 
 export const getItemSetList = (baseAddress) => {
-  return axios.get("http://" + baseAddress + "/api/item_sets?per_page=1000");
+  return axios.get(`http://${baseAddress}/api/item_sets?per_page=${PER_PAGE}`);
 };
 
 export const getItemSet = (baseAddress, itemSetId) => {
@@ -99,35 +101,35 @@ export const getMedia = (baseAddress, media) => {
 
 export const getMediaInItem = (baseAddress, itemId) => {
   return axios.get(
-    "http://" + baseAddress + "/api/media?per_page=1000&item_id=" + itemId
+    `http://${baseAddress}/api/media?per_page=${PER_PAGE}` + "&item_id=" + itemId
   );
 };
 
 export const searchMedia = (baseAddress, params) => {
-  return axios.get("http://" + baseAddress + "/api/media?per_page=1000", {
+  return axios.get(`http://${baseAddress}/api/media?per_page=${PER_PAGE}`, {
     params: params,
   });
 };
 
 export const getPropertyList = (baseAddress) => {
-  return axios.get("http://" + baseAddress + "/api/properties?per_page=1000");
+  return axios.get(`http://${baseAddress}/api/properties?per_page=${PER_PAGE}`);
 };
 
 export const searchProperties = (baseAddress, params) => {
-  return axios.get("http://" + baseAddress + "/api/properties?per_page=1000", {
+  return axios.get(`http://${baseAddress}/api/properties?per_page=${PER_PAGE}`, {
     params: params,
   });
 };
 
 export const getResourceClassList = (baseAddress) => {
   return axios.get(
-    "http://" + baseAddress + "/api/resource_classes?per_page=1000"
+    `http://${baseAddress}/api/resource_classes?per_page=${PER_PAGE}`
   );
 };
 
 export const searchResourceClasses = (baseAddress, params) => {
   return axios.get(
-    "http://" + baseAddress + "/api/resource_classes?per_page=1000",
+    `http://${baseAddress}/api/resource_classes?per_page=${PER_PAGE}`,
     {
       params: params,
     }
@@ -136,7 +138,7 @@ export const searchResourceClasses = (baseAddress, params) => {
 
 export const getResourceTemplateList = (baseAddress) => {
   return axios.get(
-    "http://" + baseAddress + "/api/resource_templates?per_page=1000"
+    `http://${baseAddress}/api/resource_templates?per_page=${PER_PAGE}`
   );
 };
 

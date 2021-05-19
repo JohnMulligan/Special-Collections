@@ -9,8 +9,19 @@ const PropertySelector = (props) => {
   const [value, setValue] = useState([]);
 
   const onPropertyChange = async (e) => {
-      const propertySelected = (e == undefined) ? null : e.value;
-      setSelectedProperties(propertySelected);
+      const propertiesSelected = (e == undefined) ? null : e.value;
+
+      setSelectedProperties(propertiesSelected);
+
+      props.setActiveProperties(propertiesSelected.map((propertySelected) => {
+          let property = null;
+          props.availableProperties.map((availableProperty) => {
+              if (availableProperty['o:label'] == propertySelected['property']) {
+                  property = availableProperty;
+              }
+          });
+          return property;
+      }));
   }
 
   useEffect(() => {
@@ -31,7 +42,17 @@ const PropertySelector = (props) => {
   }, [props.availableProperties]);
 
   useEffect(() => {
-    setSelectedProperties(null);
+    setSelectedProperties(
+      props.availableProperties
+        ? props.availableProperties.map((property) => {
+            let option = {
+              property: property['o:label'],
+            };
+            return option;
+          })
+        : []
+      );
+
     props.setActiveProperties(
       props.availableProperties
         ? props.availableProperties.filter((property) =>

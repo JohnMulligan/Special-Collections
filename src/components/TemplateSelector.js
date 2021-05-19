@@ -33,24 +33,27 @@ const TemplateSelector = (props) => {
       const templateSelected = (e == undefined) ? defaultTemplate : e.value;
 
       setSelectedTemplate(templateSelected);
+      props.setActiveTemplate(templateSelected);
 
       const template = templates.filter(
         (template) => template["o:id"] === templateSelected['id']
       )[0];
 
-      const requests = template["o:resource_template_property"].map((property) =>
-        Axios.get(property["o:property"]["@id"])
-      );
+      if (template) {
+        const requests = template["o:resource_template_property"].map((property) =>
+          Axios.get(property["o:property"]["@id"])
+        );
 
-      const res = await Axios.all(requests);
-      const properties = res.map((inner) => inner.data);
+        const res = await Axios.all(requests);
+        const properties = res.map((inner) => inner.data);
 
-      props.setAvailableProperties(properties);
-      props.clearQuery("items");
+        props.setAvailableProperties(properties);
+        props.clearQuery("items");
 
-      const search = {};
-      search["resource_class_id"] = template["o:resource_class"]["o:id"];
-      props.setQuery("items", search, 99999);
+        const search = {};
+        search["resource_class_id"] = template["o:resource_class"]["o:id"];
+        props.setQuery("items", search, 99999);
+      }
   }
 
   useEffect(() => {
@@ -70,7 +73,6 @@ const TemplateSelector = (props) => {
         );
         
         // onTemplateChange();
-        // setSelectedTemplate(defaultTemplate);
       };
 
       initComponent();

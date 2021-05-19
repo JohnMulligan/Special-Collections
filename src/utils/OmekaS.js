@@ -24,7 +24,14 @@ export const fetch = async (
       page,
       per_page: perPage,
     },
+    // headers: {
+    //   'Access-Control-Request-Headers': true
+    //   // "Access-Control-Allow-Origin": "*"
+    // }
   });
+
+  console.log(`http://${baseAddress}/api/${endpoint}`);
+  console.log(res.headers);
 
   const data = res.data.map((each) => ({
     ...each,

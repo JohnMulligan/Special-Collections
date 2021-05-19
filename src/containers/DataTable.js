@@ -10,35 +10,37 @@ import { fetch } from "../utils/OmekaS";
 
 import '../assets/css/DataTable.css';
 
+// import ProductService from '../service/ProductService';
+
 const DataTableContainer = (props) => {
     const [cookies] = useCookies(["userInfo"]);
     const [globalFilter, setGlobalFilter] = useState(null);
-    const dt = useRef(null);
 
+    const dt = useRef(null);
+    const [showTable, setShowTable] = useState(false);
     const [collection, setCollection] = useState([]);
+    const [selectedItems, setSelectedItems] = useState(null);
     const [columns, setColumns] = useState([]);
 
-    const [tableState, setTableState] = useState({
-        data: [],
-        pagination: {
-          current: 1,
-          pageSize: 10,
-          total: props.query.size,
-        },
-        loading: false,
-        selectedRowKeys: [],
-    });
-    
+    // const [products, setProducts] = useState([]);
+    // const [selectedProducts8, setSelectedProducts8] = useState(null);
+
     useEffect(() => {
-        setColumns(props.activeProperties.map((property) => {
-            return <Column key={property['o:label']} field={property['o:label']} header={property['o:label']} sortable filter filterPlaceholder={"Search by " + property['o:label']} />;
-        }));
+        if (props.activeProperties) {
+            setColumns(
+                props.activeProperties.map((property, i) => {
+                    return <Column key={property['o:id']} field={property['o:label']} header={property['o:label']} sortable filter filterPlaceholder={"Search by " + property['o:label']} />;
+                })
+            );
+        } else {
+            setColumns([]);
+        }
 
         const fetchInitial = async () => {
-            setTableState((state) => ({
-                ...state,
-                loading: true,
-            }));
+            // setTableState((state) => ({
+                // ...state,
+                // loading: true,
+            // }));
 
             const data = await fetch(
                 cookies.userInfo.host,
@@ -49,33 +51,33 @@ const DataTableContainer = (props) => {
                 10
             );
 
-            setTableState((state) => ({
-                ...state,
-                data,
-                loading: false,
-                pagination: {
-                    current: 1,
-                    pageSize: 10,
-                    total: props.query.size,
-                },
-            }));
+            if (props.activeTemplate) {
+                setShowTable(true);
+                setCollection(data.map((row, key) => {
+                    if (props.activeProperties && props.activeProperties.length > 0) {
+                        let item = {'id': key};
+                        props.activeProperties.map((property) => {
+                            let label = property['o:label'];
+                            let value = null;
 
-            setCollection(data.map((row, key) => {
-                let item = {};
-                props.activeProperties.map((property) => {
-                    let label = property['o:label'];
-                    let value = null;
+                            if (typeof row[property['o:term']] !== 'undefined') {
+                                value = row[property['o:term']][0]['@value'];
+                            }
 
-                    if (typeof row[property['o:term']] !== 'undefined') {
-                        value = row[property['o:term']][0]['@value'];
+                            item[label] = value;
+                        });
+                        return item;
+                    } else {
+                        setShowTable(false);
                     }
-
-                    item[label] = value;
-                });
-                return item;
-            }));
+                }));
+            }
         };
         fetchInitial();
+
+        // const productService = new ProductService();
+        // productService.getProductsSmall().then(data => setProducts(data));
+
     }, [cookies.userInfo.host, props.activeProperties, props.query]);
 
     const renderHeader = () => {
@@ -94,26 +96,39 @@ const DataTableContainer = (props) => {
     return (
         <div className="datatable-component">
             <div className="card">
-                <DataTable
-                    ref={dt}
-                    value={collection}
-                    header={header}
-                    className="p-datatable-collection"
-                    dataKey="id"
-                    rowHover
-                    globalFilter={globalFilter}
-                    // selection={selectedItems}
-                    // onSelectionChange={e => setSelectedItems(e.value)}
-                    paginator
-                    rows={5}
-                    emptyMessage="No items found"
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                    rowsPerPageOptions={[10,25,50]}                    
-                >
-                    <Column selectionMode="multiple" style={{width:'3em'}}/>
-                    {columns}
-                </DataTable>
+                {
+                    showTable ?
+                        <DataTable
+                            ref={dt}
+                            value={collection}
+                            header={header}
+                            className="p-datatable-collection"
+                            dataKey="id"
+                            rowHover
+                            globalFilter={globalFilter}
+                            selectionMode="checkbox"
+                            selection={selectedItems}
+                            onSelectionChange={e => setSelectedItems(e.value)}
+                            paginator
+                            rows={10}
+                            emptyMessage="No items found"
+                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                            rowsPerPageOptions={[10,25,50]}                    
+                        >
+                            <Column selectionMode="multiple" headerStyle={{width:'3em'}}/>
+                            {columns}
+                        </DataTable>
+                    : null
+                }
+
+                {/*<DataTable value={products} selectionMode="checkbox" selection={selectedProducts8} onSelectionChange={e => setSelectedProducts8(e.value)} dataKey="id">
+                    <Column selectionMode="multiple" headerStyle={{width: '3em'}}></Column>
+                    <Column field="code" header="Code"/>
+                    <Column field="name" header="Name"/>
+                    <Column field="category" header="Category"/>
+                    <Column field="quantity" header="Quantity"/>
+                </DataTable>*/}
             </div>
         </div>
     );
