@@ -22,6 +22,11 @@ RewriteCond %{REQUEST_URI}::$1 ^(/.+)/(.*)::\2$
 RewriteRule ^(.*) - [E=BASE:%1]
 RewriteRule ^(.*)$ %{ENV:BASE}/index.php [L]
 
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET,PUT,POST,DELETE"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+Header set Access-Control-Expose-Headers "Omeka-S-Total-Results"
+
 # Block access to all .ini files.
 <FilesMatch "\.ini$">
     <IfModule mod_authz_core.c>

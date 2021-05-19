@@ -5,6 +5,7 @@ FROM php:7.4-apache-buster
 # MAINTAINER Giorgio Comai <g@giorgiocomai.eu>
 
 RUN a2enmod rewrite
+RUN a2enmod headers
 
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get -qq update && apt-get -qq -y upgrade
