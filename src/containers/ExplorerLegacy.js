@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Layout, Row, Col, Divider } from "antd";
+import { Row, Col } from "antd";
 
 import ItemSetSelector from "../components/ItemSetSelector";
 import TemplateSelectorLegacy from "../components/TemplateSelectorLegacy";
@@ -32,6 +32,12 @@ const ExplorerLegacy = (props) => {
       </Row>
 
       <Row gutter={[HORIZONTAL_GUTTER, VERTICAL_GUTTER]}>
+        <Col span={LEFT_SPAN}>
+          <QueryBuilder
+            activeProperties={activeProperties}
+            availableProperties={availableProperties}
+          />{" "}
+        </Col>
         <Col span={RIGHT_SPAN}>
           <Visualizer activeProperties={activeProperties} />
         </Col>

@@ -9,7 +9,6 @@ import { connect } from "react-redux";
 import { clearQuery, setQuery } from "../redux/actions";
 
 import { fetchTemplates } from "../utils/OmekaS";
-import { fetchSize } from "../utils/OmekaS";
 
 import Axios from "axios";
 
@@ -30,7 +29,7 @@ const TemplateSelector = (props) => {
   const defaultTemplate = {'template': 'Source', 'id': 6}; // Default is "Source"
 
   const onTemplateChange = async (e) => {
-      const templateSelected = (e == undefined) ? defaultTemplate : e.value;
+      const templateSelected = (e === undefined) ? defaultTemplate : e.value;
 
       setSelectedTemplate(templateSelected);
       props.setActiveTemplate(templateSelected);

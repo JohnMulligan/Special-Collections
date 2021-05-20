@@ -2,6 +2,46 @@ import axios from "axios";
 
 const PER_PAGE = 9999;
 
+export const fetchItems = async (
+  baseAddress,
+  endpoint,
+  itemSetId,
+  params,
+  start,
+  limit,
+  sortBy = "id",
+  sortOrder = "asc",
+  fullTextSearch = null,
+  search = null,
+) => {
+  const perPage = limit + (start % limit);
+  const page = Math.ceil(start / perPage) + 1;
+
+  const res = await axios.get(`http://${baseAddress}/api/${endpoint}`, {
+    params: {
+      ...params,
+      item_set_id: itemSetId !== -1 ? itemSetId : null,
+      sort_by: sortBy,
+      sort_order: sortOrder,
+      page,
+      per_page: perPage,
+      fulltext_search: fullTextSearch,
+      ...search,
+    },
+  });
+
+  const items = res.data.map((each) => ({
+    ...each,
+    key: each["o:id"],
+  }));
+
+  return {
+    items: items,
+    total: parseInt(res.headers['omeka-s-total-results']),
+  };
+};
+
+/* TO DO: remove this old function after remove home legacy */
 export const fetch = async (
   baseAddress,
   endpoint,
@@ -25,9 +65,6 @@ export const fetch = async (
       per_page: perPage,
     },
   });
-
-  console.log(`http://${baseAddress}/api/${endpoint}`);
-  console.log(res.headers['omeka-s-total-results']);
 
   const data = res.data.map((each) => ({
     ...each,

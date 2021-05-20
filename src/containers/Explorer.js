@@ -1,20 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useCookies } from "react-cookie";
-import { Layout, Row, Col, Divider } from "antd";
-
-import { Column } from 'primereact/column';
-import { DataTable } from 'primereact/datatable';
+import React, { useState } from "react";
+import { Row, Col } from "antd";
 
 import TemplateSelector from "../components/TemplateSelector";
 import PropertySelector from "../components/PropertySelector";
-import PropertySelectorLegacy from "../components/PropertySelectorLegacy";
 
 import DataTableContainer from "../containers/DataTable";
 
-import Visualizer from "./Visualizer";
-
 const Explorer = (props) => {
-  const [cookies] = useCookies(["userInfo"]);
   const [activeTemplate, setActiveTemplate] = useState(null);
   const [availableProperties, setAvailableProperties] = useState();
   const [activeProperties, setActiveProperties] = useState([]);

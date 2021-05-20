@@ -1,12 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCookies } from "react-cookie";
-
-import { DataTable } from 'primereact/datatable';
 
 import Explorer from "./Explorer";
 import { getPropertyList } from "../utils/Utils";
-
-import '../assets/css/DataTableCollections.css';
 
 const Home = () => {
     const [cookies] = useCookies(["userInfo"]);

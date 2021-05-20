@@ -4,7 +4,6 @@ import { MainpageRouter } from "../route/Routers";
 import { withRouter } from "react-router-dom";
 import {
   FolderOutlined,
-  FolderAddOutlined,
   PartitionOutlined,
 } from "@ant-design/icons";
 import "antd/dist/antd.css";

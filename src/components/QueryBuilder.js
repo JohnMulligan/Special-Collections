@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Select, Input, Table, Row, Col } from "antd";
+import { Select, Input, Row, Col } from "antd";
 
 import { setQuery } from "../redux/actions";
 
 import { connect } from "react-redux";
 import { fetchSize } from "../utils/OmekaS";
 import { useCookies } from "react-cookie";
-
-const { Option } = Select;
 
 const mapStateToProps = (state, props) => {
   return {
@@ -17,7 +15,6 @@ const mapStateToProps = (state, props) => {
 };
 
 const QueryBuilder = (props) => {
-  const [filters, setFilters] = useState([]);
   const [cookies] = useCookies(["userInfo"]);
 
   const [rows, setRows] = useState([]);
@@ -75,8 +72,6 @@ const QueryBuilder = (props) => {
     fetchSize(cookies.userInfo.host, "items", search).then((count) =>
       props.setQuery("items", search, count)
     );
-
-    console.log(search);
   };
 
   // Return a table object where each row is a field, the first column is the name

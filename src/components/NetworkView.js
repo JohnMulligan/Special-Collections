@@ -4,8 +4,7 @@ import { Slider, Button, Modal, Descriptions } from "antd";
 import AddNoteButton from "./AddNoteButton";
 import { useCookies } from "react-cookie";
 import { fetch, fetchOne, fetchResourceTemplates } from "../utils/OmekaS";
-import { connect } from "react-redux";
-import { svg, text } from "d3";
+import { svg } from "d3";
 import * as d3Legend from "d3-svg-legend";
 
 /*

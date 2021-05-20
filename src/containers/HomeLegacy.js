@@ -1,20 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Layout, Tabs, Divider, Space } from "antd";
-import Preview from "../components/Preview";
-import Datalist from "../components/DataList";
-import Filmstrip from "../components/Filmstrip";
-import Metadata from "../components/Metadata";
-import Archive from "../components/Archive";
-import ItemSearchForm from "../components/ItemSearchForm";
-import MediumSearchForm from "../components/MediumSearchForm";
-import TemplateDropdown from "../components/TemplateDropdown";
+import { Layout } from "antd";
 
-import {
-  TableOutlined,
-  VideoCameraAddOutlined,
-  SearchOutlined,
-  ApartmentOutlined,
-} from "@ant-design/icons";
 import { useCookies } from "react-cookie";
 import axios from "axios";
 import {
@@ -24,15 +10,12 @@ import {
 } from "../utils/Utils";
 import ExplorerLegacy from "./ExplorerLegacy";
 
-const { Sider, Content } = Layout;
-const { TabPane } = Tabs;
+const { Content } = Layout;
 
 const HomeLegacy = () => {
   const [selectedItems, setSelectedItems] = useState([]);
-  const [rowRecord, setRowRecord] = useState({});
   const [cookies] = useCookies(["userInfo"]);
   const [dataLoading, setDataLoading] = useState(false);
-  const [hasMediaData, setHasMediaData] = useState(false);
   const [selectedProperties, setSelectedProperties] = useState([]);
   const [templateId, setTemplateId] = useState(0);
   const [propertyList, setPropertyList] = useState([]);

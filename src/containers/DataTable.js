@@ -6,54 +6,64 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 
-import { fetch } from "../utils/OmekaS";
+import { fetchItems } from "../utils/OmekaS";
 
 import '../assets/css/DataTable.css';
 
-// import ProductService from '../service/ProductService';
-
 const DataTableContainer = (props) => {
     const [cookies] = useCookies(["userInfo"]);
-    const [globalFilter, setGlobalFilter] = useState(null);
-
-    const dt = useRef(null);
+    
+    const [loading, setLoading] = useState(false);
+    const [totalRecords, setTotalRecords] = useState(null);
     const [showTable, setShowTable] = useState(false);
+    
     const [collection, setCollection] = useState([]);
     const [selectedItems, setSelectedItems] = useState(null);
     const [columns, setColumns] = useState([]);
+    const [lazyParams, setLazyParams] = useState({
+        first: 0,
+        rows: 10,
+        // page: 1,
+        sortField: 'o:id',
+        sortOrder: 1,
+        sortDirection: 'asc',
+    });
 
-    // const [products, setProducts] = useState([]);
-    // const [selectedProducts8, setSelectedProducts8] = useState(null);
+    const dt = useRef(null);
 
     useEffect(() => {
-        if (props.activeProperties) {
+        loadLazyData();
+    }, [props.activeProperties, lazyParams]);
+
+    const loadLazyData = () => {
+        if (props.activeProperties && props.activeProperties.length > 0) {
+            setShowTable(true);
+            setLoading(true);
             setColumns(
                 props.activeProperties.map((property, i) => {
-                    return <Column key={property['o:id']} field={property['o:label']} header={property['o:label']} sortable filter filterPlaceholder={"Search by " + property['o:label']} />;
+                    return <Column key={property['o:id']} columnKey={property['o:local_name']} header={property['o:label']} field={property['o:label']} filterField={property['o:id'].toString()} sortField={property['o:term']} sortable filter filterPlaceholder={"Search by " + property['o:label']} />;
                 })
             );
         } else {
             setColumns([]);
         }
 
-        const fetchInitial = async () => {
-            // setTableState((state) => ({
-                // ...state,
-                // loading: true,
-            // }));
-
-            const data = await fetch(
+        if (props.activeTemplate) {
+            fetchItems(
                 cookies.userInfo.host,
                 props.query.endpoint,
                 props.query.item_set_id,
                 props.query.params,
-                0,
-                10
-            );
-
-            if (props.activeTemplate) {
+                lazyParams.first,
+                lazyParams.rows,
+                lazyParams.sortField,
+                lazyParams.sortDirection,
+                lazyParams.globalFilter,
+                lazyParams.filter
+            ).then(data => {
+                setTotalRecords(data.total);
                 setShowTable(true);
-                setCollection(data.map((row, key) => {
+                setCollection(data.items.map((row, key) => {
                     if (props.activeProperties && props.activeProperties.length > 0) {
                         let item = {'id': key};
                         props.activeProperties.map((property) => {
@@ -71,64 +81,114 @@ const DataTableContainer = (props) => {
                         setShowTable(false);
                     }
                 }));
-            }
+                setLoading(false);
+            });
+        }
+    }
+
+    const onPage = (event) => {
+        let _lazyParams = {
+            ...lazyParams,
+            ...event,
         };
-        fetchInitial();
+        setLazyParams(_lazyParams);
+    }
 
-        // const productService = new ProductService();
-        // productService.getProductsSmall().then(data => setProducts(data));
+    const onSort = (event) => {
+        let _lazyParams = {
+            ...lazyParams,
+            ...event,
+            'first': 0,
+            'sortDirection': (event.sortOrder === 1) ? 'asc' : 'desc',
+        };
+        setLazyParams(_lazyParams);
+    }
 
-    }, [cookies.userInfo.host, props.activeProperties, props.query]);
+    const onGlobalFilter = (event) => {
+        let _lazyParams = {
+            ...lazyParams,
+            ...event,
+            'first': 0,
+            'globalFilter': event.target.value,
+        };
+        setLazyParams(_lazyParams);
+    }
+
+    const onFilter = (event) => {
+        let search = {};
+        let counter = 0;
+
+        for (var propertyId of Object.keys(event.filters)) {
+            if (!isNaN(propertyId)) {
+                search['property[' + counter + '][joiner]'] = 'and';
+                search['property[' + counter + '][property]'] = parseInt(propertyId);
+                search['property[' + counter + '][type]'] = 'in';
+                search['property[' + counter + '][text]'] = event.filters[propertyId]['value'];
+
+                counter++;
+            }
+        }
+
+        let _lazyParams = {
+            ...lazyParams,
+            ...event,
+            'first': 0,
+            'filter': (Object.keys(search).length > 0) ? search : null,
+        };
+        setLazyParams(_lazyParams);
+    }
 
     const renderHeader = () => {
         return (
             <div className="table-header">
                 <span className="p-input-icon-left">
                     <i className="pi pi-search" />
-                    <InputText type="search" onInput={(e) => setGlobalFilter(e.target.value)} placeholder="Global Search" />
+                    <InputText type="search" onChange={onGlobalFilter} placeholder="Global Search" />
                 </span>
             </div>
         );
     }
 
-    const header = renderHeader();
-    
+    const header = renderHeader();    
+
     return (
         <div className="datatable-component">
             <div className="card">
                 {
                     showTable ?
                         <DataTable
+                            loading={loading}
+                            className="p-datatable-collection"
+                            emptyMessage="No items found"
+                            lazy
                             ref={dt}
                             value={collection}
                             header={header}
-                            className="p-datatable-collection"
-                            dataKey="id"
+                            globalFilter={lazyParams.globalFilter}
+                            filters={lazyParams.filters}
+                            onFilter={onFilter}
                             rowHover
-                            globalFilter={globalFilter}
+                            rows={lazyParams.rows}
+                            rowsPerPageOptions={[10,25,50]}                    
+                            dataKey="id"
                             selectionMode="checkbox"
                             selection={selectedItems}
                             onSelectionChange={e => setSelectedItems(e.value)}
-                            paginator
-                            rows={10}
-                            emptyMessage="No items found"
+                            first={lazyParams.first}
+                            totalRecords={totalRecords}
                             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                            paginator
                             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                            rowsPerPageOptions={[10,25,50]}                    
+                            onPage={onPage}
+                            onSort={onSort}
+                            sortField={lazyParams.sortField}
+                            sortOrder={lazyParams.sortOrder}
                         >
                             <Column selectionMode="multiple" headerStyle={{width:'3em'}}/>
                             {columns}
                         </DataTable>
                     : null
                 }
-
-                {/*<DataTable value={products} selectionMode="checkbox" selection={selectedProducts8} onSelectionChange={e => setSelectedProducts8(e.value)} dataKey="id">
-                    <Column selectionMode="multiple" headerStyle={{width: '3em'}}></Column>
-                    <Column field="code" header="Code"/>
-                    <Column field="name" header="Name"/>
-                    <Column field="category" header="Category"/>
-                    <Column field="quantity" header="Quantity"/>
-                </DataTable>*/}
             </div>
         </div>
     );

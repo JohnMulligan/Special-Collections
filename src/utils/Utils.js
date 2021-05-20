@@ -101,7 +101,7 @@ export const getMedia = (baseAddress, media) => {
 
 export const getMediaInItem = (baseAddress, itemId) => {
   return axios.get(
-    `http://${baseAddress}/api/media?per_page=${PER_PAGE}` + "&item_id=" + itemId
+    `http://${baseAddress}/api/media?per_page=${PER_PAGE}&item_id=` + itemId
   );
 };
 
