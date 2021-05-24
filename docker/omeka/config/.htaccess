@@ -1,6 +1,22 @@
 SetEnv APPLICATION_ENV "development"
 
+
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET,PUT,POST,DELETE,PATCH,OPTIONS"
+Header set Access-Control-Expose-Headers "Omeka-S-Total-Results"
+
+Header set Access-Control-Allow-Headers "Origin, Content-Type, Authorization"
+#Header set Access-Control-Allow-Headers "Accept, Accept-Datetime, Accept-Language, App-Version, Authorization, Cache-Control, Content-Type, Date, Device-Token, Location, Origin, Time-Zone, User-Agent, X-Requested-With"
+#Header set Access-Control-Allow-Credentials "true"
+#Header set Access-Control-Max-Age "86400"
+
 RewriteEngine On
+
+# Accept all OPTIONS requests
+
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule .* empty.html [NC,L]
+
 # The following rule tells Apache that if the requested filename
 # exists, simply serve it.
 RewriteCond %{REQUEST_FILENAME} -s [OR]
@@ -21,11 +37,6 @@ RewriteRule .* %1 [R=307,L]
 RewriteCond %{REQUEST_URI}::$1 ^(/.+)/(.*)::\2$
 RewriteRule ^(.*) - [E=BASE:%1]
 RewriteRule ^(.*)$ %{ENV:BASE}/index.php [L]
-
-Header set Access-Control-Allow-Origin "*"
-Header set Access-Control-Allow-Methods "GET,PUT,POST,DELETE"
-Header set Access-Control-Allow-Headers "Content-Type, Authorization"
-Header set Access-Control-Expose-Headers "Omeka-S-Total-Results"
 
 # Block access to all .ini files.
 <FilesMatch "\.ini$">
