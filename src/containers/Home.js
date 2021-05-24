@@ -13,7 +13,7 @@ const Home = () => {
     useEffect(() => {
         const fetchPropertyList = async () => {
             setPropertyLoading(true);
-            
+
             const response = await getPropertyList(cookies.userInfo.host);
             let classes = response.data.map((each) => ({
                 id: each["o:id"],

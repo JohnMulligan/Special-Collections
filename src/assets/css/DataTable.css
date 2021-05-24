@@ -54,6 +54,11 @@
     border-left: 1px solid #000 !important;
 }
 
+.datatable-component th.p-filter-column input {
+    padding-top: 3.5px;
+    padding-bottom: 3.5px;
+}
+
 @media screen and (max-width: 960px) {
     .datatable-component .p-datatable.p-datatable-collection .p-datatable-thead > tr > th,
     .datatable-component .p-datatable.p-datatable-collection .p-datatable-tfoot > tr > td {

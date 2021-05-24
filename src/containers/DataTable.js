@@ -5,19 +5,22 @@ import { connect } from "react-redux";
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
+import { Dialog } from 'primereact/dialog';
+import { Button } from 'primereact/button';
 
 import { fetchItems } from "../utils/OmekaS";
 import { PlaceHolder } from "../utils/Utils";
 
 import '../assets/css/DataTable.css';
+import '../assets/css/Dialog.css';
 
 const DataTableContainer = (props) => {
     const [cookies] = useCookies(["userInfo"]);
-    
+
     const [loading, setLoading] = useState(false);
     const [totalRecords, setTotalRecords] = useState(null);
     const [showTable, setShowTable] = useState(false);
-    
+
     const [collection, setCollection] = useState([]);
     const [selectedItems, setSelectedItems] = useState(null);
     const [columns, setColumns] = useState([]);
@@ -28,6 +31,10 @@ const DataTableContainer = (props) => {
         sortOrder: 1,
         sortDirection: 'asc',
     });
+
+    const [displayDialog, setDisplayDialog] = useState(false);
+    const [dialogContent, setDialogContent] = useState(null);
+    const [dialogHeader, setDialogHeader] = useState(null);
 
     const dt = useRef(null);
 
@@ -41,7 +48,19 @@ const DataTableContainer = (props) => {
             setLoading(true);
             setColumns(
                 props.activeProperties.map((property, i) => {
-                    return <Column key={property['o:id']} columnKey={property['o:local_name']} header={property['o:label']} field={property['o:label']} filterField={property['o:id'].toString()} sortField={property['o:term']} sortable filter filterPlaceholder={"Search by " + property['o:label']} className="p-datatable-column" />;
+                    return <Column
+                                key={property['o:id']}
+                                columnKey={property['o:local_name']}
+                                header={property['o:label']}
+                                field={property['o:label']}
+                                filterField={property['o:id'].toString()}
+                                sortField={property['o:term']}
+                                sortable
+                                filter
+                                filterPlaceholder={"Search by " + property['o:label']}
+                                className="p-datatable-column"
+                                body={longTextTemplate}
+                            />;
                 })
             );
         } else {
@@ -77,7 +96,11 @@ const DataTableContainer = (props) => {
                             item[label] = value;
                         });
 
-                        item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
+                        if (row['thumbnail_display_urls']['square'] && row['thumbnail_display_urls']['square'].indexOf(`http://${cookies.userInfo.host}`) == 0) {
+                            item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
+                        } else {
+                            item['thumbnail_url'] = row['thumbnail_display_urls']['square'] ? `http://${cookies.userInfo.host}/${row['thumbnail_display_urls']['square']}` : PlaceHolder;
+                        }
 
                         return item;
                     }
@@ -85,6 +108,34 @@ const DataTableContainer = (props) => {
                 setLoading(false);
             });
         }
+    }
+
+    const openDialog = (content, header) => {
+        setDisplayDialog(true);
+        setDialogContent(content);
+        setDialogHeader(header);
+    }
+
+    const longTextTemplate = (rowData, index) => {
+        const cellMaxLength = 150;
+        if (rowData !== undefined) {
+            if (rowData[index.field] && rowData[index.field].length > cellMaxLength) {
+                return (
+                    <div>
+                        <span>{rowData[index.field].substring(0, cellMaxLength) + '...'}</span>
+                        <Button
+                            label="View More"
+                            className="p-button-link p-py-0"
+                            onClick={() => {
+                                openDialog(rowData[index.field], index.field);
+                            }}/>
+                    </div>
+                );
+            } else {
+                return rowData[index.field];
+            }
+        }
+        return null;
     }
 
     const onPage = (event) => {
@@ -147,7 +198,7 @@ const DataTableContainer = (props) => {
                 {headerTitle}
                 <span className="p-input-icon-left">
                     <i className="pi pi-search" />
-                    <InputText type="search" onChange={onGlobalFilter} placeholder="Global Search" />
+                    <InputText type="search" onChange={onGlobalFilter} placeholder="Global Search" className="p-py-1"/>
                 </span>
             </div>
         );
@@ -156,10 +207,10 @@ const DataTableContainer = (props) => {
     const header = renderHeader();
 
     const thumbnailTemplate = (rowData) => {
-        const thumbnailSrc = (rowData !== undefined && rowData['thumbnail_url'] !== null) ? rowData['thumbnail_url'] : PlaceHolder;
+        const thumbnailSrc = (rowData !== undefined) ? rowData['thumbnail_url'] : null;
         return (
             <React.Fragment>
-                <img src={thumbnailSrc} width="100" height="100" />
+                <img src={thumbnailSrc} width="100" height="100" onError={(e) => e.target.src=PlaceHolder}/>
             </React.Fragment>
         );
     }
@@ -180,12 +231,12 @@ const DataTableContainer = (props) => {
                             globalFilter={lazyParams.globalFilter}
                             filters={lazyParams.filters}
                             onFilter={onFilter}
-                            // reorderableColumns
+                            reorderableColumns
                             resizableColumns
                             columnResizeMode="fit"
                             rowHover
                             rows={lazyParams.rows}
-                            rowsPerPageOptions={[10,25,50]}                    
+                            rowsPerPageOptions={[10,25,50]}
                             dataKey="id"
                             selectionMode="checkbox"
                             selection={selectedItems}
@@ -200,13 +251,16 @@ const DataTableContainer = (props) => {
                             sortField={lazyParams.sortField}
                             sortOrder={lazyParams.sortOrder}
                         >
-                            <Column header="Actions" selectionMode="multiple" headerStyle={{width:'100px'}} className="p-datatable-column" />
-                            <Column header="Thumbnail" body={thumbnailTemplate} className="p-datatable-column" />
+                            <Column header="Actions" columnKey="actions" selectionMode="multiple" headerStyle={{width:'100px'}} className="p-datatable-column" reorderable={false}/>
+                            <Column header="Thumbnail" columnKey="thumbnail" body={thumbnailTemplate} className="p-datatable-column" reorderable={false}/>
                             {columns}
                         </DataTable>
                     : null
                 }
             </div>
+            <Dialog header={dialogHeader} visible={displayDialog} maximizable style={{ width: '50vw' }} onHide={() => {setDisplayDialog(false); setDialogContent(null)}}>
+                {dialogContent}
+            </Dialog>
         </div>
     );
 };
