@@ -7,6 +7,7 @@ import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 
 import { fetchItems } from "../utils/OmekaS";
+import { PlaceHolder } from "../utils/Utils";
 
 import '../assets/css/DataTable.css';
 
@@ -23,7 +24,6 @@ const DataTableContainer = (props) => {
     const [lazyParams, setLazyParams] = useState({
         first: 0,
         rows: 10,
-        // page: 1,
         sortField: 'o:id',
         sortOrder: 1,
         sortDirection: 'asc',
@@ -41,7 +41,7 @@ const DataTableContainer = (props) => {
             setLoading(true);
             setColumns(
                 props.activeProperties.map((property, i) => {
-                    return <Column key={property['o:id']} columnKey={property['o:local_name']} header={property['o:label']} field={property['o:label']} filterField={property['o:id'].toString()} sortField={property['o:term']} sortable filter filterPlaceholder={"Search by " + property['o:label']} />;
+                    return <Column key={property['o:id']} columnKey={property['o:local_name']} header={property['o:label']} field={property['o:label']} filterField={property['o:id'].toString()} sortField={property['o:term']} sortable filter filterPlaceholder={"Search by " + property['o:label']} className="p-datatable-column" />;
                 })
             );
         } else {
@@ -76,9 +76,10 @@ const DataTableContainer = (props) => {
 
                             item[label] = value;
                         });
+
+                        item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
+
                         return item;
-                    } else {
-                        setShowTable(false);
                     }
                 }));
                 setLoading(false);
@@ -139,8 +140,11 @@ const DataTableContainer = (props) => {
     }
 
     const renderHeader = () => {
+        const headerTitle = props.activeTemplate ? 'List of ' + props.activeTemplate['template'] : null;
+
         return (
             <div className="table-header">
+                {headerTitle}
                 <span className="p-input-icon-left">
                     <i className="pi pi-search" />
                     <InputText type="search" onChange={onGlobalFilter} placeholder="Global Search" />
@@ -149,16 +153,25 @@ const DataTableContainer = (props) => {
         );
     }
 
-    const header = renderHeader();    
+    const header = renderHeader();
+
+    const thumbnailTemplate = (rowData) => {
+        const thumbnailSrc = (rowData !== undefined && rowData['thumbnail_url'] !== null) ? rowData['thumbnail_url'] : PlaceHolder;
+        return (
+            <React.Fragment>
+                <img src={thumbnailSrc} width="100" height="100" />
+            </React.Fragment>
+        );
+    }
 
     return (
-        <div className="datatable-component">
+        <div className="datatable-component datatable-responsive">
             <div className="card">
                 {
                     showTable ?
                         <DataTable
                             loading={loading}
-                            className="p-datatable-collection"
+                            className="p-datatable-collection p-datatable-striped p-datatable-responsive"
                             emptyMessage="No items found"
                             lazy
                             ref={dt}
@@ -167,6 +180,9 @@ const DataTableContainer = (props) => {
                             globalFilter={lazyParams.globalFilter}
                             filters={lazyParams.filters}
                             onFilter={onFilter}
+                            // reorderableColumns
+                            resizableColumns
+                            columnResizeMode="fit"
                             rowHover
                             rows={lazyParams.rows}
                             rowsPerPageOptions={[10,25,50]}                    
@@ -184,7 +200,8 @@ const DataTableContainer = (props) => {
                             sortField={lazyParams.sortField}
                             sortOrder={lazyParams.sortOrder}
                         >
-                            <Column selectionMode="multiple" headerStyle={{width:'3em'}}/>
+                            <Column header="Actions" selectionMode="multiple" headerStyle={{width:'100px'}} className="p-datatable-column" />
+                            <Column header="Thumbnail" body={thumbnailTemplate} className="p-datatable-column" />
                             {columns}
                         </DataTable>
                     : null
