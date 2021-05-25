@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCookies } from "react-cookie";
 import { connect } from "react-redux";
+import { Link } from "react-router-dom";
 
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -9,7 +10,7 @@ import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 
 import { fetchItems } from "../utils/OmekaS";
-import { PlaceHolder } from "../utils/Utils";
+import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
 
 import '../assets/css/DataTable.css';
 import '../assets/css/Dialog.css';
@@ -84,7 +85,7 @@ const DataTableContainer = (props) => {
                 setShowTable(true);
                 setCollection(data.items.map((row, key) => {
                     if (props.activeProperties && props.activeProperties.length > 0) {
-                        let item = {'id': key};
+                        let item = {'id': row['o:id']};
                         props.activeProperties.map((property) => {
                             let label = property['o:label'];
                             let value = null;
@@ -126,9 +127,8 @@ const DataTableContainer = (props) => {
                         <Button
                             label="View More"
                             className="p-button-link p-py-0"
-                            onClick={() => {
-                                openDialog(rowData[index.field], index.field);
-                            }}/>
+                            onClick={() => { openDialog(rowData[index.field], index.field);} }
+                        />
                     </div>
                 );
             } else {
@@ -206,6 +206,20 @@ const DataTableContainer = (props) => {
 
     const header = renderHeader();
 
+    const viewTemplate = (rowData) => {
+        if (rowData !== undefined) {
+            var dialogHeader = "HEADER";
+            var dialogContent = cardViewTemplate(rowData);
+            return (
+                <React.Fragment>
+                    <Button icon="pi pi-eye" title="View" onClick={() => { openDialog(dialogContent, dialogHeader); } }></Button>
+                </React.Fragment>
+            );
+        } else {
+            return null;
+        }
+    }
+
     const thumbnailTemplate = (rowData) => {
         const thumbnailSrc = (rowData !== undefined) ? rowData['thumbnail_url'] : null;
         return (
@@ -213,6 +227,36 @@ const DataTableContainer = (props) => {
                 <img src={thumbnailSrc} width="100" height="100" onError={(e) => e.target.src=PlaceHolder}/>
             </React.Fragment>
         );
+    }
+
+    const cardViewTemplate = (rowData) => {
+        if (rowData !== undefined) {
+            return (
+                <div className="p-col-12 p-md-4">
+                    <div className="product-grid-item card">
+                        <div className="product-grid-item-top">
+                            <div>
+                                <i className="pi pi-tag product-category-icon"></i>
+                                <span className="product-category">CATEGORY</span>
+                            </div>
+                        </div>
+                        <div className="product-grid-item-content">
+                        <img src={`https://www.primefaces.org/wp-content/uploads/2020/05/placeholder.png`} onError={(e) => e.target.src='https://www.primefaces.org/wp-content/uploads/2020/05/placeholder.png'} />
+                            <div className="product-name">{rowData['Title']}</div>
+                            <div className="product-description">{rowData['list of authors']}</div>
+                        </div>
+                        <div className="product-grid-item-bottom">
+                            {/*<Button icon="pi pi-shopping-cart" label="Add to Cart"></Button>*/}
+                            <Link to={PATH_PREFIX + "/items/" + rowData['id']} target="_blank">
+                                View
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            );
+        } else {
+            return null;
+        }
     }
 
     return (
@@ -252,6 +296,7 @@ const DataTableContainer = (props) => {
                             sortOrder={lazyParams.sortOrder}
                         >
                             <Column header="Actions" columnKey="actions" selectionMode="multiple" headerStyle={{width:'100px'}} className="p-datatable-column" reorderable={false}/>
+                            <Column header="View" columnKey="view" body={viewTemplate} headerStyle={{width:'60px'}} className="p-datatable-column" reorderable={false} />
                             <Column header="Thumbnail" columnKey="thumbnail" body={thumbnailTemplate} className="p-datatable-column" reorderable={false}/>
                             {columns}
                         </DataTable>
