@@ -60,6 +60,8 @@ const PropertySelector = (props) => {
           )
         : []
     );
+
+    // onPropertyChange();
   }, [props.setActiveProperties, props.availableProperties, value]);
 
   return (

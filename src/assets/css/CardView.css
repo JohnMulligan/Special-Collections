@@ -1,0 +1,36 @@
+.item-title {
+    font-size: 25px;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+.item-field {
+    text-align: left;
+    margin: 10px;
+}
+
+.item-field-title {
+    font-weight: bold;
+}
+
+.item-grid-item {
+    margin: .5em;
+    border: 1px solid #dee2e6;
+    padding: 10px;
+}
+
+.item-grid-item .item-grid-item-content {
+    text-align: center;
+}
+
+.item-grid-item .item-grid-item-bottom {
+    text-align: right;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.item-grid-item img {
+    /*width: 75%;*/
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    margin: 10px 0;
+}
