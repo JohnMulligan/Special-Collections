@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCookies } from "react-cookie";
 import { connect } from "react-redux";
-import { Link } from "react-router-dom";
+
+import Axios from "axios";
 
 import { DataTable } from 'primereact/datatable';
+import { DataView } from 'primereact/dataview';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
+import { OverlayPanel } from 'primereact/overlaypanel';
 
-import { fetchItems } from "../utils/OmekaS";
+import { fetchItems, fetchOne } from "../utils/OmekaS";
 import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
 
 import '../assets/css/DataTable.css';
@@ -38,6 +41,14 @@ const DataTableContainer = (props) => {
     const [dialogHeader, setDialogHeader] = useState(null);
     const [dialogContent, setDialogContent] = useState(null);
 
+    const overlayPanel = useRef(null);
+    const [overlayPanelItems, setOverlayPanelItems] = useState([]);
+    const [dataViewCollection, setDataViewCollection] = useState([]);
+    const [dataViewLoading, setDataViewLoading] = useState(false);
+    const [dataViewFirst, setDataViewFirst] = useState(0);
+    const [dataViewTotalRecords, setDataViewTotalRecords] = useState(0);
+    const [dataViewProperties, setDataViewProperties] = useState([]);
+    
     const dt = useRef(null);
 
     useEffect(() => {
@@ -61,7 +72,7 @@ const DataTableContainer = (props) => {
                                 filter
                                 filterPlaceholder={"Search by " + property['o:label']}
                                 className="p-datatable-column"
-                                body={longTextTemplate}
+                                body={cellTemplate}
                             />;
                 })
             );
@@ -85,31 +96,64 @@ const DataTableContainer = (props) => {
                 setTotalRecords(data.total);
                 setShowTable(true);
                 setCollection(data.items.map((row, key) => {
-                    if (props.activeProperties && props.activeProperties.length > 0) {
-                        let item = {'id': row['o:id']};
-                        props.activeProperties.map((property) => {
-                            let label = property['o:label'];
-                            let value = null;
-
-                            if (typeof row[property['o:term']] !== 'undefined') {
-                                value = row[property['o:term']][0]['@value'];
-                            }
-
-                            item[label] = value;
-                        });
-
-                        if (row['thumbnail_display_urls']['square'] && row['thumbnail_display_urls']['square'].indexOf(`http://${cookies.userInfo.host}`) == 0) {
-                            item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
-                        } else {
-                            item['thumbnail_url'] = row['thumbnail_display_urls']['square'] ? `http://${cookies.userInfo.host}/${row['thumbnail_display_urls']['square']}` : PlaceHolder;
-                        }
-
-                        return item;
-                    }
+                    return parseItem(row, props.activeProperties);
                 }));
                 setLoading(false);
             });
         }
+    }
+
+    const loadLazyDataViewData = async (item) => {
+        setDataViewLoading(true);
+        fetchOne(
+            cookies.userInfo.host,
+            item['value_resource_name'],
+            item['value_resource_id']
+        ).then(data => {
+            var resourceTemplate = props.templates.filter(
+                (template) => template['o:resource_class']['o:id'] === data['o:resource_class']['o:id']
+            )[0];
+
+            const requests = resourceTemplate["o:resource_template_property"].map((property) =>
+              Axios.get(property["o:property"]["@id"])
+            );
+
+            Axios.all(requests).then(res => {
+                setDataViewProperties(res.map((inner) => inner.data));
+            });
+
+            setDataViewCollection([parseItem(data, dataViewProperties)]);
+            setDataViewLoading(false);
+        });
+    }
+
+    const parseItem = (row, properties) => {
+        if (properties && properties.length > 0) {
+            let item = {'id': row['o:id']};
+            properties.map((property) => {
+                let label = property['o:label'];
+                let value = null;
+
+                if (row[property['o:term']] !== undefined) {
+                    if (row[property['o:term']][0]['@value'] !== undefined) {
+                        value = row[property['o:term']][0]['@value'];
+                    } else if (row[property['o:term']][0]['type'] == 'resource') {
+                        value = row[property['o:term']];
+                    }
+                }
+
+                item[label] = value;
+            });
+
+            if (row['thumbnail_display_urls']['square'] && row['thumbnail_display_urls']['square'].indexOf(`http://${cookies.userInfo.host}`) == 0) {
+                item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
+            } else {
+                item['thumbnail_url'] = row['thumbnail_display_urls']['square'] ? `http://${cookies.userInfo.host}/${row['thumbnail_display_urls']['square']}` : PlaceHolder;
+            }
+
+            return item;
+        }
+        return [];
     }
 
     const openDialog = (header, content) => {
@@ -118,22 +162,50 @@ const DataTableContainer = (props) => {
         setDialogHeader(header);
     }
 
-    const longTextTemplate = (rowData, index) => {
+    const closeDialog = () => {
+        setDisplayDialog(false);
+        setDialogContent(null);
+    }
+
+    const openOverlayPanel = (event, items) => {
+        overlayPanel.current.toggle(event);
+
+        setDataViewFirst(0);
+        setOverlayPanelItems(items);
+        setDataViewTotalRecords(items.length);
+        
+        loadLazyDataViewData(items[dataViewFirst]);
+    }
+
+    const cellTemplate = (rowData, index) => {
         const cellMaxLength = 150;
         if (rowData !== undefined) {
-            if (rowData[index.field] && rowData[index.field].length > cellMaxLength) {
+            if (rowData[index.field] && (typeof rowData[index.field]) === 'object') {
                 return (
-                    <div>
-                        <span>{rowData[index.field].substring(0, cellMaxLength) + '...'}</span>
-                        <Button
-                            label="View More"
-                            className="p-button-link p-py-0"
-                            onClick={() => { openDialog(index.field, rowData[index.field]);} }
-                        />
-                    </div>
+                    <Button
+                        type="button"
+                        icon="pi pi-plus-circle"
+                        label={Object.keys(rowData[index.field]).length + " related items"}
+                        onClick={(e) => openOverlayPanel(e, rowData[index.field]) }
+                        aria-haspopup aria-controls="overlay_panel"
+                        className="select-product-button"
+                    />
                 );
             } else {
-                return rowData[index.field];
+                if (rowData[index.field] && rowData[index.field].length > cellMaxLength) {
+                    return (
+                        <div>
+                            <span>{rowData[index.field].substring(0, cellMaxLength) + '...'}</span>
+                            <Button
+                                label="View More"
+                                className="p-button-link p-py-0"
+                                onClick={() => { openDialog(index.field, rowData[index.field]);} }
+                            />
+                        </div>
+                    );
+                } else {
+                    return rowData[index.field];
+                }
             }
         }
         return null;
@@ -191,6 +263,13 @@ const DataTableContainer = (props) => {
         setLazyParams(_lazyParams);
     }
 
+    const onDataViewPage = (event) => {
+        setDataViewLoading(true);
+        const startIndex = event.first;
+        setDataViewFirst(startIndex);
+        loadLazyDataViewData(overlayPanelItems[startIndex]);
+    }
+
     const renderHeader = () => {
         const headerTitle = props.activeTemplate ? 'List of ' + props.activeTemplate['template'] : null;
 
@@ -211,7 +290,7 @@ const DataTableContainer = (props) => {
         if (rowData !== undefined) {
             return (
                 <React.Fragment>
-                    <Button icon="pi pi-eye" title="View" onClick={() => { openDialog(null, cardViewTemplate(rowData)); } }></Button>
+                    <Button icon="pi pi-eye" title="View" onClick={() => { openDialog(null, cardViewTemplate(rowData, props.activeProperties)); } }></Button>
                 </React.Fragment>
             );
         } else {
@@ -219,13 +298,13 @@ const DataTableContainer = (props) => {
         }
     }
 
-    const cardViewTemplate = (rowData) => {
+    const cardViewTemplate = (rowData, properties) => {
         if (rowData !== undefined) {
             var dialogCardViewTitle = null;
-            var dialogCardViewItems = props.activeProperties.map((property, i) => {
+            var dialogCardViewItems = properties.map((property, i) => {
                 if (property['o:label'] == 'Title' || property['o:label'] == 'name') {
                     dialogCardViewTitle = rowData[property['o:label']];
-                } else if (rowData[property['o:label']]) {
+                } else if (rowData[property['o:label']] && (typeof rowData[property['o:label']]) !== 'object') {
                     return (
                         <div className="item-field">
                             <span className="item-field-title">{property['o:label'] + ':'}</span> {rowData[property['o:label']]}
@@ -261,6 +340,14 @@ const DataTableContainer = (props) => {
                 <img src={thumbnailSrc} width="100" height="100" onError={(e) => e.target.src=PlaceHolder}/>
             </React.Fragment>
         );
+    }
+
+    const dataViewGridTemplate = (rowData, layout) => {
+        if (!rowData) {
+            return;
+        }
+
+        return cardViewTemplate(rowData, dataViewProperties);
     }
 
     return (
@@ -307,9 +394,29 @@ const DataTableContainer = (props) => {
                     : null
                 }
             </div>
-            <Dialog header={dialogHeader} visible={displayDialog} maximizable style={{ width: '50vw' }} onHide={() => {setDisplayDialog(false); setDialogContent(null)}}>
+            <Dialog
+                header={dialogHeader}
+                visible={displayDialog}
+                maximizable
+                style={{ width: '50vw' }}
+                onHide={closeDialog}
+            >
                 {dialogContent}
             </Dialog>
+            <OverlayPanel ref={overlayPanel} showCloseIcon id="overlay_panel" style={{width: '450px'}}>
+                <DataView
+                    value={dataViewCollection}
+                    layout="grid"
+                    itemTemplate={dataViewGridTemplate}
+                    lazy
+                    paginator
+                    rows={1}
+                    totalRecords={dataViewTotalRecords}
+                    first={dataViewFirst}
+                    onPage={onDataViewPage}
+                    loading={dataViewLoading} />
+
+            </OverlayPanel>
         </div>
     );
 };

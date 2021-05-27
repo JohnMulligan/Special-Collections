@@ -7,6 +7,7 @@ import PropertySelector from "../components/PropertySelector";
 import DataTableContainer from "../containers/DataTable";
 
 const Explorer = (props) => {
+  const [templates, setTemplates] = useState([]);
   const [activeTemplate, setActiveTemplate] = useState(null);
   const [availableProperties, setAvailableProperties] = useState();
   const [activeProperties, setActiveProperties] = useState([]);
@@ -20,7 +21,12 @@ const Explorer = (props) => {
     <>
       <Row gutter={[HORIZONTAL_GUTTER, VERTICAL_GUTTER]}>
         <Col span={LEFT_SPAN}>
-          <TemplateSelector setActiveTemplate={setActiveTemplate} setAvailableProperties={setAvailableProperties} />
+          <TemplateSelector
+            templates={templates}
+            setTemplates={setTemplates}
+            setActiveTemplate={setActiveTemplate}
+            setAvailableProperties={setAvailableProperties}
+          />
         </Col>
         <Col span={10}>
           <PropertySelector
@@ -32,7 +38,11 @@ const Explorer = (props) => {
 
       <Row gutter={[HORIZONTAL_GUTTER, VERTICAL_GUTTER]}>
         <Col span={LEFT_SPAN + RIGHT_SPAN}>
-          <DataTableContainer activeTemplate={activeTemplate} activeProperties={activeProperties} />
+          <DataTableContainer
+            templates={templates}
+            activeTemplate={activeTemplate}
+            activeProperties={activeProperties}
+          />
         </Col>
       </Row>
     </>

@@ -22,7 +22,6 @@ const mapStateToProps = (state, props) => {
 const TemplateSelector = (props) => {
   const [cookies] = useCookies(["userInfo"]);
   const [options, setOptions] = useState([]);
-  const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   
   // May be able to initially define availableProperties and options?
@@ -34,7 +33,7 @@ const TemplateSelector = (props) => {
       setSelectedTemplate(templateSelected);
       props.setActiveTemplate(templateSelected);
 
-      const template = templates.filter(
+      const template = props.templates.filter(
         (template) => template["o:id"] === templateSelected['id']
       )[0];
 
@@ -59,7 +58,7 @@ const TemplateSelector = (props) => {
       // get templates options on load
       const initComponent = async () => {
         const res = await fetchTemplates(cookies.userInfo.host);
-        setTemplates(res);
+        props.setTemplates(res);
 
         setOptions(
           res.map((template) => {
