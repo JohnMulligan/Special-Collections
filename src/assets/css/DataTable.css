@@ -12,7 +12,6 @@
 }
 
 .datatable-component .table-header {
-    display: flex;
     justify-content: space-between;
 }
 
@@ -24,9 +23,8 @@
     font-weight: 400;
 }
 
-.datatable-component .p-datatable.p-datatable-collection .p-datatable-header {
+.datatable-component .p-datatable.p-datatable-collection .p-datatable-header .datatable-title {
     padding: 1rem;
-    text-align: left;
     font-size: 1.5rem;
 }
 

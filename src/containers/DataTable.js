@@ -8,8 +8,10 @@ import { DataTable } from 'primereact/datatable';
 import { DataView } from 'primereact/dataview';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
+import { Toolbar } from 'primereact/toolbar';
 import { OverlayPanel } from 'primereact/overlaypanel';
 
 import { fetchItems, fetchOne } from "../utils/OmekaS";
@@ -41,6 +43,13 @@ const DataTableContainer = (props) => {
     const [dialogHeader, setDialogHeader] = useState(null);
     const [dialogContent, setDialogContent] = useState(null);
 
+    const [mode, setMode] = useState('view');
+    const [modeButtonLabel, setModeButtonLabel] = useState('Edit Mode');
+    const [editingIndex, setEditingIndex] = useState(null);
+    const [rowEditor, setRowEditor] = useState(true);
+
+    const [originalRow, setOriginalRow] = useState(null);
+
     const overlayPanel = useRef(null);
     const [overlayPanelItems, setOverlayPanelItems] = useState([]);
     const [dataViewCollection, setDataViewCollection] = useState([]);
@@ -48,7 +57,7 @@ const DataTableContainer = (props) => {
     const [dataViewFirst, setDataViewFirst] = useState(0);
     const [dataViewTotalRecords, setDataViewTotalRecords] = useState(0);
     const [dataViewProperties, setDataViewProperties] = useState([]);
-    
+
     const dt = useRef(null);
 
     useEffect(() => {
@@ -61,6 +70,8 @@ const DataTableContainer = (props) => {
             setLoading(true);
             setColumns(
                 props.activeProperties.map((property, i) => {
+                    let isHasParts = property['o:local_name'] && property['o:local_name'] == 'hasPart';
+
                     return <Column
                                 key={property['o:id']}
                                 columnKey={property['o:local_name']}
@@ -68,11 +79,16 @@ const DataTableContainer = (props) => {
                                 field={property['o:label']}
                                 filterField={property['o:id'].toString()}
                                 sortField={property['o:term']}
-                                sortable
-                                filter
+                                sortable={!isHasParts}
+                                filter={!isHasParts}
                                 filterPlaceholder={"Search by " + property['o:label']}
                                 className="p-datatable-column"
                                 body={cellTemplate}
+                                editor={(props) => {
+                                    if(!isHasParts) {
+                                        return inputTextEditor(props, property['o:label']);
+                                    }
+                                }}
                             />;
                 })
             );
@@ -173,7 +189,7 @@ const DataTableContainer = (props) => {
         setDataViewFirst(0);
         setOverlayPanelItems(items);
         setDataViewTotalRecords(items.length);
-        
+
         loadLazyDataViewData(items[dataViewFirst]);
     }
 
@@ -270,16 +286,29 @@ const DataTableContainer = (props) => {
         loadLazyDataViewData(overlayPanelItems[startIndex]);
     }
 
-    const renderHeader = () => {
-        const headerTitle = props.activeTemplate ? 'List of ' + props.activeTemplate['template'] : null;
+    const leftContents = (
+        <React.Fragment>
+            <span className="datatable-title p-mr-2">{props.activeTemplate ? 'List of ' + props.activeTemplate['template'] : null}</span>
+        </React.Fragment>
+    );
 
+    const rightContents = (
+        <React.Fragment>
+            <Button label="Add Note" className="p-button-sm p-button-raised p-button-text p-button-plain p-mr-2" onClick={() => { openDialog('Header', 'TO-DO'); }} />
+            <Button label="Add to Project" className="p-button-sm p-button-raised p-button-text p-button-plain p-mr-2" onClick={() => { openDialog('Header', 'TO-DO'); }} />
+            <Button label="Create Project" className="p-button-sm p-button-raised p-mr-2" onClick={() => { openDialog('Header', 'TO-DO'); }} />
+            <Button label={modeButtonLabel} className="p-button-sm p-button-raised p-button-info p-mr-2" onClick={() => { toggleEditMode(); }} />
+            <span className="p-input-icon-left">
+                <i className="pi pi-search" />
+                <InputText type="search" onChange={onGlobalFilter} placeholder="Global Search" className="p-py-1"/>
+            </span>
+        </React.Fragment>
+    );
+
+    const renderHeader = () => {
         return (
             <div className="table-header">
-                {headerTitle}
-                <span className="p-input-icon-left">
-                    <i className="pi pi-search" />
-                    <InputText type="search" onChange={onGlobalFilter} placeholder="Global Search" className="p-py-1"/>
-                </span>
+                <Toolbar left={leftContents} right={rightContents} />
             </div>
         );
     }
@@ -350,6 +379,42 @@ const DataTableContainer = (props) => {
         return cardViewTemplate(rowData, dataViewProperties);
     }
 
+    const toggleEditMode = () => {
+        if (mode == 'view') {
+            setMode('edit');
+            setModeButtonLabel('View Mode');
+        } else {
+            setMode('view');
+            setModeButtonLabel('Edit Mode');
+        }
+    }
+
+    const onRowEditInit = (event) => {
+        setOriginalRow({ ...collection[event.index] });
+    }
+
+    const onRowEditCancel = (event) => {
+        let rows = [...collection];
+        rows[event.index] = originalRow;
+        setOriginalRow(null);
+
+        setCollection(rows);
+    }
+
+    const onEditorValueChange = (props, value) => {
+        let updatedProducts = [...props.value];
+        updatedProducts[props.rowIndex][props.field] = value;
+        setCollection(updatedProducts);
+    }
+
+    const onRowEditSave = (event, data) => {
+        openDialog('Header', 'TO-DO');
+    }
+
+    const inputTextEditor = (props, field) => {
+        return <InputTextarea value={props.rowData[field] ? props.rowData[field] : ""} onChange={(e) => onEditorValueChange(props, e.target.value)} rows={5} cols={20} />;
+    }
+
     return (
         <div className="datatable-component datatable-responsive">
             <div className="card">
@@ -385,9 +450,20 @@ const DataTableContainer = (props) => {
                             onSort={onSort}
                             sortField={lazyParams.sortField}
                             sortOrder={lazyParams.sortOrder}
+                            editMode="row"
+                            onRowEditInit={onRowEditInit}
+                            onRowEditCancel={onRowEditCancel}
+                            onRowEditSave={onRowEditSave}
                         >
-                            <Column header="Actions" columnKey="actions" selectionMode="multiple" headerStyle={{width:'100px'}} className="p-datatable-column" reorderable={false} />
-                            <Column header="View" columnKey="view" body={viewTemplate} headerStyle={{width:'60px'}} className="p-datatable-column" reorderable={false} />
+                            {mode == 'view' ? <Column header="Actions" columnKey="actions" selectionMode="multiple" headerStyle={{width:'100px'}} className="p-datatable-column" reorderable={false} /> : null }
+
+                            {
+                                mode == 'view' ?
+                                    <Column header="View" columnKey="view" body={viewTemplate} headerStyle={{width:'60px'}} className="p-datatable-column" reorderable={false} />
+                                :
+                                    <Column columnKey="editor" rowEditor headerStyle={{ width: '100px' }} className="p-datatable-column" bodyStyle={{ textAlign: 'center' }} reorderable={false} ></Column>
+                            }
+
                             <Column header="Thumbnail" columnKey="thumbnail" body={thumbnailTemplate} className="p-datatable-column" reorderable={false} />
                             {columns}
                         </DataTable>
@@ -410,6 +486,8 @@ const DataTableContainer = (props) => {
                     itemTemplate={dataViewGridTemplate}
                     lazy
                     paginator
+                    paginatorPosition={'both'}
+                    paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
                     rows={1}
                     totalRecords={dataViewTotalRecords}
                     first={dataViewFirst}
