@@ -2,16 +2,22 @@ const path = require("path");
 const express = require("express");
 const { createProxyMiddleware, responseInterceptor } = require('http-proxy-middleware');
 const app = express(); // create express app
+const bcrypt = require('bcrypt'); // allow checking passwords securely
+const jwt = require('jsonwebtoken'); // generates JWTs.
+const generator = require('generate-password'); // used to generate initial/reset passwords.
+// CSV used to parse user info.
+const csv = require('csv-parser');
+const fs = require('fs');
+const usersDataFile = '.users.csv';
+let users = {};
+
+app.use(express.json());
 
 if (process.env.NODE_ENV !== 'production') {
   // Allow an .env file in development to store local Omeka access keys.
   require('dotenv').config();
 }
 
-// TODO: Implement JWT logic
-// https://www.luiztools.com.br/post/autenticacao-json-web-token-jwt-em-nodejs/
-
-// TODO: Read from environment vars.
 const omekaProtocol = process.env.OMEKA_PROTOCOL || 'http';
 const omekaUrl = process.env.OMEKA_URL || 'localhost';
 const port = process.env.SERVER_PORT || 3000;
@@ -29,15 +35,35 @@ const updateQueryStringParameter = (path, key, value) => {
   }
 };
 
+const jwtNoToken = { auth: false, message: 'No token provided.' };
+const jwtFailure = { auth: false, message: 'Failed to authenticate token.' };
+
+const verifyJWT = (req, res, next) => {
+  const token = req.headers['x-access-token'];
+  if (!token) return res.status(401).json(jwtNoToken);
+  jwt.verify(token, process.env.JWT_SECRET, function (err, decoded) {
+    if (err) return res.status(500).json(jwtFailure);
+    // Include the user in the request.
+    req.user = users[decoded.userName];
+    if (!req.user) return res.status(500).json(jwtFailure);
+    next();
+  });
+};
+
 const baseProxyConfig = {
   target: `${omekaProtocol}://${omekaUrl}`,
   changeOrigin: true,
-  pathRewrite: function(path, req) {
+  pathRewrite: (path, req) => {
     let newPath = path;
-    // TODO: we need to get the authenticated user and fetch
-    // the corresponding id/cred pair.
-    newPath = updateQueryStringParameter(newPath, 'key_identity',  process.env.OMEKA_ADMIN_ID);
-    newPath = updateQueryStringParameter(newPath, 'key_credential',  process.env.OMEKA_ADMIN_CREDENTIAL);
+    if (req.user) {
+      const role = req.user.role.toUpperCase();
+      newPath = updateQueryStringParameter(newPath, 'key_identity', process.env[`OMEKA_${role}_ID`]);
+      newPath = updateQueryStringParameter(newPath, 'key_credential', process.env[`OMEKA_${role}_CREDENTIAL`]);
+    } else {
+      // TODO: we can get rid of this when the React app uses authentication.
+      newPath = updateQueryStringParameter(newPath, 'key_identity', process.env.OMEKA_ADMIN_ID);
+      newPath = updateQueryStringParameter(newPath, 'key_credential', process.env.OMEKA_ADMIN_CREDENTIAL);
+    }
     return newPath;
   }
 };
@@ -50,16 +76,150 @@ const apiProxyConfig = {
   onProxyRes: responseInterceptor(async (responseBuffer, proxyRes, req, res) => {
     // Omeka S includes its own URL in several parts of the response.
     // Here we replace all occurrances it by our proxy URL.
+    // TODO: check if there is a configuration option in Omeka S to
+    // disable the base url from being exported in the response.
     const response = responseBuffer.toString('utf8');
     return response.replace(apiUrlRegex, baseUrl);
   })
 };
 
+const roles = ['admin', 'contrib', 'guest'];
+
+const updateUsers = async (next) => {
+  // Persist to users CSV file before updating our local cache.
+  let data = 'userName,role,hash\n';
+  for (const u of Object.values(next)) {
+    data += `"${u.userName}",${u.role},${u.hash}\n`;
+  }
+  await fs.promises.writeFile(usersDataFile, data);
+  // At this point we can update the users.
+  users = next;
+};
+
+const hashPassword = async (password) => await bcrypt.hash(password, 10);
+
+// Creates or updates a user setting a randomly generated
+// password and return an object with the user info,
+// including the plain text password (that needs to be
+// changed).
+const createOrUpdateUser = async (userName, role) => {
+  const password = generator.generate({
+    length: 10,
+    numbers: true
+  });
+  const hash = await hashPassword(password);
+  await updateUsers({
+    ...users,
+    [userName]: {
+      userName,
+      role,
+      hash
+    }
+  });
+  return { userName, role, password };
+};
+
+const isUserNameValid = (s) => s.match(/^([0-9]|[a-z]|_|-|@|\.)+$/);
+
+app.post('/adduser', verifyJWT, async (req, res) => {
+  if (req.user?.role !== 'admin') return res.status(401).json(jwtFailure);
+  // We got an admin user logged asking for a new user to be created!
+  const { userName, role } = req.body;
+  if (userName && role) {
+    if (!isUserNameValid(userName)) {
+      return res.status(400).json({ error: 'Invalid character in userName' });
+    }
+    if (roles.indexOf(role) < 0) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+    if (users[userName]) {
+      return res.status(400).json({ error: 'userName already taken' });
+    }
+    // We are free to create a new user.
+    return res.json(await createOrUpdateUser(userName, role));
+  } else {
+    return res.status(400).json({ error: 'Must specify userName and role' });
+  }
+});
+
+app.post('/resetpassword', verifyJWT, async (req, res) => {
+  if (req.user?.role !== 'admin') return res.status(401).json(jwtFailure);
+  // We got an admin user logged asking for a new user to be created!
+  const { userName } = req.body;
+  // The user must exist.
+  const user = users[userName];
+  if (user) {
+    return res.json(await createOrUpdateUser(userName, user.role));
+  } else {
+    return res.status(400).json({ error: 'userName not found' });
+  }
+});
+
+app.post('/changerole', verifyJWT, async (req, res) => {
+  if (req.user?.role !== 'admin') return res.status(401).json(jwtFailure);
+  // We got an admin user logged asking for a new user to be created!
+  const { userName, role } = req.body;
+  if (userName && role) {
+    if (roles.indexOf(role) < 0) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+    const user = users[userName];
+    if (!user) {
+      return res.status(400).json({ error: 'userName not found' });
+    }
+    // now modify the role of the user.
+    await updateUsers({
+      ...users,
+      [userName]: { ...user, role }
+    });
+    return res.json({ result: 'Role updated' });
+  } else {
+    return res.status(400).json({ error: 'Must specify userName and role' });
+  }
+});
+
+app.post('/changepassword', verifyJWT, async (req, res) => {
+  if (!req.user) return res.status(401).json(jwtFailure);
+  const { password } = req.body;
+  // TODO: password strength.
+  if (password && password.length >= 6) {
+    const hash = await hashPassword(password);
+    const changedUser = { ...req.user, hash };
+    await updateUsers({
+      ...users,
+      [changedUser.userName]: changedUser
+    });
+    return res.json({ result: 'Password changed' });
+  } else {
+    return res.status(400).json({ error: 'Weak password' });
+  }
+});
+
+// Login.
+app.post('/auth', async (req, res) => {
+  const { userName, password } = req.body;
+  let ok = false;
+  if (userName && password) {
+    const u = users[userName];
+    if (u && u.hash) {
+      ok = await bcrypt.compare(password, u.hash);
+    }
+  }
+  if (!ok) return res.json({ auth: false });
+  // Generate JWT for this login.
+  const token = jwt.sign({ userName }, process.env.JWT_SECRET, {
+    expiresIn: parseInt(process.env.JWT_EXPIRATION_HOURS || 24) * 60 * 60
+  });
+  return res.json({ auth: true, token });
+});
+
 // Proxy for Omeka S:
-app.use('/api', createProxyMiddleware(apiProxyConfig));
+// TODO: enable token validation in all Omeka calls once
+// the frontend is ready to pass them.
+app.use('/api', /*verifyJWT,*/ createProxyMiddleware(apiProxyConfig));
 const omekaStaticProxy = createProxyMiddleware(baseProxyConfig);
-app.use('/files', omekaStaticProxy);
-app.use('/application', omekaStaticProxy);
+app.use('/files', /*verifyJWT,*/ omekaStaticProxy);
+app.use('/application', /*verifyJWT,*/ omekaStaticProxy);
 
 // Map React urls to the React App.
 app.use('/react', [
@@ -73,5 +233,12 @@ app.get('*', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`server started on port ${port}`);
+  fs.createReadStream(usersDataFile)
+    .pipe(csv())
+    .on('data', (row) => {
+      users[row.userName] = row;
+    })
+    .on('end', () => {
+      console.log(`Server started on port ${port} - ${Object.keys(users).length} users`);
+    });
 });
