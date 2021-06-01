@@ -28,6 +28,8 @@ const TemplateSelector = (props) => {
   const defaultTemplate = {'template': 'Source', 'id': 6}; // Default is "Source"
 
   const onTemplateChange = async (e) => {
+      props.setScreenMode('view');
+
       const templateSelected = (e === undefined) ? defaultTemplate : e.value;
 
       setSelectedTemplate(templateSelected);

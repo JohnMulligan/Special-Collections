@@ -9,16 +9,17 @@ const PropertySelector = (props) => {
   const [value, setValue] = useState([]);
 
   const onPropertyChange = async (e) => {
-      const propertiesSelected = (e == undefined) ? null : e.value;
+      const propertiesSelected = (e === undefined) ? null : e.value;
 
       setSelectedProperties(propertiesSelected);
 
       props.setActiveProperties(propertiesSelected.map((propertySelected) => {
           let property = null;
           props.availableProperties.map((availableProperty) => {
-              if (availableProperty['o:label'] == propertySelected['property']) {
+              if (availableProperty['o:label'] === propertySelected['property']) {
                   property = availableProperty;
               }
+              return null;
           });
           return property;
       }));

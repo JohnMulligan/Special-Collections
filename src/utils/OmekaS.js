@@ -2,6 +2,10 @@ import axios from "axios";
 
 const PER_PAGE = 9999;
 
+const headers = {
+  "Content-Type": "application/json",
+};
+
 export const fetchItems = async (
   baseAddress,
   endpoint,
@@ -110,4 +114,18 @@ export const fetchResourceTemplates = async (baseAddress) => {
 export const fetchOne = async (baseAddress, endpoint, id) => {
   const res = await axios.get(`http://${baseAddress}/api/${endpoint}/${id}`);
   return res.data;
+};
+
+export const patchResourceItem = (userInfo, endpoint, id, payload) => {
+  return axios.patch(
+    "http://" + userInfo.host + "/api/" + endpoint  + "/" + id,
+    payload,
+    {
+      params: {
+        key_identity: userInfo.key_identity,
+        key_credential: userInfo.key_credential,
+      },
+      headers: headers,
+    }
+  );
 };

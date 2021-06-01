@@ -53,7 +53,7 @@ const LogoHeader = () => {
           <a
             href="https://github.com/Yudai-Chen/Special-Collections/"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
           >
             <LinkOutlined /> Learn More
           </a>

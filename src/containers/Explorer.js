@@ -7,28 +7,26 @@ import PropertySelector from "../components/PropertySelector";
 import DataTableContainer from "../containers/DataTable";
 
 const Explorer = (props) => {
+  const [screenMode, setScreenMode] = useState('view');
   const [templates, setTemplates] = useState([]);
   const [activeTemplate, setActiveTemplate] = useState(null);
   const [availableProperties, setAvailableProperties] = useState();
   const [activeProperties, setActiveProperties] = useState([]);
 
-  const HORIZONTAL_GUTTER = 48;
-  const VERTICAL_GUTTER = 8;
-  const LEFT_SPAN = 4;
-  const RIGHT_SPAN = 20;
-
   return (
     <>
-      <Row gutter={[HORIZONTAL_GUTTER, VERTICAL_GUTTER]}>
-        <Col span={LEFT_SPAN}>
+      <Row className="p-col-12">
+        <Col className="p-col-2">
           <TemplateSelector
+            screenMode={screenMode}
+            setScreenMode={setScreenMode}
             templates={templates}
             setTemplates={setTemplates}
             setActiveTemplate={setActiveTemplate}
             setAvailableProperties={setAvailableProperties}
           />
         </Col>
-        <Col span={10}>
+        <Col className="p-col-10">
           <PropertySelector
             availableProperties={availableProperties}
             setActiveProperties={setActiveProperties}
@@ -36,10 +34,13 @@ const Explorer = (props) => {
         </Col>
       </Row>
 
-      <Row gutter={[HORIZONTAL_GUTTER, VERTICAL_GUTTER]}>
-        <Col span={LEFT_SPAN + RIGHT_SPAN}>
+      <Row className="p-col-12">
+        <Col>
           <DataTableContainer
+            screenMode={screenMode}
+            setScreenMode={setScreenMode}
             templates={templates}
+            availableProperties={availableProperties}
             activeTemplate={activeTemplate}
             activeProperties={activeProperties}
           />

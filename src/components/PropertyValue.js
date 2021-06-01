@@ -30,7 +30,7 @@ export const PropertySingleValue = (props) => {
     return (
       <div key={index}>
         <LinkOutlined />
-        <a target="_blank" href={value["@id"]}>
+        <a target="_blank" href={value["@id"]} rel="noopener noreferrer">
           {value["@id"]}
         </a>
       </div>

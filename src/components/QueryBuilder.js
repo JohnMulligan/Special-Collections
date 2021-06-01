@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Select, Input, Row, Col } from "antd";
+import { Input, Row, Col } from "antd";
 
 import { setQuery } from "../redux/actions";
 
@@ -67,6 +67,7 @@ const QueryBuilder = (props) => {
 
         counter += 1;
       }
+      return null;
     });
 
     fetchSize(cookies.userInfo.host, "items", search).then((count) =>
