@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useCookies } from "react-cookie";
 import { connect } from "react-redux";
 
+import $ from 'jquery';
 import Axios from "axios";
 
 import { DataTable } from 'primereact/datatable';
@@ -9,11 +10,12 @@ import { DataView } from 'primereact/dataview';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
+import { OverlayPanel } from 'primereact/overlaypanel';
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
 import { Button } from 'primereact/button';
+import { Accordion, AccordionTab } from 'primereact/accordion';
 import { Toolbar } from 'primereact/toolbar';
-import { OverlayPanel } from 'primereact/overlaypanel';
 
 import { fetchItems, fetchOne, patchResourceItem } from "../utils/OmekaS";
 import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
@@ -27,11 +29,13 @@ const DataTableContainer = (props) => {
 
     const [loading, setLoading] = useState(false);
     const [showTable, setShowTable] = useState(false);
+    const [selectButtonMode, setSelectButtonMode] = useState(false);
+    const textMaxLength = 150;
 
     const dt = useRef(null);
     const [collection, setCollection] = useState([]);
     const [totalRecords, setTotalRecords] = useState(null);
-    const [selectedItems, setSelectedItems] = useState(null);
+    const [selectedItems, setSelectedItems] = useState([]);
     const [columns, setColumns] = useState([]);
     const [lazyParams, setLazyParams] = useState({
         first: 0,
@@ -61,6 +65,10 @@ const DataTableContainer = (props) => {
         loadLazyData();
     }, [props.activeProperties, lazyParams]);
 
+    const propertyIsRelation = (property) => {
+        return property['o:local_name'] && property['o:local_name'] === 'hasPart';
+    }
+
     const loadLazyData = () => {
         if (props.activeProperties && props.activeProperties.length > 0) {
             setShowTable(true);
@@ -86,7 +94,7 @@ const DataTableContainer = (props) => {
                 setTotalRecords(data.total);
                 setShowTable(true);
                 setCollection(data.items.map((row, key) => {
-                    return parseItem(row, props.activeProperties);
+                    return parseItem(row, props.activeProperties, false);
                 }));
                 setLoading(false);
             });
@@ -97,38 +105,40 @@ const DataTableContainer = (props) => {
         let builtColumns = [];
 
         switch (props.screenMode) {
-            case 'view': 
-                builtColumns.push(<Column key="view" columnKey="view" header="View" headerStyle={{width:'60px'}} reorderable={false} className="p-datatable-column" body={viewTemplate} />);
+            case 'view':
+                builtColumns.push(<Column key="view" columnKey="view" header="View" headerStyle={{ width:'60px' }} reorderable={false} className="p-datatable-column" body={viewTemplate} />);
             break;
-            case 'edit': 
+            case 'edit':
                 builtColumns.push(<Column key="editor" columnKey="editor" header="Edit" headerStyle={{ width: '100px' }} reorderable={false} className="p-datatable-column" bodyStyle={{ textAlign: 'center' }} rowEditor ></Column>);
             break;
-            case 'select': 
-                builtColumns.push(<Column key="actions" columnKey="actions" header="Actions" headerStyle={{width:'100px'}} reorderable={false} selectionMode="multiple" className="p-datatable-column" />);
+            case 'select':
+                builtColumns.push(<Column key="select" columnKey="select" header="Select All" headerStyle={{ width:'100px' }} reorderable={false} selectionMode="multiple" className="p-datatable-column" />);
+            break;
+            default:
             break;
         }
 
         builtColumns.push(<Column key="thumbnail" columnKey="thumbnail" header="Thumbnail" headerStyle={{ width: '150px' }} reorderable={false} className="p-datatable-column" body={thumbnailTemplate} bodyStyle={{ textAlign: 'center' }} />);
 
         properties.map((property, i) => {
-            let isHasParts = property['o:local_name'] && property['o:local_name'] === 'hasPart';
-
+            let fieldIsRelation = propertyIsRelation(property);
             builtColumns.push(
                 <Column
                     key={property['o:id']}
                     columnKey={property['o:local_name']}
                     header={property['o:label']}
+                    reorderable={props.screenMode === 'view'}
                     field={property['o:label']}
                     filterField={property['o:id'].toString()}
                     sortField={property['o:term']}
-                    sortable={!isHasParts}
-                    filter={!isHasParts}
+                    sortable={!fieldIsRelation && props.screenMode === 'view'}
+                    filter={!fieldIsRelation && props.screenMode === 'view'}
                     filterPlaceholder={"Search by " + property['o:label']}
                     className="p-datatable-column"
                     body={cellTemplate}
                     editor={(props) => {
-                        if(!isHasParts) {
-                            return inputTextEditor(props, property['o:label']);
+                        if(!fieldIsRelation) {
+                            return editorTemplate(props, property['o:label']);
                         }
                     }}
                 />
@@ -155,15 +165,15 @@ const DataTableContainer = (props) => {
             );
 
             Axios.all(requests).then(res => {
-                setDataViewProperties(res.map((inner) => inner.data));
+                let properties = res.map((inner) => inner.data);
+                setDataViewProperties(properties);
+                setDataViewCollection([parseItem(data, properties, true)]);
+                setDataViewLoading(false);
             });
-
-            setDataViewCollection([parseItem(data, dataViewProperties)]);
-            setDataViewLoading(false);
         });
     }
 
-    const parseItem = (row, properties) => {
+    const parseItem = (row, properties, useCellTemplate) => {
         if (properties && properties.length > 0) {
             let item = {'id': row['o:id']};
             properties.map((property) => {
@@ -195,68 +205,158 @@ const DataTableContainer = (props) => {
         return [];
     }
 
-    const showToast = (severityClass, summary, detail) => {
-        toast.current.show({
-            severity: severityClass,
-            summary: summary,
-            detail: detail,
-            life: 5000
-        });
-    }
-
-    const openDialog = (header, content) => {
-        setDisplayDialog(true);
-        setDialogContent(content);
-        setDialogHeader(header);
-    }
-
-    const closeDialog = () => {
-        setDisplayDialog(false);
-        setDialogContent(null);
-    }
-
-    const openOverlayPanel = (event, items) => {
-        overlayPanel.current.toggle(event);
-
-        setDataViewFirst(0);
-        setOverlayPanelItems(items);
-        setDataViewTotalRecords(items.length);
-
-        loadLazyDataViewData(items[dataViewFirst]);
-    }
-
     const cellTemplate = (rowData, index) => {
-        const cellMaxLength = 150;
         if (rowData !== undefined) {
-            if (rowData[index.field] && (typeof rowData[index.field]) === 'object') {
-                return (
-                    <Button
-                        type="button"
-                        icon="pi pi-plus-circle"
-                        label={Object.keys(rowData[index.field]).length + " related items"}
-                        onClick={(e) => openOverlayPanel(e, rowData[index.field]) }
-                        aria-haspopup aria-controls="overlay_panel"
-                        className="select-product-button"
-                    />
-                );
+            return getCellTemplate(rowData[index.field], index.field, 'dialog', true);            
+        }
+        return null;
+    }
+
+    const getCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
+        if (cellData && (typeof cellData) === 'object') {
+            if (showRelatedItens) {
+                return relatedItemsButtonTemplate(cellData);
+            }
+        } else {
+            if (cellData && cellData.length > textMaxLength) {
+                return longTextTemplate(field, cellData, textMaxLength, longTextOption);
             } else {
-                if (rowData[index.field] && rowData[index.field].length > cellMaxLength) {
-                    return (
-                        <div>
-                            <span>{rowData[index.field].substring(0, cellMaxLength) + '...'}</span>
-                            <Button
-                                label="View More"
-                                className="p-button-link p-py-0"
-                                onClick={() => { openDialog(index.field, rowData[index.field]);} }
-                            />
-                        </div>
-                    );
-                } else {
-                    return rowData[index.field];
-                }
+                return cellData;
             }
         }
         return null;
+    }
+
+    const relatedItemsButtonTemplate = (items) => {
+        return (
+            <Button
+                type="button"
+                icon="pi pi-plus-circle"
+                label={Object.keys(items).length + " related items"}
+                onClick={(e) => openOverlayPanel(e, items) }
+                aria-haspopup aria-controls="overlay_panel"
+                className="select-product-button"
+            />
+        );
+    }
+
+    const longTextTemplate = (header, content, maxLength, templateOption) => {
+        switch (templateOption) {
+            case 'dialog': 
+                return (
+                    <div>
+                        <span>{content.substring(0, maxLength) + '...'}</span>
+                        <Button
+                            label="View More"
+                            className="p-button-link p-py-0"
+                            onClick={() => { openDialog(header, content);} }
+                        />
+                    </div>
+                );
+            break;
+            case 'accordion': 
+                return (
+                    <Accordion>
+                        <AccordionTab header={header}>
+                            <p>{content}</p>
+                        </AccordionTab>
+                    </Accordion>
+                );
+            break;
+            default:
+            break;
+        }
+    }
+
+    const viewTemplate = (rowData) => {
+        if (rowData !== undefined) {
+            return (
+                <React.Fragment>
+                    <Button icon="pi pi-eye" title="View" onClick={() => { openDialog(null, cardViewTemplate(rowData, props.activeProperties, true)); } }></Button>
+                </React.Fragment>
+            );
+        } else {
+            return null;
+        }
+    }
+
+    const cardViewTemplate = (rowData, properties, showRelatedItens) => {
+        if (rowData !== undefined) {
+            var dialogCardViewTitle = null;
+            var dialogCardViewItems = properties.map((property, i) => {
+                if (property['o:label'] === 'Title' || property['o:label'] === 'name') {
+                    dialogCardViewTitle = rowData[property['o:label']];
+                } else if (rowData[property['o:label']]) {
+                    let itemTemplate = getCellTemplate(rowData[property['o:label']], property['o:label'], 'accordion', showRelatedItens);
+                    if (typeof(itemTemplate) === 'string') {
+                        return (
+                            <div className="item-field">
+                                <span className="item-field-title">{property['o:label'] + ':'}</span> {itemTemplate}
+                            </div>
+                        );
+                    } else if (itemTemplate) {
+                        return (
+                            <div className="item-field">
+                                {itemTemplate}
+                            </div>
+                        );
+                    }
+                }
+                return null;
+            });
+
+            return (
+                <div className="p-col-12">
+                    <div className="item-grid-item card">
+                        <div className="item-grid-item-content">
+                            {
+                                rowData['thumbnail_url']
+                                ? <img src={rowData['thumbnail_url']} width="150" alt="" onError={(e) => e.target.src=PlaceHolder} />
+                                : null
+                            }
+                            <div className="item-title">{dialogCardViewTitle}</div>
+                            {dialogCardViewItems}
+                        </div>
+                        <div className="item-grid-item-bottom">
+                            <Button icon="pi pi-eye" label="View Details" onClick={() => window.open(PATH_PREFIX + "/items/" + rowData['id'], "_blank")}></Button>
+                        </div>
+                    </div>
+                </div>
+            );
+        } else {
+            return null;
+        }
+    }
+
+    const thumbnailTemplate = (rowData) => {
+        if (rowData !== undefined && rowData['thumbnail_url']) {
+            return (
+                <React.Fragment>
+                    <img src={rowData['thumbnail_url']} width="100" height="100" alt="" onError={(e) => e.target.src=PlaceHolder} />
+                </React.Fragment>
+            );
+        } else {
+            return null;
+        }
+    }
+
+    const dataViewGridTemplate = (rowData, layout) => {
+        if (!rowData) {
+            return null;
+        }
+
+        return cardViewTemplate(rowData, dataViewProperties, false);
+    }
+
+    const editorTemplate = (props, field) => {
+        return (
+            <InputTextarea
+                value={props.rowData[field] ? props.rowData[field] : ""}
+                onChange={(e) => onEditorValueChange(props, e.target.value)}
+                rows={5}
+                cols={20}
+            />
+        );
     }
 
     const onPage = (event) => {
@@ -311,6 +411,12 @@ const DataTableContainer = (props) => {
         setLazyParams(_lazyParams);
     }
 
+    const onColReorder = () => {
+        // buildColumns(props.activeProperties);
+
+        showToast('success', 'Success', 'Column Reordered!');
+    }
+
     const onDataViewPage = (event) => {
         setDataViewLoading(true);
         const startIndex = event.first;
@@ -318,18 +424,84 @@ const DataTableContainer = (props) => {
         loadLazyDataViewData(overlayPanelItems[startIndex]);
     }
 
+    const onRowEditInit = (event) => {
+        setOriginalRow({ ...collection[event.index] });
+        $('.p-row-editor-init').each(function(){$(this).hide()});
+    }
+
+    const onRowEditCancel = (event) => {
+        let rows = [...collection];
+        rows[event.index] = originalRow;
+        setOriginalRow(null);
+
+        setCollection(rows);
+        showToast('warn', 'Warning', 'Item changes not saved');
+        $('.p-row-editor-init').each(function(){$(this).show()});
+    }
+
+    const onEditorValueChange = (props, value) => {
+        let updatedProducts = [...props.value];
+        updatedProducts[props.rowIndex][props.field] = value;
+        setCollection(updatedProducts);
+    }
+
+    const onRowEditSave = (event) => {
+        $('.p-row-editor-init').each(function(){$(this).show()});
+        fetchOne(
+            cookies.userInfo.host,
+            props.query.endpoint,
+            event.data['id']
+        ).then(data => {
+            props.availableProperties.map((property) => {
+                if (!propertyIsRelation(property) && event.data[property['o:label']]) {
+                    data[property['o:term']][0]['@value'] = event.data[property['o:label']];
+                }
+                return null;
+            });
+            patchResourceItem(cookies.userInfo, props.query.endpoint, event.data['id'], data);
+            setOriginalRow(null);
+            showToast('success', 'Success', 'Item successfully updated!');
+        });
+    }
+
     const toggleScreenMode = (toggleToMode) => {
         props.setScreenMode(toggleToMode);
     }
 
     const addNote = () => {
-        openDialog('Open "Add Note" page', 'TO-DO');
+        setSelectedItems([]);
+        toggleScreenMode('select');
+        setSelectButtonMode('addNote');
+        showToast('info', 'Add Note', 'Check items and click "Proceed to Add Note"');
+    }
+
+    const proceedToAddNote = () => {
         toggleScreenMode('view');
+        setSelectButtonMode(null);
+
+        let idItems = selectedItems.map((item) => {
+            return item['id'];
+        });
+
+        window.open(PATH_PREFIX + "/note/" + JSON.stringify(idItems), "_blank").focus();
     }
 
     const addToProject = () => {
-        openDialog('Open "Add to Project" page', 'TO-DO');
+        setSelectedItems([]);
+        toggleScreenMode('select');
+        setSelectButtonMode('addToProject');
+        showToast('info', 'Add to Project', 'Check items and click "Proceed to Add to Project"');
+    }
+
+    const proceedToAddToProject = () => {
         toggleScreenMode('view');
+        setSelectButtonMode(null);
+
+        let idItems = selectedItems.map((item) => {
+            return item['id'];
+        });
+
+        openDialog('Add to Project', 'Items: ' + JSON.stringify(idItems));
     }
 
     const createProject = () => {
@@ -348,17 +520,28 @@ const DataTableContainer = (props) => {
         let buttons = [];
         switch (props.screenMode) {
             case 'view': 
-                buttons.push(<Button label="Add Note" className="p-button-sm p-button-raised p-button-text p-button-plain p-mr-2" onClick={() => { toggleScreenMode('select'); showToast('info', 'Add Note', 'Check items and click "Proceed to Add Note"'); }} />);
-                buttons.push(<Button label="Add to Project" className="p-button-sm p-button-raised p-button-text p-button-plain p-mr-2" onClick={() => { toggleScreenMode('select'); showToast('info', 'Add to Project', 'Check items and click "Proceed to Add to Project"'); }} />);
-                buttons.push(<Button label="Create Project" className="p-button-sm p-button-raised p-mr-2" onClick={() => { createProject(); }} />);
-                buttons.push(<Button label="Edit Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" onClick={() => { toggleScreenMode('edit'); }} />);
+                buttons.push(<Button key="add-note" label="Add Note" className="p-button-sm p-button-raised p-button-text p-mr-2" onClick={() => { addNote(); }} />);
+                buttons.push(<Button key="add-to-project" label="Add to Project" className="p-button-sm p-button-raised p-button-text p-mr-2" onClick={() => { addToProject(); }} />);
+                buttons.push(<Button key="create-project" label="Create Project" className="p-button-sm p-button-raised p-mr-2" onClick={() => { createProject(); }} />);
+                buttons.push(<Button key="edit-mode" label="Edit Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" onClick={() => { toggleScreenMode('edit'); }} />);
             break;
             case 'edit':
-                buttons.push(<Button label="View Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" onClick={() => { toggleScreenMode('view'); }} />);
+                buttons.push(<Button key="view-mode" label="View Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" disabled={originalRow !== null} onClick={() => { toggleScreenMode('view'); }} />);
             break;
             case 'select':
-                buttons.push(<Button label="Proceed to Add Note" className="p-button-sm p-button-raised p-button-text p-button-plain p-mr-2" onClick={() => { addNote(); }} />);
-                buttons.push(<Button label="Proceed to Add to Project" className="p-button-sm p-button-raised p-button-text p-button-plain p-mr-2" onClick={() => { addToProject(); }} />);
+                switch (selectButtonMode) {
+                    case 'addNote':
+                        buttons.push(<Button key="proceed-to-add-note" label="Proceed to Add Note" className="p-button-sm p-button-raised p-mr-2" disabled={selectedItems.length === 0} onClick={() => { proceedToAddNote(); }} />);
+                    break;
+                    case 'addToProject':
+                        buttons.push(<Button key="proceed-to-add-to-project" label="Proceed to Add to Project" className="p-button-sm p-button-raised p-mr-2" disabled={selectedItems.length === 0} onClick={() => { proceedToAddToProject(); }} />);
+                    break;
+                    default:
+                    break;
+                }
+                buttons.push(<Button key="view-mode" label="View Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" disabled={originalRow !== null} onClick={() => { toggleScreenMode('view'); }} />);
+            break;
+            default:
             break;
         }
 
@@ -367,7 +550,7 @@ const DataTableContainer = (props) => {
                 {buttons}
                 <span className="p-input-icon-left">
                     <i className="pi pi-search" />
-                    <InputText type="search" onChange={onGlobalFilter} placeholder="Global Search" className="p-py-1"/>
+                    <InputText disabled={!(props.screenMode === 'view')} type="search" onChange={onGlobalFilter} placeholder="Global Search" className="p-py-1"/>
                 </span>
             </React.Fragment>
         );
@@ -383,112 +566,35 @@ const DataTableContainer = (props) => {
 
     const header = renderHeader();
 
-    const viewTemplate = (rowData) => {
-        if (rowData !== undefined) {
-            return (
-                <React.Fragment>
-                    <Button icon="pi pi-eye" title="View" onClick={() => { openDialog(null, cardViewTemplate(rowData, props.activeProperties)); } }></Button>
-                </React.Fragment>
-            );
-        } else {
-            return null;
-        }
-    }
-
-    const cardViewTemplate = (rowData, properties) => {
-        if (rowData !== undefined) {
-            var dialogCardViewTitle = null;
-            var dialogCardViewItems = properties.map((property, i) => {
-                if (property['o:label'] === 'Title' || property['o:label'] === 'name') {
-                    dialogCardViewTitle = rowData[property['o:label']];
-                } else if (rowData[property['o:label']] && (typeof rowData[property['o:label']]) !== 'object') {
-                    return (
-                        <div className="item-field">
-                            <span className="item-field-title">{property['o:label'] + ':'}</span> {rowData[property['o:label']]}
-                        </div>
-                   );
-                }
-                return null;
-            });
-
-            return (
-                <div className="p-col-12">
-                    <div className="item-grid-item card">
-                        <div className="item-grid-item-content">
-                            {
-                                rowData['thumbnail_url']
-                                ? <img src={rowData['thumbnail_url']} width="150" alt="" onError={(e) => e.target.src=PlaceHolder} />
-                                : null
-                            }
-                            <div className="item-title">{dialogCardViewTitle}</div>
-                            {dialogCardViewItems}
-                        </div>
-                        <div className="item-grid-item-bottom">
-                            <Button icon="pi pi-eye" label="View Details" onClick={() => window.open(PATH_PREFIX + "/items/" + rowData['id'], "_blank")}></Button>
-                        </div>
-                    </div>
-                </div>
-            );
-        } else {
-            return null;
-        }
-    }
-
-    const thumbnailTemplate = (rowData) => {
-        if (rowData !== undefined && rowData['thumbnail_url']) {
-            return (
-                <React.Fragment>
-                    <img src={rowData['thumbnail_url']} width="100" height="100" alt="" onError={(e) => e.target.src=PlaceHolder} />
-                </React.Fragment>
-            );
-        } else {
-            return null;
-        }
-    }
-
-    const dataViewGridTemplate = (rowData, layout) => {
-        if (!rowData) {
-            return;
-        }
-
-        return cardViewTemplate(rowData, dataViewProperties);
-    }
-
-    const onRowEditInit = (event) => {
-        setOriginalRow({ ...collection[event.index] });
-    }
-
-    const onRowEditCancel = (event) => {
-        let rows = [...collection];
-        rows[event.index] = originalRow;
-        setOriginalRow(null);
-
-        setCollection(rows);
-    }
-
-    const onEditorValueChange = (props, value) => {
-        let updatedProducts = [...props.value];
-        updatedProducts[props.rowIndex][props.field] = value;
-        setCollection(updatedProducts);
-    }
-
-    const onRowEditSave = (event) => {
-        fetchOne(
-            cookies.userInfo.host,
-            props.query.endpoint,
-            event.data['id']
-        ).then(data => {
-            props.availableProperties.map((property) => {
-                if (property['o:local_name'] !== 'hasPart' && event.data[property['o:label']]) {
-                    data[property['o:term']][0]['@value'] = event.data[property['o:label']];
-                }
-            });
-            patchResourceItem(cookies.userInfo, props.query.endpoint, event.data['id'], data);
+    const showToast = (severityClass, summary, detail) => {
+        toast.current.show({
+            severity: severityClass,
+            summary: summary,
+            detail: detail,
+            life: 5000
         });
     }
 
-    const inputTextEditor = (props, field) => {
-        return <InputTextarea value={props.rowData[field] ? props.rowData[field] : ""} onChange={(e) => onEditorValueChange(props, e.target.value)} rows={5} cols={20} />;
+    const openDialog = (header, content) => {
+        setDisplayDialog(true);
+        setDialogContent(content);
+        setDialogHeader(header);
+    }
+
+    const closeDialog = () => {
+        setDisplayDialog(false);
+        setDialogContent(null);
+    }
+
+    const openOverlayPanel = (event, items) => {
+        overlayPanel.current.toggle(event);
+
+        setDataViewFirst(0);
+        setDataViewCollection([]);
+        setOverlayPanelItems(items);
+        setDataViewTotalRecords(items.length);
+
+        loadLazyDataViewData(items[dataViewFirst]);
     }
 
     return (
@@ -510,19 +616,20 @@ const DataTableContainer = (props) => {
                             filters={lazyParams.filters}
                             onFilter={onFilter}
                             reorderableColumns
+                            onColReorder={onColReorder}
                             resizableColumns
                             columnResizeMode="fit"
                             rowHover
                             rows={lazyParams.rows}
                             rowsPerPageOptions={[10,25,50]}
                             dataKey="id"
-                            selectionMode={props.screenMode == "select" ? "checkbox" : null}
+                            selectionMode={props.screenMode === "select" ? "checkbox" : null}
                             selection={selectedItems}
                             onSelectionChange={e => setSelectedItems(e.value)}
                             first={lazyParams.first}
                             totalRecords={totalRecords}
                             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                            paginator
+                            paginator={props.screenMode === 'view'}
                             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                             onPage={onPage}
                             onSort={onSort}
@@ -538,7 +645,10 @@ const DataTableContainer = (props) => {
                     : null
                 }
             </div>
-            <Toast ref={toast} />
+            <Toast
+                ref={toast}
+                position="top-left"
+            />
             <Dialog
                 header={dialogHeader}
                 visible={displayDialog}
@@ -561,8 +671,8 @@ const DataTableContainer = (props) => {
                     totalRecords={dataViewTotalRecords}
                     first={dataViewFirst}
                     onPage={onDataViewPage}
-                    loading={dataViewLoading} />
-
+                    loading={dataViewLoading}
+                />
             </OverlayPanel>
         </div>
     );

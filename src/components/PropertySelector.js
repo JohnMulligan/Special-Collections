@@ -68,7 +68,7 @@ const PropertySelector = (props) => {
   return (
     <div className="multiselect-component">
         <div className="card">
-            <MultiSelect value={selectedProperties} options={options} onChange={onPropertyChange} optionLabel="property" placeholder="Select fields" display="chip" />
+            <MultiSelect disabled={!(props.screenMode === 'view')} value={selectedProperties} options={options} onChange={onPropertyChange} optionLabel="property" placeholder="Select fields" display="chip" />
         </div>
     </div>    
   );

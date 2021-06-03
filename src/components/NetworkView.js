@@ -153,7 +153,8 @@ const NetworkView = () => {
         .on("dblclick", function (d, i) {
           // if shifting select the node, else display modal
           if (d.shiftKey) {
-            let [r, g, b, _opacity] = d3.select(this).style("fill").split(", ");
+            let [r, g, b] = d3.select(this).style("fill").split(", ");
+            // let [r, g, b, _opacity] = d3.select(this).style("fill").split(", ");
             r = r.substring(r.indexOf("(") + 1);
             if (b[b.length - 1] === ")") {
               b = b.substring(0, b.length - 1);

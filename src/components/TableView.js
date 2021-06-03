@@ -103,17 +103,6 @@ const TableView = (props) => {
     });
   };
 
-  const typeColumn = {
-    title: "Omeka-S Type",
-    dataIndex: "@type",
-    key: "type",
-    render: (value, _row, _index) => {
-      const str = value[value.length - 1];
-      const n = str.lastIndexOf(":");
-      return str.substring(n + 1);
-    },
-  };
-
   const viewColumn = {
     title: "View",
     dataIndex: "View",

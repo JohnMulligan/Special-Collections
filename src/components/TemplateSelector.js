@@ -28,8 +28,6 @@ const TemplateSelector = (props) => {
   const defaultTemplate = {'template': 'Source', 'id': 6}; // Default is "Source"
 
   const onTemplateChange = async (e) => {
-      props.setScreenMode('view');
-
       const templateSelected = (e === undefined) ? defaultTemplate : e.value;
 
       setSelectedTemplate(templateSelected);
@@ -59,11 +57,11 @@ const TemplateSelector = (props) => {
   useEffect(() => {
       // get templates options on load
       const initComponent = async () => {
-        const res = await fetchTemplates(cookies.userInfo.host);
-        props.setTemplates(res);
+        const templates = await fetchTemplates(cookies.userInfo.host);
+        props.setTemplates(templates);
 
         setOptions(
-          res.map((template) => {
+          templates.map((template) => {
             let option = {
               template: template['o:label'],
               id: template['o:id'],
@@ -77,12 +75,12 @@ const TemplateSelector = (props) => {
 
       initComponent();
 
-  }, [cookies]);
+  }, [props, cookies]);
 
   return (
       <div className="dropdown-component">
           <div className="card">
-              <Dropdown value={selectedTemplate} options={options} onChange={onTemplateChange} optionLabel="template" placeholder="Select a template" />
+              <Dropdown disabled={!(props.screenMode === 'view')} value={selectedTemplate} options={options} onChange={onTemplateChange} optionLabel="template" placeholder="Select a template" />
           </div>
       </div>
   );

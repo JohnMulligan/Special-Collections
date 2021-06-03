@@ -1,40 +1,53 @@
-import React, { useState, useEffect } from 'react';
-import { useCookies } from "react-cookie";
+import React, { useState } from "react";
+import { Row, Col } from "antd";
 
-import Explorer from "./Explorer";
-import { getPropertyList } from "../utils/Utils";
+import TemplateSelector from "../components/TemplateSelector";
+import PropertySelector from "../components/PropertySelector";
 
-const Home = () => {
-    const [cookies] = useCookies(["userInfo"]);
-    const [selectedProperties, setSelectedProperties] = useState([]);
-    const [propertyList, setPropertyList] = useState([]);
-    const [propertyLoading, setPropertyLoading] = useState(false);
+import DataTableContainer from "../containers/DataTable";
 
-    useEffect(() => {
-        const fetchPropertyList = async () => {
-            setPropertyLoading(true);
+const Home = (props) => {
+  const [screenMode, setScreenMode] = useState('view');
+  const [templates, setTemplates] = useState([]);
+  const [activeTemplate, setActiveTemplate] = useState(null);
+  const [availableProperties, setAvailableProperties] = useState();
+  const [activeProperties, setActiveProperties] = useState([]);
 
-            const response = await getPropertyList(cookies.userInfo.host);
-            let classes = response.data.map((each) => ({
-                id: each["o:id"],
-                title: each["o:label"],
-            }));
-            setPropertyList(classes);
+  return (
+    <>
+      <Row className="p-col-12">
+        <Col className="p-col-2">
+          <TemplateSelector
+            screenMode={screenMode}
+            templates={templates}
+            setTemplates={setTemplates}
+            setActiveTemplate={setActiveTemplate}
+            setAvailableProperties={setAvailableProperties}
+          />
+        </Col>
+        <Col className="p-col-10">
+          <PropertySelector
+            screenMode={screenMode}
+            availableProperties={availableProperties}
+            setActiveProperties={setActiveProperties}
+          />
+        </Col>
+      </Row>
 
-            let propertyData = response.data.map((each) => ({
-                "o:term": each["o:term"],
-                "o:label": each["o:label"],
-            }));
-            setSelectedProperties(propertyData);
-            setPropertyLoading(false);
-        };
-
-        fetchPropertyList();
-    }, [cookies.userInfo]);
-
-    return (
-        <Explorer propertyList={propertyList} />
-    );
+      <Row className="p-col-12">
+        <Col>
+          <DataTableContainer
+            screenMode={screenMode}
+            setScreenMode={setScreenMode}
+            templates={templates}
+            availableProperties={availableProperties}
+            activeTemplate={activeTemplate}
+            activeProperties={activeProperties}
+          />
+        </Col>
+      </Row>
+    </>
+  );
 };
 
 export default Home;
