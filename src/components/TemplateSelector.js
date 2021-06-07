@@ -20,62 +20,67 @@ const mapStateToProps = (state, props) => {
 };
 
 const TemplateSelector = (props) => {
-  const [cookies] = useCookies(["userInfo"]);
-  const [options, setOptions] = useState([]);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
+    const [cookies] = useCookies(["userInfo"]);
+    const [options, setOptions] = useState([]);
+    const [selectedTemplate, setSelectedTemplate] = useState(null);
   
-  // May be able to initially define availableProperties and options?
-  const defaultTemplate = {'template': 'Source', 'id': 6}; // Default is "Source"
+    // May be able to initially define availableProperties and options?
+    const defaultTemplate = {'template': 'Source', 'id': 6}; // Default is "Source"
 
-  const onTemplateChange = async (e) => {
-      const templateSelected = (e === undefined) ? defaultTemplate : e.value;
+    const onTemplateChange = async (e) => {
+        const templateSelected = (e === undefined) ? defaultTemplate : e.value;
 
-      setSelectedTemplate(templateSelected);
-      props.setActiveTemplate(templateSelected);
+        setSelectedTemplate(templateSelected);
+        props.setActiveTemplate(templateSelected);
 
-      const template = props.templates.filter(
-        (template) => template["o:id"] === templateSelected['id']
-      )[0];
+        const template = props.templates.filter(
+            (template) => template["o:id"] === templateSelected['id']
+        )[0];
 
-      if (template) {
-        const requests = template["o:resource_template_property"].map((property) =>
-          Axios.get(property["o:property"]["@id"])
-        );
+        if (template) {
+            const propertiesDetailsRequests = template["o:resource_template_property"].map((property) => {
+                return Axios.get(property["o:property"]["@id"]);
+            });
 
-        const res = await Axios.all(requests);
-        const properties = res.map((inner) => inner.data);
+            const propertiesDetailsResults = await Axios.all(propertiesDetailsRequests);
+            const properties = propertiesDetailsResults.map((result, key) => {
+                return {
+                  ...template["o:resource_template_property"][key],
+                  ...result.data
+                };
+            });
 
-        props.setAvailableProperties(properties);
-        props.clearQuery("items");
+            props.setAvailableProperties(properties);
+            props.clearQuery("items");
 
-        const search = {};
-        search["resource_class_id"] = template["o:resource_class"]["o:id"];
-        props.setQuery("items", search, 99999);
-      }
+            const search = {};
+            search["resource_class_id"] = template["o:resource_class"]["o:id"];
+            props.setQuery("items", search, 99999);
+        }
   }
 
   useEffect(() => {
       // get templates options on load
       const initComponent = async () => {
-        const templates = await fetchTemplates(cookies.userInfo.host);
-        props.setTemplates(templates);
+          const templates = await fetchTemplates(cookies.userInfo.host);
+          props.setTemplates(templates);
 
-        setOptions(
-          templates.map((template) => {
-            let option = {
-              template: template['o:label'],
-              id: template['o:id'],
-            };
-            return option;
-          })
-        );
+          setOptions(
+            templates.map((template) => {
+              let option = {
+                template: template['o:label'],
+                id: template['o:id'],
+              };
+              return option;
+            })
+          );
         
-        // onTemplateChange();
+          // onTemplateChange();
       };
 
       initComponent();
 
-  }, [props, cookies]);
+  }, [cookies]);
 
   return (
       <div className="dropdown-component">

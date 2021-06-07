@@ -10,9 +10,11 @@ import { DataView } from 'primereact/dataview';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
+import { InputNumber } from 'primereact/inputnumber';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
+import { Tooltip } from 'primereact/tooltip';
 import { Button } from 'primereact/button';
 import { Accordion, AccordionTab } from 'primereact/accordion';
 import { Toolbar } from 'primereact/toolbar';
@@ -21,7 +23,6 @@ import { fetchItems, fetchOne, patchResourceItem } from "../utils/OmekaS";
 import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
 
 import '../assets/css/DataTable.css';
-import '../assets/css/Dialog.css';
 import '../assets/css/CardView.css';
 
 const DataTableContainer = (props) => {
@@ -45,6 +46,7 @@ const DataTableContainer = (props) => {
         sortDirection: 'asc',
     });
 
+    const [originalCollection, setOriginalCollection] = useState([]);
     const [originalRow, setOriginalRow] = useState(null);
 
     const [displayDialog, setDisplayDialog] = useState(false);
@@ -93,8 +95,9 @@ const DataTableContainer = (props) => {
             ).then(data => {
                 setTotalRecords(data.total);
                 setShowTable(true);
+                setOriginalCollection(data.items);
                 setCollection(data.items.map((row, key) => {
-                    return parseItem(row, props.activeProperties, false);
+                    return parseItem(row, props.activeProperties);
                 }));
                 setLoading(false);
             });
@@ -106,19 +109,19 @@ const DataTableContainer = (props) => {
 
         switch (props.screenMode) {
             case 'view':
-                builtColumns.push(<Column key="view" columnKey="view" header="View" headerStyle={{ width:'60px' }} reorderable={false} className="p-datatable-column" body={viewTemplate} />);
+                builtColumns.push(<Column key="view" columnKey="view" header="View" headerStyle={{ width:'60px' }} reorderable={false} className="p-datatable-column text-align-center" body={viewTemplate} />);
             break;
             case 'edit':
-                builtColumns.push(<Column key="editor" columnKey="editor" header="Edit" headerStyle={{ width: '100px' }} reorderable={false} className="p-datatable-column" bodyStyle={{ textAlign: 'center' }} rowEditor ></Column>);
+                builtColumns.push(<Column key="editor" columnKey="editor" header="Edit" headerStyle={{ width: '100px' }} reorderable={false} className="p-datatable-column text-align-center" rowEditor ></Column>);
             break;
             case 'select':
-                builtColumns.push(<Column key="select" columnKey="select" header="Select All" headerStyle={{ width:'100px' }} reorderable={false} selectionMode="multiple" className="p-datatable-column" />);
+                builtColumns.push(<Column key="select" columnKey="select" header="Select All" headerStyle={{ width:'100px' }} reorderable={false} selectionMode="multiple" className="p-datatable-column text-align-center" />);
             break;
             default:
             break;
         }
 
-        builtColumns.push(<Column key="thumbnail" columnKey="thumbnail" header="Thumbnail" headerStyle={{ width: '150px' }} reorderable={false} className="p-datatable-column" body={thumbnailTemplate} bodyStyle={{ textAlign: 'center' }} />);
+        builtColumns.push(<Column key="thumbnail" columnKey="thumbnail" header="Thumbnail" headerStyle={{ width: '150px' }} reorderable={false} className="p-datatable-column text-align-center" body={thumbnailTemplate} />);
 
         properties.map((property, i) => {
             let fieldIsRelation = propertyIsRelation(property);
@@ -136,9 +139,12 @@ const DataTableContainer = (props) => {
                     filterPlaceholder={"Search by " + property['o:label']}
                     className="p-datatable-column"
                     body={cellTemplate}
-                    editor={(props) => {
+                    editor={(columnProperties) => {
                         if(!fieldIsRelation) {
-                            return editorTemplate(props, property['o:label']);
+                            var originalRow = originalCollection.filter(
+                                (row) => row['o:id'] === columnProperties.rowData['id']
+                            )[0];
+                            return editorTemplate(columnProperties, originalRow, property);
                         }
                     }}
                 />
@@ -156,24 +162,24 @@ const DataTableContainer = (props) => {
             item['value_resource_name'],
             item['value_resource_id']
         ).then(data => {
-            var resourceTemplate = props.templates.filter(
+            let resourceTemplate = props.templates.filter(
                 (template) => template['o:resource_class']['o:id'] === data['o:resource_class']['o:id']
             )[0];
 
             const requests = resourceTemplate["o:resource_template_property"].map((property) =>
-              Axios.get(property["o:property"]["@id"])
+                Axios.get(property["o:property"]["@id"])
             );
 
             Axios.all(requests).then(res => {
                 let properties = res.map((inner) => inner.data);
                 setDataViewProperties(properties);
-                setDataViewCollection([parseItem(data, properties, true)]);
+                setDataViewCollection([parseItem(data, properties)]);
                 setDataViewLoading(false);
             });
         });
     }
 
-    const parseItem = (row, properties, useCellTemplate) => {
+    const parseItem = (row, properties) => {
         if (properties && properties.length > 0) {
             let item = {'id': row['o:id']};
             properties.map((property) => {
@@ -181,10 +187,17 @@ const DataTableContainer = (props) => {
                 let value = null;
 
                 if (row[property['o:term']] !== undefined) {
-                    if (row[property['o:term']][0]['@value'] !== undefined) {
-                        value = row[property['o:term']][0]['@value'];
-                    } else if (row[property['o:term']][0]['type'] === 'resource') {
+                    if (row[property['o:term']][0]['type'] === 'resource') {
                         value = row[property['o:term']];
+                    } else {
+                        let separator = '';
+                        value = '';
+                        row[property['o:term']].map((subItem) => {
+                            if (subItem['@value'] !== undefined) {
+                                value += separator + subItem['@value'];
+                                separator = ' | ';
+                            }
+                        });
                     }
                 }
 
@@ -282,8 +295,8 @@ const DataTableContainer = (props) => {
 
     const cardViewTemplate = (rowData, properties, showRelatedItens) => {
         if (rowData !== undefined) {
-            var dialogCardViewTitle = null;
-            var dialogCardViewItems = properties.map((property, i) => {
+            let dialogCardViewTitle = null;
+            let dialogCardViewItems = properties.map((property, i) => {
                 if (property['o:label'] === 'Title' || property['o:label'] === 'name') {
                     dialogCardViewTitle = rowData[property['o:label']];
                 } else if (rowData[property['o:label']]) {
@@ -348,15 +361,47 @@ const DataTableContainer = (props) => {
         return cardViewTemplate(rowData, dataViewProperties, false);
     }
 
-    const editorTemplate = (props, field) => {
-        return (
-            <InputTextarea
-                value={props.rowData[field] ? props.rowData[field] : ""}
-                onChange={(e) => onEditorValueChange(props, e.target.value)}
-                rows={5}
-                cols={20}
-            />
-        );
+    const editorTemplate = (columnProperties, originalRow, cellProperty) => {
+        let value = columnProperties.rowData[cellProperty['o:label']] ? columnProperties.rowData[cellProperty['o:label']] : "";
+
+        if (originalRow[cellProperty['o:term']] && originalRow[cellProperty['o:term']].length > 1) {
+            return (
+                <React.Fragment>
+                    <div className="p-col-12">
+                        <Tooltip target=".info-icon" />
+                        <i className="info-icon pi pi-question-circle p-text-secondary p-overlay-badge" data-pr-tooltip="use ' | ' as separator for list items" data-pr-position="right" data-pr-at="right+5 top" data-pr-my="left center-2" style={{ fontSize: '2rem', cursor: 'pointer' }}></i>
+                    </div>
+                    <div className="p-col-12">
+                        <InputTextarea
+                            value={value}
+                            onChange={(e) => onEditorValueChange(columnProperties, e.target.value)}
+                            rows={5}
+                            cols={20}
+                        />
+                    </div>
+                </React.Fragment>
+            );
+        } else if (cellProperty['o:data_type'].length > 0 && cellProperty['o:data_type'].includes('numeric:timestamp')) {
+            return (
+                <InputNumber
+                    value={value ? parseInt(value) : ""}
+                    onChange={(e) => onEditorValueChange(columnProperties, e.value)}
+                    useGrouping={false}
+                    showButtons
+                    buttonLayout="vertical"
+                    style={{width: '75px'}}
+                />
+            );
+        } else {
+            return (
+                <InputTextarea
+                    value={value}
+                    onChange={(e) => onEditorValueChange(columnProperties, e.target.value)}
+                    rows={5}
+                    cols={20}
+                />
+            );
+        }
     }
 
     const onPage = (event) => {
@@ -391,7 +436,7 @@ const DataTableContainer = (props) => {
         let search = {};
         let counter = 0;
 
-        for (var propertyId of Object.keys(event.filters)) {
+        for (let propertyId of Object.keys(event.filters)) {
             if (!isNaN(propertyId)) {
                 search['property[' + counter + '][joiner]'] = 'and';
                 search['property[' + counter + '][property]'] = parseInt(propertyId);
@@ -412,8 +457,6 @@ const DataTableContainer = (props) => {
     }
 
     const onColReorder = () => {
-        // buildColumns(props.activeProperties);
-
         showToast('success', 'Success', 'Column Reordered!');
     }
 
@@ -439,29 +482,71 @@ const DataTableContainer = (props) => {
         $('.p-row-editor-init').each(function(){$(this).show()});
     }
 
-    const onEditorValueChange = (props, value) => {
-        let updatedProducts = [...props.value];
-        updatedProducts[props.rowIndex][props.field] = value;
+    const onEditorValueChange = (properties, value) => {
+        let updatedProducts = [...properties.value];
+        updatedProducts[properties.rowIndex][properties.field] = value;
         setCollection(updatedProducts);
     }
 
     const onRowEditSave = (event) => {
         $('.p-row-editor-init').each(function(){$(this).show()});
+        let separator = ' | ';
         fetchOne(
             cookies.userInfo.host,
             props.query.endpoint,
             event.data['id']
         ).then(data => {
             props.availableProperties.map((property) => {
-                if (!propertyIsRelation(property) && event.data[property['o:label']]) {
-                    data[property['o:term']][0]['@value'] = event.data[property['o:label']];
+                let editedValue = event.data[property['o:label']]
+                
+                //TO DO: Check how to clean a subitem (removing an author, for example)
+
+                if (!propertyIsRelation(property)) {
+                    if (editedValue) {
+                        if (typeof(editedValue) === 'string') {
+                            let values = editedValue.split(separator);
+                            values.map((value, key) => {
+                                if (data[property['o:term']] !== undefined) {
+                                    if (data[property['o:term']][key] !== undefined) {
+                                        data[property['o:term']][key]['@value'] = value;
+                                    } else {
+                                        data[property['o:term']][key] = getNewItem(property, value);
+                                    }
+                                } else {
+                                    data[property['o:term']] = [getNewItem(property, value)];
+                                }
+                            });
+                        } else {
+                            if (data[property['o:term']] !== undefined) {
+                                data[property['o:term']][0]['@value'] = parseInt(editedValue);
+                            } else {
+                                data[property['o:term']] = [getNewItem(property, parseInt(editedValue))];
+                            }
+                        }
+                    } else {
+                        //TO DO: Check how to clean empty properties
+                    }
                 }
                 return null;
             });
             patchResourceItem(cookies.userInfo, props.query.endpoint, event.data['id'], data);
+
+            let rows = [...collection];
+            rows[event.index] = parseItem(data, props.activeProperties);
             setOriginalRow(null);
+
             showToast('success', 'Success', 'Item successfully updated!');
         });
+    }
+
+    const getNewItem = (property, value) => {
+        return {
+            '@value': value,
+            'is_public': true,
+            'property_id': property['o:id'],
+            'property_label': property['o:label'],
+            'type': property['o:data_type'][0] !== undefined ? property['o:data_type'][0] : 'literal',
+        };
     }
 
     const toggleScreenMode = (toggleToMode) => {

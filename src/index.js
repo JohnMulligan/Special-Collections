@@ -11,6 +11,8 @@ import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import 'primeflex/primeflex.css';
 
+import './assets/css/SpecialCollections.css';
+
 import PrimeReact from 'primereact/api';
 
 PrimeReact.ripple = true;
