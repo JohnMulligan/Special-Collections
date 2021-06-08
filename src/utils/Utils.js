@@ -10,7 +10,7 @@ export const PlaceHolder = require("../resources/image-placeholder.png");
 
 export const Logo = require("../resources/SClogo.png");
 
-export const PATH_PREFIX = "/react";
+export const PATH_PREFIX = "";
 
 export const getItem = (baseAddress, itemId) => {
   return axios.get("http://" + baseAddress + "/api/items/" + itemId);
