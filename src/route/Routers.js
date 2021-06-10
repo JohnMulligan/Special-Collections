@@ -8,7 +8,7 @@ import {
 import MainPage from "../containers/Mainpage";
 import TranscriptView from "../containers/TranscriptView";
 import NoteView from "../containers/NoteView";
-import Welcome from "../containers/Welcome";
+import Login from "../containers/Login";
 import Home from "../containers/Home";
 import HomeLegacy from "../containers/HomeLegacy";
 import ProjectsPage from "../containers/ProjectsPage";
@@ -79,7 +79,7 @@ export const MainRouter = () => {
           <MainPage />
         </PrivateRoute>
         <Route path={PATH_PREFIX + "/login"}>
-          <Welcome />
+          <Login />
         </Route>
         <Redirect to={PATH_PREFIX + "/admin"} />
       </Switch>

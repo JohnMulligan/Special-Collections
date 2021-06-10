@@ -1,13 +1,12 @@
 import axios from "axios";
 
+// import { useCookies } from "react-cookie";
+
 const PER_PAGE = 9999;
 
-const headers = {
-  "Content-Type": "application/json",
-};
+export const apiOmekaUrl = '/api/';
 
 export const fetchItems = async (
-  baseAddress,
   endpoint,
   itemSetId,
   params,
@@ -21,7 +20,7 @@ export const fetchItems = async (
   const perPage = limit + (start % limit);
   const page = Math.ceil(start / perPage) + 1;
 
-  const res = await axios.get(`http://${baseAddress}/api/${endpoint}`, {
+  const res = await axios.get(`${apiOmekaUrl}${endpoint}`, {
     params: {
       ...params,
       item_set_id: itemSetId !== -1 ? itemSetId : null,
@@ -78,8 +77,8 @@ export const fetch = async (
   return data.slice(0, limit);
 };
 
-export const fetchSize = async (baseAddress, endpoint, params) => {
-  const res = await axios.get(`http://${baseAddress}/api/${endpoint}`, {
+export const fetchSize = async (endpoint, params) => {
+  const res = await axios.get(`${apiOmekaUrl}${endpoint}`, {
     params: {
       ...params,
       per_page: Number.MAX_SAFE_INTEGER,
@@ -89,43 +88,26 @@ export const fetchSize = async (baseAddress, endpoint, params) => {
   return res.data.length;
 };
 
-export const fetchTemplates = async (baseAddress) => {
-  const res = await axios.get(
-    `http://${baseAddress}/api/resource_templates?per_page=${PER_PAGE}`
-  );
-
+export const fetchTemplates = async () => {
+  const res = await axios.get(`${apiOmekaUrl}resource_templates?per_page=${PER_PAGE}`);
   return res.data;
 };
 
-export const fetchItemSets = async (baseAddress) => {
-  const res = await axios.get(
-    `http://${baseAddress}/api/item_sets?per_page=${PER_PAGE}`
-  );
+export const fetchItemSets = async () => {
+  const res = await axios.get(`${apiOmekaUrl}item_sets?per_page=${PER_PAGE}`);
   return res.data;
 };
 
-export const fetchResourceTemplates = async (baseAddress) => {
-  const res = await axios.get(
-    `http://${baseAddress}/api/resource_templates?per_page=${PER_PAGE}`
-  );
+export const fetchResourceTemplates = async () => {
+  const res = await axios.get(`${apiOmekaUrl}resource_templates?per_page=${PER_PAGE}`);
   return res.data;
 };
 
-export const fetchOne = async (baseAddress, endpoint, id) => {
-  const res = await axios.get(`http://${baseAddress}/api/${endpoint}/${id}`);
+export const fetchOne = async (endpoint, id) => {
+  const res = await axios.get(`${apiOmekaUrl}${endpoint}/${id}`);
   return res.data;
 };
 
 export const patchResourceItem = (userInfo, endpoint, id, payload) => {
-  return axios.patch(
-    "http://" + userInfo.host + "/api/" + endpoint  + "/" + id,
-    payload,
-    {
-      params: {
-        key_identity: userInfo.key_identity,
-        key_credential: userInfo.key_credential,
-      },
-      headers: headers,
-    }
-  );
+  return axios.patch(`${apiOmekaUrl}${endpoint}/${id}`, payload);
 };

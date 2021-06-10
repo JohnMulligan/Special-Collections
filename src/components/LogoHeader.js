@@ -1,12 +1,26 @@
 import React from "react";
-import { Layout } from "antd";
-import { LinkOutlined } from "@ant-design/icons";
-import "antd/dist/antd.css";
-import { Logo, PATH_PREFIX } from "../utils/Utils";
 import { Link } from "react-router-dom";
+import { useCookies } from "react-cookie";
+
+import { Layout } from "antd";
+
+import { Button } from 'primereact/button';
+
+import { LinkOutlined } from "@ant-design/icons";
+
+import { Logo, PATH_PREFIX } from "../utils/Utils";
+
+import "antd/dist/antd.css";
+
 const { Header } = Layout;
 
 const LogoHeader = () => {
+  let [cookies, setCookie, removeCookie] = useCookies(["userInfo"]);
+
+  const logout = () => {
+    removeCookie("userInfo", { path: "/" });
+  }
+
   return (
     <Header
       style={{ background: "#FFF", height: "13vh", position: "relative" }}
@@ -57,6 +71,8 @@ const LogoHeader = () => {
           >
             <LinkOutlined /> Learn More
           </a>
+
+          <Button key="logout" label="Logout" className="p-button-sm p-button-raised" onClick={() => { logout(); }} />
         </div>
       </div>
     </Header>

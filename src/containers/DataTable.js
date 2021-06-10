@@ -27,6 +27,7 @@ import '../assets/css/CardView.css';
 
 const DataTableContainer = (props) => {
     const [cookies] = useCookies(["userInfo"]);
+    const omekaUrl = useState('localhost');
 
     const [loading, setLoading] = useState(false);
     const [showTable, setShowTable] = useState(false);
@@ -82,7 +83,6 @@ const DataTableContainer = (props) => {
 
         if (props.activeTemplate) {
             fetchItems(
-                cookies.userInfo.host,
                 props.query.endpoint,
                 props.query.item_set_id,
                 props.query.params,
@@ -158,7 +158,6 @@ const DataTableContainer = (props) => {
     const loadLazyDataViewData = async (item) => {
         setDataViewLoading(true);
         fetchOne(
-            cookies.userInfo.host,
             item['value_resource_name'],
             item['value_resource_id']
         ).then(data => {
@@ -206,10 +205,10 @@ const DataTableContainer = (props) => {
             });
 
             if (row['thumbnail_display_urls']['square']) {
-                if (row['thumbnail_display_urls']['square'].indexOf(`http://${cookies.userInfo.host}`) === 0) {
+                if (row['thumbnail_display_urls']['square'].indexOf(`http://${omekaUrl}`) === 0) {
                     item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
                 } else {
-                    item['thumbnail_url'] = `http://${cookies.userInfo.host}/${row['thumbnail_display_urls']['square']}`;
+                    item['thumbnail_url'] = `http://${omekaUrl}/${row['thumbnail_display_urls']['square']}`;
                 }
             }
 
@@ -492,7 +491,6 @@ const DataTableContainer = (props) => {
         $('.p-row-editor-init').each(function(){$(this).show()});
         let separator = ' | ';
         fetchOne(
-            cookies.userInfo.host,
             props.query.endpoint,
             event.data['id']
         ).then(data => {

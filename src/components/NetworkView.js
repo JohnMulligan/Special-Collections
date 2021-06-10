@@ -181,7 +181,6 @@ const NetworkView = () => {
               let thumbnailUrl = "";
               if (i["o:media"].length !== 0) {
                 const media = await fetchOne(
-                  cookies.userInfo.host,
                   "media",
                   i["o:media"][0]["o:id"]
                 );
@@ -305,14 +304,13 @@ const NetworkView = () => {
     console.log("fetching...");
 
     const getResourceTemplateProperties = async () => {
-      const templates = await fetchResourceTemplates(cookies.userInfo.host);
+      const templates = await fetchResourceTemplates();
       const template2properties = await Promise.all(
         templates.map(async (template) => {
           const properties = await Promise.all(
             template["o:resource_template_property"].map(
               async (property) =>
                 await fetchOne(
-                  cookies.userInfo.host,
                   "properties",
                   property["o:property"]["o:id"]
                 )

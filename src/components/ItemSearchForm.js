@@ -84,7 +84,7 @@ const ItemSearchForm = (props) => {
     }
 
     // START: cool zone
-    fetchSize(cookies.userInfo.host, "items", params).then((count) =>
+    fetchSize("items", params).then((count) =>
       props.setQuery("items", params, count)
     );
     // END: cool zone

@@ -8,7 +8,7 @@ import { connect } from "react-redux";
 
 import { clearQuery, setQuery } from "../redux/actions";
 
-import { fetchTemplates } from "../utils/OmekaS";
+import { OmekaUrl, fetchTemplates } from "../utils/OmekaS";
 
 import Axios from "axios";
 
@@ -62,7 +62,7 @@ const TemplateSelector = (props) => {
   useEffect(() => {
       // get templates options on load
       const initComponent = async () => {
-          const templates = await fetchTemplates(cookies.userInfo.host);
+          const templates = await fetchTemplates();
           props.setTemplates(templates);
 
           setOptions(
@@ -85,7 +85,14 @@ const TemplateSelector = (props) => {
   return (
       <div className="dropdown-component">
           <div className="card">
-              <Dropdown disabled={!(props.screenMode === 'view')} value={selectedTemplate} options={options} onChange={onTemplateChange} optionLabel="template" placeholder="Select a template" />
+              <Dropdown
+                  value={selectedTemplate}
+                  options={options}
+                  disabled={!(props.screenMode === 'view')}
+                  onChange={onTemplateChange}
+                  optionLabel="template"
+                  placeholder="Select a template"
+              />
           </div>
       </div>
   );

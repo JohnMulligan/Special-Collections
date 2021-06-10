@@ -1,0 +1,23 @@
+.login-form .card {
+    min-width: 450px;
+    padding: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+}
+.login-form .card form {
+    margin-top: 2rem;
+}
+.login-form .card .p-field {
+    margin-bottom: 1.5rem;
+}
+@media screen and (max-width: 960px) {
+    .login-form .card {
+        width: 80%;
+    }
+}
+@media screen and (max-width: 640px) {
+    .login-form .card {
+        width: 100%;
+        min-width: 0;
+    }
+}

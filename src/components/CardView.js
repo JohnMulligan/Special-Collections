@@ -45,7 +45,6 @@ const CardView = (props) => {
         let thumbnailUrl = "";
         if (item["o:media"].length !== 0) {
           const media = await fetchOne(
-            cookies.userInfo.host,
             "media",
             item["o:media"][0]["o:id"]
           );

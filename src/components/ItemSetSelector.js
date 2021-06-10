@@ -15,7 +15,7 @@ const ItemSetSelector = (props) => {
   useEffect(() => {
     // get templates options on load
     const fetchOptions = async () => {
-      const res = await fetchItemSets(cookies.userInfo.host);
+      const res = await fetchItemSets();
 
       const itemSetOptions = res.map((template) => (
         <Option key={template["o:id"]} value={template["o:id"]}>

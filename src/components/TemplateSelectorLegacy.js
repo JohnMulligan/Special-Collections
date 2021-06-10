@@ -31,7 +31,7 @@ const TemplateSelectorLegacy = (props) => {
   useEffect(() => {
     // get templates options on load
     const fetchOptions = async () => {
-      const res = await fetchTemplates(cookies.userInfo.host);
+      const res = await fetchTemplates();
       setTemplates(res);
 
       setOptions(
