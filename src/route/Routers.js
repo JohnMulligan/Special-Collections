@@ -24,7 +24,7 @@ function PrivateRoute({ children, ...rest }) {
     <Route
       {...rest}
       render={(props) =>
-        cookies.userInfo !== undefined ? (
+        cookies.userInfo && cookies.userInfo.token ? (
           children
         ) : (
           <Redirect

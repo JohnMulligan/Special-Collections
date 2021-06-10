@@ -1,7 +1,5 @@
 import axios from "axios";
 
-// import { useCookies } from "react-cookie";
-
 const PER_PAGE = 9999;
 
 export const apiOmekaUrl = '/api/';
@@ -58,7 +56,7 @@ export const fetch = async (
   const perPage = limit + (start % limit);
   const page = Math.ceil(start / perPage) + 1;
 
-  const res = await axios.get(`http://${baseAddress}/api/${endpoint}`, {
+  const res = await axios.get(`${apiOmekaUrl}${endpoint}`, {
     params: {
       ...params,
       item_set_id: itemSetId !== -1 ? itemSetId : null,
@@ -108,6 +106,6 @@ export const fetchOne = async (endpoint, id) => {
   return res.data;
 };
 
-export const patchResourceItem = (userInfo, endpoint, id, payload) => {
+export const patchResourceItem = (endpoint, id, payload) => {
   return axios.patch(`${apiOmekaUrl}${endpoint}/${id}`, payload);
 };

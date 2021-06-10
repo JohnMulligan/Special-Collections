@@ -2,6 +2,8 @@ import axios from "axios";
 
 const PER_PAGE = 1000;
 
+export const apiOmekaUrl = '/api/';
+
 const headers = {
   "Content-Type": "application/json",
 };
@@ -13,7 +15,7 @@ export const Logo = require("../resources/SClogo.png");
 export const PATH_PREFIX = "";
 
 export const getItem = (baseAddress, itemId) => {
-  return axios.get("http://" + baseAddress + "/api/items/" + itemId);
+  return axios.get(`${apiOmekaUrl}items/${itemId}`);
 };
 
 export const getItems = (baseAddress, items) => {
@@ -22,13 +24,13 @@ export const getItems = (baseAddress, items) => {
 };
 
 export const searchItems = (baseAddress, params) => {
-  return axios.get(`http://${baseAddress}/api/items?per_page=${PER_PAGE}`, {
+  return axios.get(`${apiOmekaUrl}items?per_page=${PER_PAGE}`, {
     params: params,
   });
 };
 
 export const createItem = (userInfo, payload) => {
-  return axios.post("http://" + userInfo.host + "/api/items", payload, {
+  return axios.post(`${apiOmekaUrl}items`, payload, {
     params: {
       key_identity: userInfo.key_identity,
       key_credential: userInfo.key_credential,
@@ -38,21 +40,19 @@ export const createItem = (userInfo, payload) => {
 };
 
 export const getItemSetList = (baseAddress) => {
-  return axios.get(`http://${baseAddress}/api/item_sets?per_page=${PER_PAGE}`);
+  return axios.get(`${apiOmekaUrl}item_sets?per_page=${PER_PAGE}`);
 };
 
 export const getItemSet = (baseAddress, itemSetId) => {
-  return axios.get("http://" + baseAddress + "/api/item_sets/" + itemSetId);
+  return axios.get(`${apiOmekaUrl}item_sets/${itemSetId}`);
 };
 
 export const getItemsInItemSet = (baseAddress, itemSetId) => {
-  return axios.get(
-    "http://" + baseAddress + "/api/items?item_set_id=" + itemSetId
-  );
+  return axios.get(`${apiOmekaUrl}items?item_set_id=${itemSetId}`);
 };
 
 export const createItemSet = (userInfo, payload) => {
-  return axios.post("http://" + userInfo.host + "/api/item_sets", payload, {
+  return axios.post(`${apiOmekaUrl}item_sets`, payload, {
     params: {
       key_identity: userInfo.key_identity,
       key_credential: userInfo.key_credential,
@@ -67,7 +67,7 @@ export const addItemsToItemSet = (userInfo, itemSetId, items) => {
   }
   let requests = items.map((each) => {
     return axios
-      .get("http://" + userInfo.host + "/api/items/" + each)
+      .get(`${apiOmekaUrl}items/${each}`)
       .then((response) => {
         let originItemSets = response.data["o:item_set"]
           ? response.data["o:item_set"]
@@ -75,7 +75,7 @@ export const addItemsToItemSet = (userInfo, itemSetId, items) => {
         originItemSets.push({ "o:id": itemSetId });
 
         return axios.patch(
-          "http://" + userInfo.host + "/api/items/" + each,
+          `${apiOmekaUrl}items/${each}`,
           { "o:item_set": originItemSets },
           {
             params: {
@@ -91,7 +91,7 @@ export const addItemsToItemSet = (userInfo, itemSetId, items) => {
 };
 
 export const getMedium = (baseAddress, medium) => {
-  return axios.get("http://" + baseAddress + "/api/media/" + medium);
+  return axios.get(`${apiOmekaUrl}media/${medium}`);
 };
 
 export const getMedia = (baseAddress, media) => {
@@ -100,36 +100,32 @@ export const getMedia = (baseAddress, media) => {
 };
 
 export const getMediaInItem = (baseAddress, itemId) => {
-  return axios.get(
-    `http://${baseAddress}/api/media?per_page=${PER_PAGE}&item_id=` + itemId
-  );
+  return axios.get(`${apiOmekaUrl}media?per_page=${PER_PAGE}&item_id=${itemId}`);
 };
 
 export const searchMedia = (baseAddress, params) => {
-  return axios.get(`http://${baseAddress}/api/media?per_page=${PER_PAGE}`, {
+  return axios.get(`${apiOmekaUrl}media?per_page=${PER_PAGE}`, {
     params: params,
   });
 };
 
 export const getPropertyList = (baseAddress) => {
-  return axios.get(`http://${baseAddress}/api/properties?per_page=${PER_PAGE}`);
+  return axios.get(`${apiOmekaUrl}properties?per_page=${PER_PAGE}`);
 };
 
 export const searchProperties = (baseAddress, params) => {
-  return axios.get(`http://${baseAddress}/api/properties?per_page=${PER_PAGE}`, {
+  return axios.get(`${apiOmekaUrl}properties?per_page=${PER_PAGE}`, {
     params: params,
   });
 };
 
 export const getResourceClassList = (baseAddress) => {
-  return axios.get(
-    `http://${baseAddress}/api/resource_classes?per_page=${PER_PAGE}`
-  );
+  return axios.get(`${apiOmekaUrl}resource_classes?per_page=${PER_PAGE}`);
 };
 
 export const searchResourceClasses = (baseAddress, params) => {
   return axios.get(
-    `http://${baseAddress}/api/resource_classes?per_page=${PER_PAGE}`,
+    `${apiOmekaUrl}resource_classes?per_page=${PER_PAGE}`,
     {
       params: params,
     }
@@ -137,15 +133,11 @@ export const searchResourceClasses = (baseAddress, params) => {
 };
 
 export const getResourceTemplateList = (baseAddress) => {
-  return axios.get(
-    `http://${baseAddress}/api/resource_templates?per_page=${PER_PAGE}`
-  );
+  return axios.get(`${apiOmekaUrl}resource_templates?per_page=${PER_PAGE}`);
 };
 
 export const getResourceTemplate = (baseAddress, templateId) => {
-  return axios.get(
-    "http://" + baseAddress + "/api/resource_templates/" + templateId
-  );
+  return axios.get(`${apiOmekaUrl}resource_templates/${templateId}`);
 };
 
 export const getPropertiesInResourceTemplate = (baseAddress, templateId) => {
@@ -174,7 +166,7 @@ export const getItemPath = (baseAddress, itemId, path = []) => {
 
 export const patchMedia = (userInfo, mediaId, payload) => {
   return axios.patch(
-    "http://" + userInfo.host + "/api/media/" + mediaId,
+    `${apiOmekaUrl}media/${mediaId}`,
     payload,
     {
       params: {
@@ -188,7 +180,7 @@ export const patchMedia = (userInfo, mediaId, payload) => {
 
 export const patchItem = (userInfo, itemId, payload) => {
   return axios.patch(
-    "http://" + userInfo.host + "/api/items/" + itemId,
+    `${apiOmekaUrl}items/${itemId}`,
     payload,
     {
       params: {

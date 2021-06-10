@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useCookies } from "react-cookie";
 import { connect } from "react-redux";
 
 import $ from 'jquery';
@@ -26,9 +25,6 @@ import '../assets/css/DataTable.css';
 import '../assets/css/CardView.css';
 
 const DataTableContainer = (props) => {
-    const [cookies] = useCookies(["userInfo"]);
-    const omekaUrl = useState('localhost');
-
     const [loading, setLoading] = useState(false);
     const [showTable, setShowTable] = useState(false);
     const [selectButtonMode, setSelectButtonMode] = useState(false);
@@ -205,11 +201,7 @@ const DataTableContainer = (props) => {
             });
 
             if (row['thumbnail_display_urls']['square']) {
-                if (row['thumbnail_display_urls']['square'].indexOf(`http://${omekaUrl}`) === 0) {
-                    item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
-                } else {
-                    item['thumbnail_url'] = `http://${omekaUrl}/${row['thumbnail_display_urls']['square']}`;
-                }
+                item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
             }
 
             return item;
@@ -527,7 +519,7 @@ const DataTableContainer = (props) => {
                 }
                 return null;
             });
-            patchResourceItem(cookies.userInfo, props.query.endpoint, event.data['id'], data);
+            patchResourceItem(props.query.endpoint, event.data['id'], data);
 
             let rows = [...collection];
             rows[event.index] = parseItem(data, props.activeProperties);

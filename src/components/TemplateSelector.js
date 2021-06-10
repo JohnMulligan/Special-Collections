@@ -8,7 +8,7 @@ import { connect } from "react-redux";
 
 import { clearQuery, setQuery } from "../redux/actions";
 
-import { OmekaUrl, fetchTemplates } from "../utils/OmekaS";
+import { fetchTemplates } from "../utils/OmekaS";
 
 import Axios from "axios";
 
