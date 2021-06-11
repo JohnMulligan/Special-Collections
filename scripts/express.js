@@ -11,8 +11,6 @@ const fs = require('fs');
 const usersDataFile = '.users.csv';
 let users = {};
 
-app.use(express.json());
-
 if (process.env.NODE_ENV !== 'production') {
   // Allow an .env file in development to store local Omeka access keys.
   require('dotenv').config();
@@ -121,7 +119,18 @@ const createOrUpdateUser = async (userName, role) => {
 
 const isUserNameValid = (s) => s.match(/^([0-9]|[a-z]|_|-|@|\.)+$/);
 
-app.post('/adduser', verifyJWT, async (req, res) => {
+// Handlers for request entrypoints.
+
+// Proxy for Omeka S:
+// TODO: enable token validation in all Omeka calls once
+// the frontend is ready to pass them.
+app.use('/api', /*verifyJWT,*/ createProxyMiddleware(apiProxyConfig));
+app.patch('/api', /*verifyJWT,*/ createProxyMiddleware(apiProxyConfig));
+const omekaStaticProxy = createProxyMiddleware(baseProxyConfig);
+app.use('/files', /*verifyJWT,*/ omekaStaticProxy);
+app.use('/application', /*verifyJWT,*/ omekaStaticProxy);
+
+app.post('/adduser', verifyJWT, express.json(), async (req, res) => {
   if (req.user?.role !== 'admin') return res.status(401).json(jwtFailure);
   // We got an admin user logged asking for a new user to be created!
   const { userName, role } = req.body;
@@ -142,7 +151,7 @@ app.post('/adduser', verifyJWT, async (req, res) => {
   }
 });
 
-app.post('/resetpassword', verifyJWT, async (req, res) => {
+app.post('/resetpassword', verifyJWT, express.json(), async (req, res) => {
   if (req.user?.role !== 'admin') return res.status(401).json(jwtFailure);
   // We got an admin user logged asking for a new user to be created!
   const { userName } = req.body;
@@ -155,7 +164,7 @@ app.post('/resetpassword', verifyJWT, async (req, res) => {
   }
 });
 
-app.post('/changerole', verifyJWT, async (req, res) => {
+app.post('/changerole', verifyJWT, express.json(), async (req, res) => {
   if (req.user?.role !== 'admin') return res.status(401).json(jwtFailure);
   // We got an admin user logged asking for a new user to be created!
   const { userName, role } = req.body;
@@ -178,7 +187,7 @@ app.post('/changerole', verifyJWT, async (req, res) => {
   }
 });
 
-app.post('/changepassword', verifyJWT, async (req, res) => {
+app.post('/changepassword', verifyJWT, express.json(), async (req, res) => {
   if (!req.user) return res.status(401).json(jwtFailure);
   const { password } = req.body;
   // TODO: password strength.
@@ -196,7 +205,7 @@ app.post('/changepassword', verifyJWT, async (req, res) => {
 });
 
 // Login.
-app.post('/auth', async (req, res) => {
+app.post('/auth', express.json(), async (req, res) => {
   const { userName, password } = req.body;
   let ok = false;
   if (userName && password) {
@@ -212,14 +221,6 @@ app.post('/auth', async (req, res) => {
   });
   return res.json({ auth: true, token });
 });
-
-// Proxy for Omeka S:
-// TODO: enable token validation in all Omeka calls once
-// the frontend is ready to pass them.
-app.use('/api', /*verifyJWT,*/ createProxyMiddleware(apiProxyConfig));
-const omekaStaticProxy = createProxyMiddleware(baseProxyConfig);
-app.use('/files', /*verifyJWT,*/ omekaStaticProxy);
-app.use('/application', /*verifyJWT,*/ omekaStaticProxy);
 
 // Map React urls to the React App.
 app.use('/react', [
