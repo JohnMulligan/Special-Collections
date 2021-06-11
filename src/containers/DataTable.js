@@ -19,7 +19,7 @@ import { Accordion, AccordionTab } from 'primereact/accordion';
 import { Toolbar } from 'primereact/toolbar';
 
 import { fetchItems, fetchOne, patchResourceItem } from "../utils/OmekaS";
-import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
+import { authGet, PATH_PREFIX, PlaceHolder } from "../utils/Utils";
 
 import '../assets/css/DataTable.css';
 import '../assets/css/CardView.css';
@@ -162,7 +162,7 @@ const DataTableContainer = (props) => {
             )[0];
 
             const requests = resourceTemplate["o:resource_template_property"].map((property) =>
-                Axios.get(property["o:property"]["@id"])
+                authGet(property["o:property"]["@id"])
             );
 
             Axios.all(requests).then(res => {

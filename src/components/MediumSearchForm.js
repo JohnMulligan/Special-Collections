@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Button, Space, Input, Spin } from "antd";
-import { useCookies } from "react-cookie";
 import { searchMedia, getItems, searchProperties } from "../utils/Utils";
 import axios from "axios";
 
@@ -9,17 +8,16 @@ const MediumSearchForm = (props) => {
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
   const [transcriptPropertyId, setTranscriptPropertyId] = useState();
-  const [cookies] = useCookies(["userInfo"]);
 
   useEffect(() => {
     setLoading(true);
     const params = {
       term: "bibo:transcriptOf",
     };
-    searchProperties(cookies.userInfo.host, params).then((response) => {
+    searchProperties(params).then((response) => {
       setTranscriptPropertyId(response.data[0]["o:id"]);
     });
-  }, [cookies.userInfo]);
+  }, []);
 
   useEffect(() => {
     setLoading(false);
@@ -34,11 +32,11 @@ const MediumSearchForm = (props) => {
       "property[0][text]": keyword,
       sort_by: "o:item"["o:id"],
     };
-    searchMedia(cookies.userInfo.host, params).then((response) => {
+    searchMedia(params).then((response) => {
       let containerItems = new Set(
         response.data.map((record) => record["o:item"]["o:id"])
       );
-      getItems(cookies.userInfo.host, [...containerItems]).then(
+      getItems([...containerItems]).then(
         axios.spread((...responses) => {
           let data = responses.map((each) => {
             let media = response.data

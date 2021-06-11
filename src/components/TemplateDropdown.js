@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Menu, Spin, Dropdown } from "antd";
 import { getResourceTemplateList } from "../utils/Utils";
-import { useCookies } from "react-cookie";
 import { DownOutlined } from "@ant-design/icons";
 
 // onMenuSelect
 const TemplateDropdown = (props) => {
   const [loading, setLoading] = useState(true);
   const [templateList, setTemplateList] = useState([]);
-  const [cookies] = useCookies(["userInfo"]);
   const [menuSelected, setMenuSelected] = useState({
     "o:label": "Select A Template",
   });
@@ -38,7 +36,7 @@ const TemplateDropdown = (props) => {
   useEffect(() => {
     setLoading(true);
 
-    getResourceTemplateList(cookies.userInfo.host).then((response) => {
+    getResourceTemplateList().then((response) => {
       setTemplateList([
         { "o:label": "ALL Properties", "o:id": 0 },
         ...response.data,
@@ -51,7 +49,7 @@ const TemplateDropdown = (props) => {
         props.onMenuSelect(defaultTemplate[0][["o:id"]]);
       }
     });
-  }, [cookies.userInfo]);
+  }, []);
 
   useEffect(() => {
     setLoading(false);

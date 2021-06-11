@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Layout } from "antd";
 
-import { useCookies } from "react-cookie";
 import axios from "axios";
 import {
   getItems,
@@ -14,7 +13,6 @@ const { Content } = Layout;
 
 const HomeLegacy = () => {
   const [selectedItems, setSelectedItems] = useState([]);
-  const [cookies] = useCookies(["userInfo"]);
   const [dataLoading, setDataLoading] = useState(false);
   const [selectedProperties, setSelectedProperties] = useState([]);
   const [templateId, setTemplateId] = useState(0);
@@ -24,7 +22,7 @@ const HomeLegacy = () => {
   const onArchiveCheck = (keys) => {
     if (keys.length > 0) {
       setDataLoading(true);
-      getItems(cookies.userInfo.host, keys)
+      getItems(keys)
         .then(
           axios.spread((...responses) => {
             let data = responses
@@ -43,7 +41,7 @@ const HomeLegacy = () => {
   useEffect(() => {
     setPropertyLoading(true);
     if (templateId === 0) {
-      getPropertyList(cookies.userInfo.host)
+      getPropertyList()
         .then((response) => {
           let classes = response.data.map((each) => ({
             id: each["o:id"],
@@ -58,7 +56,7 @@ const HomeLegacy = () => {
         })
         .then(() => setPropertyLoading(false));
     } else {
-      getPropertiesInResourceTemplate(cookies.userInfo.host, templateId)
+      getPropertiesInResourceTemplate(templateId)
         .then(
           axios.spread((...responses) => {
             let properties = responses.map((each) => ({
@@ -77,7 +75,7 @@ const HomeLegacy = () => {
           setPropertyLoading(false);
         });
     }
-  }, [templateId, cookies.userInfo]);
+  }, [templateId]);
 
   return (
     <Layout

@@ -37,16 +37,27 @@ const jwtNoToken = { auth: false, message: 'No token provided.' };
 const jwtFailure = { auth: false, message: 'Failed to authenticate token.' };
 
 const verifyJWT = (req, res, next) => {
-  const token = req.headers['x-access-token'];
+  const tokenHeader = 'x-access-token';
+  const token = req.headers[tokenHeader];
   if (!token) return res.status(401).json(jwtNoToken);
   jwt.verify(token, process.env.JWT_SECRET, function (err, decoded) {
     if (err) return res.status(500).json(jwtFailure);
     // Include the user in the request.
     req.user = users[decoded.userName];
     if (!req.user) return res.status(500).json(jwtFailure);
+    // Delete headers that are not needed further in the chain.
+    delete req.headers[tokenHeader];
+    delete req.headers['cookie']
     next();
   });
 };
+
+const readOnlyOmeka = (req, res, next) => {
+  if (req.method === 'GET') {
+    req.user = { role: 'guest' };
+    return next();
+  }
+}; 
 
 const baseProxyConfig = {
   target: `${omekaProtocol}://${omekaUrl}`,
@@ -57,10 +68,6 @@ const baseProxyConfig = {
       const role = req.user.role.toUpperCase();
       newPath = updateQueryStringParameter(newPath, 'key_identity', process.env[`OMEKA_${role}_ID`]);
       newPath = updateQueryStringParameter(newPath, 'key_credential', process.env[`OMEKA_${role}_CREDENTIAL`]);
-    } else {
-      // TODO: we can get rid of this when the React app uses authentication.
-      newPath = updateQueryStringParameter(newPath, 'key_identity', process.env.OMEKA_ADMIN_ID);
-      newPath = updateQueryStringParameter(newPath, 'key_credential', process.env.OMEKA_ADMIN_CREDENTIAL);
     }
     return newPath;
   }
@@ -122,13 +129,11 @@ const isUserNameValid = (s) => s.match(/^([0-9]|[a-z]|_|-|@|\.)+$/);
 // Handlers for request entrypoints.
 
 // Proxy for Omeka S:
-// TODO: enable token validation in all Omeka calls once
-// the frontend is ready to pass them.
-app.use('/api', /*verifyJWT,*/ createProxyMiddleware(apiProxyConfig));
-app.patch('/api', /*verifyJWT,*/ createProxyMiddleware(apiProxyConfig));
+app.use('/api', verifyJWT, createProxyMiddleware(apiProxyConfig));
+app.patch('/api', verifyJWT, createProxyMiddleware(apiProxyConfig));
 const omekaStaticProxy = createProxyMiddleware(baseProxyConfig);
-app.use('/files', /*verifyJWT,*/ omekaStaticProxy);
-app.use('/application', /*verifyJWT,*/ omekaStaticProxy);
+app.use('/files', readOnlyOmeka, omekaStaticProxy);
+app.use('/application', readOnlyOmeka, omekaStaticProxy);
 
 app.post('/adduser', verifyJWT, express.json(), async (req, res) => {
   if (req.user?.role !== 'admin') return res.status(401).json(jwtFailure);

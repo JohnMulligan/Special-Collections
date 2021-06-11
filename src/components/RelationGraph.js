@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useCookies } from "react-cookie";
 import { useParams } from "react-router-dom";
 import Graph from "react-graph-vis";
 import { Spin, Layout, Dropdown, Menu, Space } from "antd";
@@ -57,7 +56,6 @@ const RelationGraph = () => {
   const { itemId } = useParams();
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
-  const [cookies] = useCookies(["userInfo"]);
   const centerId = itemId;
   const [layer, setLayer] = useState(3);
   const [loading, setLoading] = useState(false);
@@ -69,7 +67,7 @@ const RelationGraph = () => {
         return graph;
       }
       setLoading(true);
-      const response = await getItem(cookies.userInfo.host, itemId);
+      const response = await getItem(itemId);
       let newNode = graph.nodes.find((item) => item.id === itemId);
       newNode.label = response.data["o:title"]
         ? response.data["o:title"].slice(0, 20)
@@ -143,7 +141,7 @@ const RelationGraph = () => {
     };
 
     entry();
-  }, [centerId, layer, cookies.userInfo, style]);
+  }, [centerId, layer, style]);
 
   const sytleMenu = (
     <Menu onClick={({ key }) => setStyle(key)}>

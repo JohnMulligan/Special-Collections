@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useCookies } from "react-cookie";
 
 import { Dropdown } from 'primereact/dropdown';
 import '../assets/css/Dropdown.css';
@@ -11,6 +10,7 @@ import { clearQuery, setQuery } from "../redux/actions";
 import { fetchTemplates } from "../utils/OmekaS";
 
 import Axios from "axios";
+import { authGet } from "../utils/Utils";
 
 const mapStateToProps = (state, props) => {
   return {
@@ -20,7 +20,6 @@ const mapStateToProps = (state, props) => {
 };
 
 const TemplateSelector = (props) => {
-    const [cookies] = useCookies(["userInfo"]);
     const [options, setOptions] = useState([]);
     const [selectedTemplate, setSelectedTemplate] = useState(null);
   
@@ -39,7 +38,7 @@ const TemplateSelector = (props) => {
 
         if (template) {
             const propertiesDetailsRequests = template["o:resource_template_property"].map((property) => {
-                return Axios.get(property["o:property"]["@id"]);
+                return authGet(property["o:property"]["@id"]);
             });
 
             const propertiesDetailsResults = await Axios.all(propertiesDetailsRequests);
@@ -80,7 +79,7 @@ const TemplateSelector = (props) => {
 
       initComponent();
 
-  }, [cookies]);
+  }, []);
 
   return (
       <div className="dropdown-component">

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { authGet, getHeadersOrRedirect } from './Utils'
 
 const PER_PAGE = 9999;
 
@@ -18,7 +19,7 @@ export const fetchItems = async (
   const perPage = limit + (start % limit);
   const page = Math.ceil(start / perPage) + 1;
 
-  const res = await axios.get(`${apiOmekaUrl}${endpoint}`, {
+  const res = await authGet(`${apiOmekaUrl}${endpoint}`, {
     params: {
       ...params,
       item_set_id: itemSetId !== -1 ? itemSetId : null,
@@ -44,7 +45,6 @@ export const fetchItems = async (
 
 /* TO DO: remove this old function after remove home legacy */
 export const fetch = async (
-  baseAddress,
   endpoint,
   itemSetId,
   params,
@@ -56,7 +56,7 @@ export const fetch = async (
   const perPage = limit + (start % limit);
   const page = Math.ceil(start / perPage) + 1;
 
-  const res = await axios.get(`${apiOmekaUrl}${endpoint}`, {
+  const res = await authGet(`${apiOmekaUrl}${endpoint}`, {
     params: {
       ...params,
       item_set_id: itemSetId !== -1 ? itemSetId : null,
@@ -76,7 +76,7 @@ export const fetch = async (
 };
 
 export const fetchSize = async (endpoint, params) => {
-  const res = await axios.get(`${apiOmekaUrl}${endpoint}`, {
+  const res = await authGet(`${apiOmekaUrl}${endpoint}`, {
     params: {
       ...params,
       per_page: Number.MAX_SAFE_INTEGER,
@@ -87,25 +87,27 @@ export const fetchSize = async (endpoint, params) => {
 };
 
 export const fetchTemplates = async () => {
-  const res = await axios.get(`${apiOmekaUrl}resource_templates?per_page=${PER_PAGE}`);
+  const res = await authGet(`${apiOmekaUrl}resource_templates?per_page=${PER_PAGE}`);
   return res.data;
 };
 
 export const fetchItemSets = async () => {
-  const res = await axios.get(`${apiOmekaUrl}item_sets?per_page=${PER_PAGE}`);
+  const res = await authGet(`${apiOmekaUrl}item_sets?per_page=${PER_PAGE}`);
   return res.data;
 };
 
 export const fetchResourceTemplates = async () => {
-  const res = await axios.get(`${apiOmekaUrl}resource_templates?per_page=${PER_PAGE}`);
+  const res = await authGet(`${apiOmekaUrl}resource_templates?per_page=${PER_PAGE}`);
   return res.data;
 };
 
 export const fetchOne = async (endpoint, id) => {
-  const res = await axios.get(`${apiOmekaUrl}${endpoint}/${id}`);
+  const res = await authGet(`${apiOmekaUrl}${endpoint}/${id}`);
   return res.data;
 };
 
-export const patchResourceItem = (endpoint, id, payload) => {
-  return axios.patch(`${apiOmekaUrl}${endpoint}/${id}`, payload);
+export const patchResourceItem = async (endpoint, id, payload) => {
+  const h = getHeadersOrRedirect();
+  if (!h) return null;
+  return axios.patch(`${apiOmekaUrl}${endpoint}/${id}`, payload, { headers: h });
 };

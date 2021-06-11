@@ -1,7 +1,7 @@
 import React from "react";
 import {
   Switch,
-  BrowserRouter as Router,
+  Router,
   Route,
   Redirect,
 } from "react-router-dom";
@@ -14,17 +14,19 @@ import HomeLegacy from "../containers/HomeLegacy";
 import ProjectsPage from "../containers/ProjectsPage";
 import ItemView from "../containers/ItemView";
 import RelationGraph from "../components/RelationGraph";
-import { useCookies } from "react-cookie";
 import { PATH_PREFIX } from "../utils/Utils";
 import NetworkContainer from "../containers/NetworkContainer";
+import { createBrowserHistory } from "history";
+import { isLogged } from '../containers/Login'
+
+export const history = createBrowserHistory();
 
 function PrivateRoute({ children, ...rest }) {
-  const [cookies] = useCookies(["userInfo"]);
   return (
     <Route
       {...rest}
       render={(props) =>
-        cookies.userInfo && cookies.userInfo.token ? (
+        isLogged() ? (
           children
         ) : (
           <Redirect
@@ -61,7 +63,7 @@ export const MainpageRouter = () => {
 
 export const MainRouter = () => {
   return (
-    <Router>
+    <Router history={history}>
       <Switch>
         <PrivateRoute path={PATH_PREFIX + "/media/:mediaList"}>
           <TranscriptView />

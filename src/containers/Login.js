@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useCookies } from "react-cookie";
 import { useHistory, useLocation, withRouter } from "react-router-dom";
 
 import axios from "axios";
@@ -13,8 +12,17 @@ import { Dialog } from 'primereact/dialog';
 
 import '../assets/css/Login.css';
 
+export const isLogged = () => {
+    try {
+        const { token } = JSON.parse(localStorage.getItem('userInfo'));
+        return !!token;
+    }
+    catch {
+        return false;
+    }
+}
+
 const Login = () => {
-  let [cookies, setCookie] = useCookies(["userInfo"]);
   let history = useHistory();
   let location = useLocation();
   let { from } = location.state || {
@@ -26,19 +34,13 @@ const Login = () => {
   const [dialogMessage, setDialogMessage] = useState(null);
   const [showMessage, setShowMessage] = useState(false);
 
-  useEffect(() => {
-      if (cookies.userInfo && cookies.userInfo.token) {
-          history.replace(from);
-      }
-  });
-
   const login = () => {
       axios.post(`/auth`, {
           userName: username,
           password: password,
       }).then((response) => {
           if (response.data.auth) {
-              setCookie('userInfo', { token: response.data.token }, { path: "/" });
+              localStorage.setItem('userInfo', JSON.stringify({ token: response.data.token }));
               history.replace(from);
           } else {
               setDialogMessage('Invalid username and password!');

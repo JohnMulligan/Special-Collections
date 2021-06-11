@@ -6,7 +6,6 @@ import {
   createItem,
   patchItem,
 } from "../utils/Utils";
-import { useCookies } from "react-cookie";
 const { TextArea } = Input;
 
 // targets
@@ -14,7 +13,6 @@ const NoteInput = (props) => {
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [title, setTitle] = useState("");
-  const [cookies] = useCookies(["userInfo"]);
   const [noteClassId, setNoteClassId] = useState();
   const [notePropertyTerm, setNotePropertyTerm] = useState();
   const [notePropertyId, setNotePropertyId] = useState();
@@ -34,17 +32,17 @@ const NoteInput = (props) => {
       local_name: "note",
     };
 
-    searchResourceClasses(cookies.userInfo.host, params1).then((response) => {
+    searchResourceClasses(params1).then((response) => {
       console.log(response);
       console.log(params1);
 
       setNoteClassId(response.data[0]["o:id"]);
     });
-    searchProperties(cookies.userInfo.host, params2).then((response) => {
+    searchProperties(params2).then((response) => {
       setNotePropertyId(response.data[0]["o:id"]);
       setNotePropertyTerm(response.data[0]["o:term"]);
     });
-  }, [cookies.userInfo]);
+  }, []);
 
   useEffect(() => {
     if (
@@ -100,7 +98,7 @@ const NoteInput = (props) => {
       "dcterms:references": refList,
     };
 
-    createItem(cookies.userInfo, payload)
+    createItem(payload)
       .then((response) => {
         const myInfo = {
           type: "resource",
@@ -117,7 +115,7 @@ const NoteInput = (props) => {
           newLinksToNotes.push(myInfo);
           each["dcterms:isReferencedBy"] = newLinksToNotes;
 
-          patchItem(cookies.userInfo, each["o:id"], each).catch((error) => {
+          patchItem(each["o:id"], each).catch((error) => {
             Modal.error({
               title: "Fail to update item!",
               content:

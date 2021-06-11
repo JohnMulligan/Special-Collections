@@ -1,23 +1,18 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useCookies } from "react-cookie";
-
 import { Button } from 'primereact/button';
-
 import { Logo, PATH_PREFIX } from "../utils/Utils";
+import { history } from "../route/Routers"
 
 import "antd/dist/antd.css";
 
 const LogoHeader = () => {
-  let [cookies, removeCookie] = useCookies(["userInfo"]);
-
-
   const openPath = (path) => {
-      window.location.href = PATH_PREFIX + '/' + path;
+    history.push(PATH_PREFIX + '/' + path);
   }
 
   const logout = () => {
-      removeCookie('userInfo', {});
+      localStorage.setItem('userInfo', JSON.stringify({}));
       openPath('login');
   }
 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, Col, Row, Spin, Slider } from "antd";
 import { PlaceHolder, getMedium, PATH_PREFIX } from "../utils/Utils";
-import { useCookies } from "react-cookie";
 import { Link } from "react-router-dom";
 const { Meta } = Card;
 const colCounts = {};
@@ -18,7 +17,7 @@ const DisplayCard = (props) => {
     if (!props.item["o:media"][0]) {
       setImg(<img alt="PlaceHolder" src={PlaceHolder} />);
     } else {
-      getMedium(props.baseAddress, props.item["o:media"][0]["o:id"]).then(
+      getMedium(props.item["o:media"][0]["o:id"]).then(
         (response) => {
           setImg(
             <img
@@ -29,7 +28,7 @@ const DisplayCard = (props) => {
         }
       );
     }
-  }, [props.baseAddress, props.item]);
+  }, [props.item]);
 
   useEffect(() => {
     setLoading(false);
@@ -60,7 +59,6 @@ const DisplayCard = (props) => {
 const Filmstrip = (props) => {
   const [loading, setLoading] = useState(true);
   const [display, setDisplay] = useState([]);
-  const [cookies] = useCookies(["userInfo"]);
   const [colCountKey, setColCountKey] = useState(2);
 
   useEffect(() => {
@@ -70,7 +68,7 @@ const Filmstrip = (props) => {
       let displayData = props.dataSource.map((item) => {
         return (
           <Col className="gutter-row" span={24 / colCount} key={item["o:id"]}>
-            <DisplayCard item={item} baseAddress={cookies.userInfo.host} />
+            <DisplayCard item={item} />
           </Col>
         );
       });
@@ -87,7 +85,7 @@ const Filmstrip = (props) => {
     } else {
       setDisplay([]);
     }
-  }, [props.dataSource, cookies.userInfo, colCountKey]);
+  }, [props.dataSource, colCountKey]);
 
   useEffect(() => {
     setLoading(false);

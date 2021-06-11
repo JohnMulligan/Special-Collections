@@ -5,7 +5,6 @@ import { setQuery } from "../redux/actions";
 
 import { connect } from "react-redux";
 import { fetchSize } from "../utils/OmekaS";
-import { useCookies } from "react-cookie";
 
 const mapStateToProps = (state, props) => {
   return {
@@ -15,8 +14,6 @@ const mapStateToProps = (state, props) => {
 };
 
 const QueryBuilder = (props) => {
-  const [cookies] = useCookies(["userInfo"]);
-
   const [rows, setRows] = useState([]);
 
   const query = {};
@@ -70,7 +67,7 @@ const QueryBuilder = (props) => {
       return null;
     });
 
-    fetchSize(cookies.userInfo.host, "items", search).then((count) =>
+    fetchSize("items", search).then((count) =>
       props.setQuery("items", search, count)
     );
   };

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useCookies } from "react-cookie";
 import { Select } from "antd";
 
 import { connect } from "react-redux";
@@ -9,6 +8,7 @@ import { clearQuery, setQuery } from "../redux/actions";
 import { fetchTemplates } from "../utils/OmekaS";
 
 import Axios from "axios";
+import { authGet } from "../utils/Utils";
 
 const { Option } = Select;
 
@@ -26,8 +26,6 @@ const TemplateSelectorLegacy = (props) => {
   const [options, setOptions] = useState([]);
   const [templates, setTemplates] = useState([]);
 
-  const [cookies] = useCookies(["userInfo"]);
-
   useEffect(() => {
     // get templates options on load
     const fetchOptions = async () => {
@@ -44,7 +42,7 @@ const TemplateSelectorLegacy = (props) => {
     };
 
     fetchOptions();
-  }, [cookies]);
+  }, []);
 
   const handleChange = async (value) => {
     const template = templates.filter(
@@ -52,7 +50,7 @@ const TemplateSelectorLegacy = (props) => {
     )[0];
 
     const requests = template["o:resource_template_property"].map((property) =>
-      Axios.get(property["o:property"]["@id"])
+      authGet(property["o:property"]["@id"])
     );
 
     const res = await Axios.all(requests);

@@ -3,15 +3,12 @@ import { Table, Button, Space } from "antd";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { fetch } from "../utils/OmekaS";
-import { useCookies } from "react-cookie";
 import NewProjectModal from "./NewProjectModal";
 import AddToProjectModal from "./AddToProjectModal";
 import AddNoteButton from "./AddNoteButton";
 import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
 
 const TableView = (props) => {
-  const [cookies] = useCookies(["userInfo"]);
-
   const [tableState, setTableState] = useState({
     data: [],
     pagination: {
@@ -33,7 +30,6 @@ const TableView = (props) => {
       }));
 
       const data = await fetch(
-        cookies.userInfo.host,
         props.query.endpoint,
         props.query.item_set_id,
         props.query.params,
@@ -54,7 +50,7 @@ const TableView = (props) => {
     };
 
     fetchInitial();
-  }, [props.query, cookies.userInfo.host]);
+  }, [props.query]);
 
   const [columns, setColumns] = useState([]);
 
@@ -84,7 +80,6 @@ const TableView = (props) => {
     });
 
     fetch(
-      cookies.userInfo.host,
       props.query.endpoint,
       props.query.item_set_id,
       props.query.params,

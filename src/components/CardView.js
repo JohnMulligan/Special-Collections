@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Card, Col, Row, Pagination } from "antd";
 import { connect } from "react-redux";
 import { fetch, fetchOne } from "../utils/OmekaS";
-import { useCookies } from "react-cookie";
 
 const chunk = (array, size) => {
   if (!array) return [];
@@ -14,8 +13,6 @@ const chunk = (array, size) => {
 };
 
 const CardView = (props) => {
-  const [cookies] = useCookies(["userInfo"]);
-
   const [items, setItems] = useState([]);
   const [cards, setCards] = useState([]);
   const [cardGrid, setCardGrid] = useState(<></>);
@@ -25,7 +22,6 @@ const CardView = (props) => {
   useEffect(() => {
     const fetchInitial = async () => {
       const data = await fetch(
-        cookies.userInfo.host,
         props.query.endpoint,
         props.query.item_set_id,
         props.query.params,
@@ -37,7 +33,7 @@ const CardView = (props) => {
     };
 
     fetchInitial();
-  }, [props.query, cookies.userInfo.host]);
+  }, [props.query]);
 
   useEffect(() => {
     const genCards = async (items) => {
@@ -93,7 +89,7 @@ const CardView = (props) => {
     };
 
     genCards(items);
-  }, [props.activeProperties, items, cookies.userInfo.host]);
+  }, [props.activeProperties, items]);
 
   useEffect(() => {
     const cardCols = cards.map((card, i) => (
@@ -112,7 +108,6 @@ const CardView = (props) => {
 
   const handleChange = (page, pageSize) => {
     fetch(
-      cookies.userInfo.host,
       props.query.endpoint,
       props.query.item_set_id,
       props.query.params,

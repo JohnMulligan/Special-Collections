@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import * as d3 from "d3";
 import { Slider, Button, Modal, Descriptions } from "antd";
 import AddNoteButton from "./AddNoteButton";
-import { useCookies } from "react-cookie";
 import { fetch, fetchOne, fetchResourceTemplates } from "../utils/OmekaS";
 import { svg } from "d3";
 import * as d3Legend from "d3-svg-legend";
@@ -23,8 +22,6 @@ import * as d3Legend from "d3-svg-legend";
  */
 
 const NetworkView = () => {
-  const [cookies] = useCookies(["userInfo"]);
-
   const height = 1000;
   const width = 1500;
   const radiusCoefficient = 8;
@@ -326,7 +323,6 @@ const NetworkView = () => {
 
     const getData = async () => {
       const res = await fetch(
-        cookies.userInfo.host,
         "items",
         -1,
         {},
@@ -338,7 +334,7 @@ const NetworkView = () => {
 
     getResourceTemplateProperties();
     getData();
-  }, [cookies]);
+  }, []);
 
   useEffect(() => {
     if (nodeData.length === 0) return;

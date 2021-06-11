@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Input, Tree, Button, Modal, Space } from "antd";
 import { getItem } from "../utils/Utils";
-import { useCookies } from "react-cookie";
 import "antd/dist/antd.css";
 
 const { DirectoryTree } = Tree;
@@ -39,11 +38,10 @@ const makeTreeNodeLeaf = (list, key) => {
 const Archive = (props) => {
   const [hasRoot, setHasRoot] = useState(false);
   const [treeData, setTreeData] = useState([]);
-  const [cookies] = useCookies(["userInfo"]);
   const [rootId, setRootId] = useState(undefined);
 
   const onLoadData = async (treeNode) => {
-    let response = await getItem(cookies.userInfo.host, treeNode.key);
+    let response = await getItem(treeNode.key);
     try {
       let list = response.data["dcterms:hasPart"];
       if (!list || list.length === 0) {
@@ -80,7 +78,7 @@ const Archive = (props) => {
   };
 
   const onConfirm = () => {
-    getItem(cookies.userInfo.host, rootId).then((response) => {
+    getItem(rootId).then((response) => {
       setTreeData([
         {
           title: response.data["o:title"]

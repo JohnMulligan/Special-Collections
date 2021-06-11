@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Spin, Menu } from "antd";
 import { getItemSetList, getItemsInItemSet } from "../utils/Utils";
-import { useCookies } from "react-cookie";
 import { withRouter } from "react-router-dom";
 
 const { SubMenu } = Menu;
@@ -10,14 +9,12 @@ const { SubMenu } = Menu;
 const ProjectList = (props) => {
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState([]);
-  const [cookies] = useCookies(["userInfo"]);
 
   useEffect(() => {
     const loadProjectList = () => {
-      getItemSetList(cookies.userInfo.host).then((response) => {
+      getItemSetList().then((response) => {
         let requests = response.data.map(async (each) => {
           const items = await getItemsInItemSet(
-            cookies.userInfo.host,
             each["o:id"]
           );
           return {
@@ -37,7 +34,7 @@ const ProjectList = (props) => {
 
     setLoading(true);
     loadProjectList();
-  }, [cookies.userInfo]);
+  }, []);
 
   useEffect(() => {
     setLoading(false);

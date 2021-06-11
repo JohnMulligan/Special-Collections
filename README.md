@@ -2,7 +2,7 @@
 
 # Special Collections
 
-![](https://img.shields.io/npm/v/npm) ![](https://img.shields.io/npm/v/antd?color=green&label=antd) ![](https://img.shields.io/npm/v/react?label=react) ![](https://img.shields.io/npm/v/react-router?color=green&label=react-router) ![](https://img.shields.io/npm/v/react-cookie?label=react-cookie)
+![](https://img.shields.io/npm/v/npm) ![](https://img.shields.io/npm/v/antd?color=green&label=antd) ![](https://img.shields.io/npm/v/react?label=react) ![](https://img.shields.io/npm/v/react-router?color=green&label=react-router)
 
 > Special Collections is a tiny data display website.
 >

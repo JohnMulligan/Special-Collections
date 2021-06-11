@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Form, Spin, Input, Select, Space, Button } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
-import { useCookies } from "react-cookie";
 import {
   getItemSetList,
   getResourceClassList,
@@ -24,12 +23,11 @@ const ItemSearchForm = (props) => {
   const [classList, setClassList] = useState([]);
   const [projectList, setProjectList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [cookies] = useCookies(["userInfo"]);
 
   useEffect(() => {
     setLoading(true);
     let requests = [
-      getItemSetList(cookies.userInfo.host).then((response) => {
+      getItemSetList().then((response) => {
         let classes = response.data.map((each) => ({
           id: each["o:id"],
           title: each["o:title"] ? each["o:title"] : "[Untitled]",
@@ -37,7 +35,7 @@ const ItemSearchForm = (props) => {
         setProjectList(classes);
       }),
 
-      getResourceClassList(cookies.userInfo.host).then((response) => {
+      getResourceClassList().then((response) => {
         let classes = response.data.map((each) => ({
           id: each["o:id"],
           title: each["o:label"],
@@ -46,7 +44,7 @@ const ItemSearchForm = (props) => {
       }),
     ];
     Promise.all(requests).then(() => setLoading(false));
-  }, [cookies.userInfo]);
+  }, []);
 
   const formRef = React.createRef();
   const onReset = () => {
@@ -89,7 +87,7 @@ const ItemSearchForm = (props) => {
     );
     // END: cool zone
 
-    // searchItems(cookies.userInfo.host, params).then((response) => {
+    // searchItems(params).then((response) => {
     //   let data = response.data.map((each) => ({
     //     ...each,
     //     key: each["o:id"],

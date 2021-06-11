@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import { Modal } from "antd";
 import { addItemsToItemSet } from "../utils/Utils";
-import { useCookies } from "react-cookie";
 import ProjectDropdown from "./ProjectDropdown";
 
 // visible, selectedRowKeys
 const AddToProjectModal = (props) => {
-  const [cookies] = useCookies(["userInfo"]);
   const [receiveProject, setReceiveProject] = useState();
 
   const onProjectAdd = () => {
@@ -17,7 +15,7 @@ const AddToProjectModal = (props) => {
       });
       return;
     }
-    addItemsToItemSet(cookies.userInfo, receiveProject, props.selectedRowKeys)
+    addItemsToItemSet(receiveProject, props.selectedRowKeys)
       .then(() => {
         Modal.success({
           title: "Success!",

@@ -2,13 +2,11 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Space, Carousel, Spin } from "antd";
 import { PlaceHolder, getMedia } from "../utils/Utils";
-import { useCookies } from "react-cookie";
 
 //dataSource, displayNum
 const Preview = (props) => {
   const [loading, setLoading] = useState(true);
   const [media, setMedia] = useState([]);
-  const [cookies] = useCookies(["userInfo"]);
 
   useEffect(() => {
     setLoading(true);
@@ -16,7 +14,7 @@ const Preview = (props) => {
       let media = props.dataSource["o:media"]
         .slice(0, props.displayNum)
         .map((each) => each["o:id"]);
-      getMedia(cookies.userInfo.host, media).then(
+      getMedia(media).then(
         axios.spread((...responses) => {
           setMedia(responses.map((each) => each.data));
         })
@@ -24,7 +22,7 @@ const Preview = (props) => {
     } else {
       setMedia([]);
     }
-  }, [props.dataSource, cookies.userInfo, props.displayNum]);
+  }, [props.dataSource, props.displayNum]);
 
   useEffect(() => {
     setLoading(false);
