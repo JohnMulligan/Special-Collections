@@ -28,9 +28,7 @@ const LogoHeader = () => {
               </div>
               <div className="p-col-4">
                   <Link to={PATH_PREFIX + "/admin/home"}>
-                      <h1 className="header-title">
-                        SPECIAL COLLECTIONS
-                      </h1>
+                      <h1 className="header-title">SPECIAL COLLECTIONS</h1>
                   </Link>
               </div>
               <div className="p-col-6">
