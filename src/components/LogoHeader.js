@@ -9,7 +9,7 @@ import { Logo, PATH_PREFIX } from "../utils/Utils";
 import "antd/dist/antd.css";
 
 const LogoHeader = () => {
-  let [cookies, removeCookie] = useCookies(["userInfo"]);
+  let [cookies, removeCookie] = useCookies(["token"]);
 
 
   const openPath = (path) => {
@@ -17,7 +17,7 @@ const LogoHeader = () => {
   }
 
   const logout = () => {
-      removeCookie('userInfo', {});
+      removeCookie('token');
       openPath('login');
   }
 
@@ -33,9 +33,7 @@ const LogoHeader = () => {
               </div>
               <div className="p-col-4">
                   <Link to={PATH_PREFIX + "/admin/home"}>
-                      <h1 className="header-title">
-                        SPECIAL COLLECTIONS
-                      </h1>
+                      <h1 className="header-title">SPECIAL COLLECTIONS</h1>
                   </Link>
               </div>
               <div className="p-col-6">

@@ -19,12 +19,12 @@ import { PATH_PREFIX } from "../utils/Utils";
 import NetworkContainer from "../containers/NetworkContainer";
 
 function PrivateRoute({ children, ...rest }) {
-  const [cookies] = useCookies(["userInfo"]);
+  const [cookies] = useCookies(["token"]);
   return (
     <Route
       {...rest}
       render={(props) =>
-        cookies.userInfo && cookies.userInfo.token ? (
+        cookies.token !== undefined ? (
           children
         ) : (
           <Redirect

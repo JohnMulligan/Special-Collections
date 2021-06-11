@@ -14,7 +14,7 @@ import { Dialog } from 'primereact/dialog';
 import '../assets/css/Login.css';
 
 const Login = () => {
-  let [cookies, setCookie] = useCookies(["userInfo"]);
+  let [cookies, setCookie] = useCookies(["token"]);
   let history = useHistory();
   let location = useLocation();
   let { from } = location.state || {
@@ -27,7 +27,7 @@ const Login = () => {
   const [showMessage, setShowMessage] = useState(false);
 
   useEffect(() => {
-      if (cookies.userInfo && cookies.userInfo.token) {
+      if (cookies.token) {
           history.replace(from);
       }
   });
@@ -38,7 +38,7 @@ const Login = () => {
           password: password,
       }).then((response) => {
           if (response.data.auth) {
-              setCookie('userInfo', { token: response.data.token }, { path: "/" });
+              setCookie('token', response.data.token);
               history.replace(from);
           } else {
               setDialogMessage('Invalid username and password!');
