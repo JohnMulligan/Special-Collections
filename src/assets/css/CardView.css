@@ -1,37 +1,50 @@
-.item-title {
+.card-grid {
+    margin: .5em;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 10px;
+    min-height: 300px;
+    max-height: 500px;
+}
+
+.card-grid .card-grid-content {
+    text-align: center;
+}
+
+.card-grid .card-image {
+    margin-bottom: 10px;
+}
+
+.card-grid img {
+    width: 150px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    margin: 10px 0;
+}
+
+.card-grid .card-title {
     font-size: 25px;
     font-weight: bold;
     vertical-align: middle;
 }
 
-.item-field {
+.card-grid .card-fields-div {
+    height: 200px;
+    overflow: auto;
+}
+
+.card-grid .card-field-title {
+    font-weight: bold;
+}
+
+.card-grid .card-field {
     text-align: left;
     margin: 10px;
 }
 
-.item-field-title {
-    font-weight: bold;
-}
-
-.item-grid-item {
-    margin: .5em;
-    border: 1px solid #dee2e6;
-    padding: 10px;
-}
-
-.item-grid-item .item-grid-item-content {
-    text-align: center;
-}
-
-.item-grid-item .item-grid-item-bottom {
+.card-grid .card-grid-bottom {
     text-align: right;
     align-items: center;
     justify-content: space-between;
-    margin-top: 30px;
-}
-
-.item-grid-item img {
-    /*width: 75%;*/
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-    margin: 10px 0;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }

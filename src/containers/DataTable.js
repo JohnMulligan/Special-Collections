@@ -2,34 +2,26 @@ import React, { useState, useEffect, useRef } from 'react';
 import { connect } from "react-redux";
 
 import $ from 'jquery';
-import Axios from "axios";
 
 import { DataTable } from 'primereact/datatable';
-import { DataView } from 'primereact/dataview';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { InputNumber } from 'primereact/inputnumber';
-import { OverlayPanel } from 'primereact/overlaypanel';
-import { Dialog } from 'primereact/dialog';
-import { Toast } from 'primereact/toast';
 import { Tooltip } from 'primereact/tooltip';
 import { Button } from 'primereact/button';
-import { Accordion, AccordionTab } from 'primereact/accordion';
 import { Toolbar } from 'primereact/toolbar';
 
 import { fetchItems, fetchOne, patchResourceItem } from "../utils/OmekaS";
-import { authGet, PATH_PREFIX, PlaceHolder } from "../utils/Utils";
+import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
 
 import '../assets/css/DataTable.css';
-import '../assets/css/CardView.css';
 
 const DataTableContainer = (props) => {
     const [loading, setLoading] = useState(false);
-    const [showTable, setShowTable] = useState(false);
+    const [displayContent, setDisplayContent] = useState(false);
     const [selectButtonMode, setSelectButtonMode] = useState(false);
-    const textMaxLength = 150;
-
+    
     const dt = useRef(null);
     const [collection, setCollection] = useState([]);
     const [totalRecords, setTotalRecords] = useState(null);
@@ -46,31 +38,13 @@ const DataTableContainer = (props) => {
     const [originalCollection, setOriginalCollection] = useState([]);
     const [originalRow, setOriginalRow] = useState(null);
 
-    const [displayDialog, setDisplayDialog] = useState(false);
-    const [dialogHeader, setDialogHeader] = useState(null);
-    const [dialogContent, setDialogContent] = useState(null);
-
-    const toast = useRef(null);
-
-    const overlayPanel = useRef(null);
-    const [overlayPanelItems, setOverlayPanelItems] = useState([]);
-    const [dataViewCollection, setDataViewCollection] = useState([]);
-    const [dataViewLoading, setDataViewLoading] = useState(false);
-    const [dataViewFirst, setDataViewFirst] = useState(0);
-    const [dataViewTotalRecords, setDataViewTotalRecords] = useState(0);
-    const [dataViewProperties, setDataViewProperties] = useState([]);
-
     useEffect(() => {
         loadLazyData();
     }, [props.activeProperties, lazyParams]);
 
-    const propertyIsRelation = (property) => {
-        return property['o:local_name'] && property['o:local_name'] === 'hasPart';
-    }
-
     const loadLazyData = () => {
         if (props.activeProperties && props.activeProperties.length > 0) {
-            setShowTable(true);
+            setDisplayContent(true);
             setLoading(true);
             setColumns(buildColumns(props.activeProperties));
         } else {
@@ -90,10 +64,10 @@ const DataTableContainer = (props) => {
                 lazyParams.filter
             ).then(data => {
                 setTotalRecords(data.total);
-                setShowTable(true);
+                setDisplayContent(true);
                 setOriginalCollection(data.items);
                 setCollection(data.items.map((row, key) => {
-                    return parseItem(row, props.activeProperties);
+                    return props.parseItem(row, props.activeProperties);
                 }));
                 setLoading(false);
             });
@@ -120,7 +94,7 @@ const DataTableContainer = (props) => {
         builtColumns.push(<Column key="thumbnail" columnKey="thumbnail" header="Thumbnail" headerStyle={{ width: '150px' }} reorderable={false} className="p-datatable-column text-align-center" body={thumbnailTemplate} />);
 
         properties.map((property, i) => {
-            let fieldIsRelation = propertyIsRelation(property);
+            let fieldIsRelation = props.propertyIsRelation(property);
             builtColumns.push(
                 <Column
                     key={property['o:id']}
@@ -151,181 +125,24 @@ const DataTableContainer = (props) => {
         return builtColumns;
     }
 
-    const loadLazyDataViewData = async (item) => {
-        setDataViewLoading(true);
-        fetchOne(
-            item['value_resource_name'],
-            item['value_resource_id']
-        ).then(data => {
-            let resourceTemplate = props.templates.filter(
-                (template) => template['o:resource_class']['o:id'] === data['o:resource_class']['o:id']
-            )[0];
-
-            const requests = resourceTemplate["o:resource_template_property"].map((property) =>
-                authGet(property["o:property"]["@id"])
-            );
-
-            Axios.all(requests).then(res => {
-                let properties = res.map((inner) => inner.data);
-                setDataViewProperties(properties);
-                setDataViewCollection([parseItem(data, properties)]);
-                setDataViewLoading(false);
-            });
-        });
-    }
-
-    const parseItem = (row, properties) => {
-        if (properties && properties.length > 0) {
-            let item = {'id': row['o:id']};
-            properties.map((property) => {
-                let label = property['o:label'];
-                let value = null;
-
-                if (row[property['o:term']] !== undefined) {
-                    if (row[property['o:term']][0]['type'] === 'resource') {
-                        value = row[property['o:term']];
-                    } else {
-                        let separator = '';
-                        value = '';
-                        row[property['o:term']].map((subItem) => {
-                            if (subItem['@value'] !== undefined) {
-                                value += separator + subItem['@value'];
-                                separator = ' | ';
-                            }
-                        });
-                    }
-                }
-
-                item[label] = value;
-                return null;
-            });
-
-            if (row['thumbnail_display_urls']['square']) {
-                item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
-            }
-
-            return item;
-        }
-        return [];
-    }
-
     const cellTemplate = (rowData, index) => {
         if (rowData !== undefined) {
-            return getCellTemplate(rowData[index.field], index.field, 'dialog', true);            
+            return props.getCellTemplate(rowData[index.field], index.field, 'dialog', true);            
         }
         return null;
-    }
-
-    const getCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
-        if (cellData && (typeof cellData) === 'object') {
-            if (showRelatedItens) {
-                return relatedItemsButtonTemplate(cellData);
-            }
-        } else {
-            if (cellData && cellData.length > textMaxLength) {
-                return longTextTemplate(field, cellData, textMaxLength, longTextOption);
-            } else {
-                return cellData;
-            }
-        }
-        return null;
-    }
-
-    const relatedItemsButtonTemplate = (items) => {
-        return (
-            <Button
-                type="button"
-                icon="pi pi-plus-circle"
-                label={Object.keys(items).length + " related items"}
-                onClick={(e) => openOverlayPanel(e, items) }
-                aria-haspopup aria-controls="overlay_panel"
-                className="select-product-button"
-            />
-        );
-    }
-
-    const longTextTemplate = (header, content, maxLength, templateOption) => {
-        switch (templateOption) {
-            case 'dialog': 
-                return (
-                    <div>
-                        <span>{content.substring(0, maxLength) + '...'}</span>
-                        <Button
-                            label="View More"
-                            className="p-button-link p-py-0"
-                            onClick={() => { openDialog(header, content);} }
-                        />
-                    </div>
-                );
-            break;
-            case 'accordion': 
-                return (
-                    <Accordion>
-                        <AccordionTab header={header}>
-                            <p>{content}</p>
-                        </AccordionTab>
-                    </Accordion>
-                );
-            break;
-            default:
-            break;
-        }
     }
 
     const viewTemplate = (rowData) => {
         if (rowData !== undefined) {
             return (
                 <React.Fragment>
-                    <Button icon="pi pi-eye" title="View" onClick={() => { openDialog(null, cardViewTemplate(rowData, props.activeProperties, true)); } }></Button>
+                    <Button
+                        className="p-button-sm p-button-raised"
+                        icon="pi pi-eye"
+                        title="View"
+                        onClick={() => { props.openDialog(null, props.cardViewTemplate(rowData, props.activeProperties, true)); } }>
+                    </Button>
                 </React.Fragment>
-            );
-        } else {
-            return null;
-        }
-    }
-
-    const cardViewTemplate = (rowData, properties, showRelatedItens) => {
-        if (rowData !== undefined) {
-            let dialogCardViewTitle = null;
-            let dialogCardViewItems = properties.map((property, i) => {
-                if (property['o:label'] === 'Title' || property['o:label'] === 'name') {
-                    dialogCardViewTitle = rowData[property['o:label']];
-                } else if (rowData[property['o:label']]) {
-                    let itemTemplate = getCellTemplate(rowData[property['o:label']], property['o:label'], 'accordion', showRelatedItens);
-                    if (typeof(itemTemplate) === 'string') {
-                        return (
-                            <div className="item-field">
-                                <span className="item-field-title">{property['o:label'] + ':'}</span> {itemTemplate}
-                            </div>
-                        );
-                    } else if (itemTemplate) {
-                        return (
-                            <div className="item-field">
-                                {itemTemplate}
-                            </div>
-                        );
-                    }
-                }
-                return null;
-            });
-
-            return (
-                <div className="p-col-12">
-                    <div className="item-grid-item card">
-                        <div className="item-grid-item-content">
-                            {
-                                rowData['thumbnail_url']
-                                ? <img src={rowData['thumbnail_url']} width="150" alt="" onError={(e) => e.target.src=PlaceHolder} />
-                                : null
-                            }
-                            <div className="item-title">{dialogCardViewTitle}</div>
-                            {dialogCardViewItems}
-                        </div>
-                        <div className="item-grid-item-bottom">
-                            <Button icon="pi pi-eye" label="View Details" onClick={() => window.open(PATH_PREFIX + "/items/" + rowData['id'], "_blank")}></Button>
-                        </div>
-                    </div>
-                </div>
             );
         } else {
             return null;
@@ -342,14 +159,6 @@ const DataTableContainer = (props) => {
         } else {
             return null;
         }
-    }
-
-    const dataViewGridTemplate = (rowData, layout) => {
-        if (!rowData) {
-            return null;
-        }
-
-        return cardViewTemplate(rowData, dataViewProperties, false);
     }
 
     const editorTemplate = (columnProperties, originalRow, cellProperty) => {
@@ -448,14 +257,7 @@ const DataTableContainer = (props) => {
     }
 
     const onColReorder = () => {
-        showToast('success', 'Success', 'Column Reordered!');
-    }
-
-    const onDataViewPage = (event) => {
-        setDataViewLoading(true);
-        const startIndex = event.first;
-        setDataViewFirst(startIndex);
-        loadLazyDataViewData(overlayPanelItems[startIndex]);
+        props.showToast('success', 'Success', 'Column Reordered!');
     }
 
     const onRowEditInit = (event) => {
@@ -469,7 +271,7 @@ const DataTableContainer = (props) => {
         setOriginalRow(null);
 
         setCollection(rows);
-        showToast('warn', 'Warning', 'Item changes not saved');
+        props.showToast('warn', 'Warning', 'Item changes not saved');
         $('.p-row-editor-init').each(function(){$(this).show()});
     }
 
@@ -491,7 +293,7 @@ const DataTableContainer = (props) => {
                 
                 //TO DO: Check how to clean a subitem (removing an author, for example)
 
-                if (!propertyIsRelation(property)) {
+                if (!props.propertyIsRelation(property)) {
                     if (editedValue) {
                         if (typeof(editedValue) === 'string') {
                             let values = editedValue.split(separator);
@@ -505,6 +307,7 @@ const DataTableContainer = (props) => {
                                 } else {
                                     data[property['o:term']] = [getNewItem(property, value)];
                                 }
+                                return null;
                             });
                         } else {
                             if (data[property['o:term']] !== undefined) {
@@ -522,10 +325,10 @@ const DataTableContainer = (props) => {
             patchResourceItem(props.query.endpoint, event.data['id'], data);
 
             let rows = [...collection];
-            rows[event.index] = parseItem(data, props.activeProperties);
+            rows[event.index] = props.parseItem(data, props.activeProperties);
             setOriginalRow(null);
 
-            showToast('success', 'Success', 'Item successfully updated!');
+            props.showToast('success', 'Success', 'Item successfully updated!');
         });
     }
 
@@ -547,7 +350,7 @@ const DataTableContainer = (props) => {
         setSelectedItems([]);
         toggleScreenMode('select');
         setSelectButtonMode('addNote');
-        showToast('info', 'Add Note', 'Check items and click "Proceed to Add Note"');
+        props.showToast('info', 'Add Note', 'Check items and click "Proceed to Add Note"');
     }
 
     const proceedToAddNote = () => {
@@ -565,7 +368,7 @@ const DataTableContainer = (props) => {
         setSelectedItems([]);
         toggleScreenMode('select');
         setSelectButtonMode('addToProject');
-        showToast('info', 'Add to Project', 'Check items and click "Proceed to Add to Project"');
+        props.showToast('info', 'Add to Project', 'Check items and click "Proceed to Add to Project"');
     }
 
     const proceedToAddToProject = () => {
@@ -576,11 +379,11 @@ const DataTableContainer = (props) => {
             return item['id'];
         });
 
-        openDialog('Add to Project', 'Items: ' + JSON.stringify(idItems));
+        props.openDialog('Add to Project', 'Items: ' + JSON.stringify(idItems));
     }
 
     const createProject = () => {
-        openDialog('Create new project', 'TO DO');
+        props.openDialog('Create new project', 'TO DO');
     }
 
     const headerLeftContents = () => {
@@ -641,116 +444,56 @@ const DataTableContainer = (props) => {
 
     const header = renderHeader();
 
-    const showToast = (severityClass, summary, detail) => {
-        toast.current.show({
-            severity: severityClass,
-            summary: summary,
-            detail: detail,
-            life: 5000
-        });
-    }
-
-    const openDialog = (header, content) => {
-        setDisplayDialog(true);
-        setDialogContent(content);
-        setDialogHeader(header);
-    }
-
-    const closeDialog = () => {
-        setDisplayDialog(false);
-        setDialogContent(null);
-    }
-
-    const openOverlayPanel = (event, items) => {
-        overlayPanel.current.toggle(event);
-
-        setDataViewFirst(0);
-        setDataViewCollection([]);
-        setOverlayPanelItems(items);
-        setDataViewTotalRecords(items.length);
-
-        loadLazyDataViewData(items[dataViewFirst]);
-    }
-
-    return (
-        <div className="datatable-component datatable-responsive">
-            <div className="card">
-                {
-                    showTable ?
-                        <DataTable
-                            loading={loading}
-                            className="p-datatable-collection p-datatable-striped p-datatable-responsive"
-                            emptyMessage="No items found"
-                            lazy
-                            ref={dt}
-                            value={collection}
-                            header={header}
-                            scrollable
-                            scrollHeight="600px"
-                            globalFilter={lazyParams.globalFilter}
-                            filters={lazyParams.filters}
-                            onFilter={onFilter}
-                            reorderableColumns
-                            onColReorder={onColReorder}
-                            resizableColumns
-                            columnResizeMode="fit"
-                            rowHover
-                            rows={lazyParams.rows}
-                            rowsPerPageOptions={[10,25,50]}
-                            dataKey="id"
-                            selectionMode={props.screenMode === "select" ? "checkbox" : null}
-                            selection={selectedItems}
-                            onSelectionChange={e => setSelectedItems(e.value)}
-                            first={lazyParams.first}
-                            totalRecords={totalRecords}
-                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                            paginator={props.screenMode === 'view'}
-                            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                            onPage={onPage}
-                            onSort={onSort}
-                            sortField={lazyParams.sortField}
-                            sortOrder={lazyParams.sortOrder}
-                            editMode="row"
-                            onRowEditInit={onRowEditInit}
-                            onRowEditCancel={onRowEditCancel}
-                            onRowEditSave={onRowEditSave}
-                        >
-                            {buildColumns(props.activeProperties)}
-                        </DataTable>
-                    : null
-                }
+    if (displayContent) {
+        return (
+            <div className="datatable-component datatable-responsive">
+                <div className="card">
+                    <DataTable
+                        loading={loading}
+                        className="p-datatable-collection p-datatable-striped p-datatable-responsive"
+                        emptyMessage="No items found"
+                        lazy
+                        ref={dt}
+                        value={collection}
+                        header={header}
+                        scrollable
+                        scrollHeight="600px"
+                        globalFilter={lazyParams.globalFilter}
+                        filters={lazyParams.filters}
+                        onFilter={onFilter}
+                        reorderableColumns
+                        onColReorder={onColReorder}
+                        resizableColumns
+                        columnResizeMode="fit"
+                        rowHover
+                        rows={lazyParams.rows}
+                        rowsPerPageOptions={[10,25,50]}
+                        dataKey="id"
+                        selectionMode={props.screenMode === "select" ? "checkbox" : null}
+                        selection={selectedItems}
+                        onSelectionChange={e => setSelectedItems(e.value)}
+                        first={lazyParams.first}
+                        totalRecords={totalRecords}
+                        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                        paginator={props.screenMode === 'view'}
+                        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+                        onPage={onPage}
+                        onSort={onSort}
+                        sortField={lazyParams.sortField}
+                        sortOrder={lazyParams.sortOrder}
+                        editMode="row"
+                        onRowEditInit={onRowEditInit}
+                        onRowEditCancel={onRowEditCancel}
+                        onRowEditSave={onRowEditSave}
+                    >
+                        {buildColumns(props.activeProperties)}
+                    </DataTable>
+                </div>
             </div>
-            <Toast
-                ref={toast}
-                position="top-left"
-            />
-            <Dialog
-                header={dialogHeader}
-                visible={displayDialog}
-                maximizable
-                style={{ width: '50vw' }}
-                onHide={closeDialog}
-            >
-                {dialogContent}
-            </Dialog>
-            <OverlayPanel ref={overlayPanel} showCloseIcon id="overlay_panel" style={{width: '450px'}}>
-                <DataView
-                    value={dataViewCollection}
-                    layout="grid"
-                    itemTemplate={dataViewGridTemplate}
-                    lazy
-                    paginator
-                    paginatorPosition={'both'}
-                    paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-                    rows={1}
-                    totalRecords={dataViewTotalRecords}
-                    first={dataViewFirst}
-                    onPage={onDataViewPage}
-                    loading={dataViewLoading}
-                />
-            </OverlayPanel>
-        </div>
-    );
+        );
+    } else {
+        return null;
+    }
 };
 
 const mapStateToProps = (state, props) => {

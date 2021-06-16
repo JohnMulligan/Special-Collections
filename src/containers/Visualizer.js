@@ -6,7 +6,7 @@ import {
   VideoCameraAddOutlined,
 } from "@ant-design/icons";
 import TableView from "../components/TableView";
-import CardView from "../components/CardView";
+import CardViewLegacy from "../components/CardViewLegacy";
 
 const { TabPane } = Tabs;
 
@@ -34,7 +34,7 @@ const Visualizer = (props) => {
         }
         key={2}
       >
-        <CardView activeProperties={props.activeProperties} />
+        <CardViewLegacy activeProperties={props.activeProperties} />
       </TabPane>
     </Tabs>
   );

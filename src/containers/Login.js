@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useHistory, useLocation, withRouter } from "react-router-dom";
+import { useHistory, withRouter } from "react-router-dom";
 
 import axios from "axios";
 
@@ -22,17 +22,20 @@ export const isLogged = () => {
     }
 }
 
+
 const Login = () => {
   let history = useHistory();
-  let location = useLocation();
-  let { from } = location.state || {
-      from: { pathname: PATH_PREFIX + "/admin" },
-  };
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [dialogMessage, setDialogMessage] = useState(null);
   const [showMessage, setShowMessage] = useState(false);
+
+  useEffect(() => {
+      if (isLogged()) {
+          history.push(PATH_PREFIX + '/admin');
+      }
+  });
 
   const login = () => {
       axios.post(`/auth`, {
@@ -41,7 +44,7 @@ const Login = () => {
       }).then((response) => {
           if (response.data.auth) {
               localStorage.setItem('userInfo', JSON.stringify({ token: response.data.token }));
-              history.replace(from);
+              history.push(PATH_PREFIX + '/admin');
           } else {
               setDialogMessage('Invalid username and password!');
               setShowMessage(true);
