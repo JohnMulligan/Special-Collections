@@ -19,6 +19,9 @@ const DataViewCardContainer = (props) => {
     const [lazyParams, setLazyParams] = useState({
         first: 0,
         rows: 12,
+        sortField: 'o:id',
+        sortDirection: 'asc',
+        filter: [],
     });
 
     useEffect(() => {
@@ -38,6 +41,10 @@ const DataViewCardContainer = (props) => {
                 props.query.params,
                 lazyParams.first,
                 lazyParams.rows,
+                lazyParams.sortField,
+                lazyParams.sortDirection,
+                null,
+                lazyParams.search,
             ).then(data => {
                 setTotalRecords(data.total);
                 setDisplayContent(true);
@@ -95,19 +102,23 @@ const DataViewCardContainer = (props) => {
                 openDialog={props.openDialog}
                 openOverlayPanel={true}
                 getCellTemplate={props.getCellTemplate}
-            />            
+            />
         );
     }
 
     const propertiesFilters = () => {
         let builtFilters = [];
-
         props.activeProperties.map((property, i) => {
             if (!props.propertyIsRelation(property)) {
                 builtFilters.push(
                     <div className="p-col-12 p-my-2">
                         <div className="p-d-flex p-jc-end">
-                            <InputText type="text" className="p-inputtext-sm p-d-block p-py-1" placeholder={"Search by " + property['o:label']} />
+                            <InputText
+                                type="text"
+                                className="p-d-block p-py-1"
+                                onChange={(e) => onChangeFilter(property, e.target.value)}
+                                placeholder={"Search by " + property['o:label']}
+                            />
                         </div>
                     </div>
                 );
@@ -123,7 +134,7 @@ const DataViewCardContainer = (props) => {
                             className="p-button-sm p-button-raised"
                             icon="pi pi-search"
                             label="Search"
-                            onClick={(e) => onFilter(e)}>
+                            onClick={(e) => onFilter()}>
                         </Button>
                     </div>
                 </div>
@@ -133,31 +144,42 @@ const DataViewCardContainer = (props) => {
         return builtFilters;
     }
 
-    const onFilter = (event) => {
+    const onChangeFilter = (property, value) => {
+        if (value) {
+            lazyParams.filter[property['o:id']] = value;
+        } else {
+            delete lazyParams.filter[property['o:id']];
+        }
+    }
 
-        console.log(event);
+    const onFilter = () => {
+        let search = {};
+        let filters = {};
+        let counter = 0;
 
-        // let search = {};
-        // let counter = 0;
+        lazyParams.filter.map((value, propertyId) => {
+            search['property[' + counter + '][joiner]'] = 'and';
+            search['property[' + counter + '][property]'] = propertyId;
+            search['property[' + counter + '][type]'] = 'in';
+            search['property[' + counter + '][text]'] = value;
 
-        // for (let propertyId of Object.keys(event.filters)) {
-        //     if (!isNaN(propertyId)) {
-        //         search['property[' + counter + '][joiner]'] = 'and';
-        //         search['property[' + counter + '][property]'] = parseInt(propertyId);
-        //         search['property[' + counter + '][type]'] = 'in';
-        //         search['property[' + counter + '][text]'] = event.filters[propertyId]['value'];
+            filters[propertyId] = {
+                'matchMode': 'startsWith',
+                'value': value
+            };
 
-        //         counter++;
-        //     }
-        // }
+            counter++;
 
-        // let _lazyParams = {
-        //     ...lazyParams,
-        //     ...event,
-        //     'first': 0,
-        //     'filter': (Object.keys(search).length > 0) ? search : null,
-        // };
-        // setLazyParams(_lazyParams);
+            return null;
+        });
+
+        let _lazyParams = {
+            ...lazyParams,
+            'first': 0,
+            'search': (Object.keys(search).length > 0) ? search : null,
+            'filters': (Object.keys(filters).length > 0) ? filters : null,
+        };
+        setLazyParams(_lazyParams);
     }
 
     const onPage = (event) => {
@@ -186,8 +208,9 @@ const DataViewCardContainer = (props) => {
                                 itemTemplate={itemCardTemplate}
                                 rows={lazyParams.rows}
                                 rowsPerPageOptions={[12,24,36]}
-                                totalRecords={totalRecords}
                                 first={lazyParams.first}
+                                totalRecords={totalRecords}
+                                currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
                                 paginator
                                 paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                                 onPage={onPage}
