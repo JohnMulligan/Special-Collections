@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { Row, Col, Spin, Slider, Input, Button, Modal, Layout } from "antd";
 import { ExpandOutlined } from "@ant-design/icons";
 import Viewer from "react-viewer";
-import { useCookies } from "react-cookie";
 import { PlaceHolder, getMedia, patchMedia } from "../utils/Utils";
 import axios from "axios";
 import LogoHeader from "../components/LogoHeader";
@@ -22,7 +21,6 @@ const TranscriptView = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
   const [colCountKey, setColCountKey] = useState(4);
-  const [cookies] = useCookies(["userInfo"]);
   const [inline, setInline] = useState(true);
   const [cache, setCache] = useState([]);
   const { mediaList } = useParams();
@@ -31,7 +29,7 @@ const TranscriptView = () => {
   useEffect(() => {
     setLoading(true);
     let media = JSON.parse(mediaList);
-    getMedia(cookies.userInfo.host, media)
+    getMedia(media)
       .then(
         axios.spread((...responses) => {
           let data = responses.map((each) => each.data);
@@ -47,7 +45,7 @@ const TranscriptView = () => {
       .then(() => {
         setLoading(false);
       });
-  }, [cookies.userInfo, mediaList]);
+  }, [mediaList]);
 
   return (
     <Layout>
@@ -187,7 +185,6 @@ const TranscriptView = () => {
                             },
                           ];
                           patchMedia(
-                            cookies.userInfo,
                             data[activeKey]["o:id"],
                             data[activeKey]
                           )

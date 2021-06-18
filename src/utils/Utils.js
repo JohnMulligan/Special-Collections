@@ -1,4 +1,9 @@
 import axios from "axios";
+import { history } from "../route/Routers"
+
+const PER_PAGE = 1000;
+
+export const apiOmekaUrl = '/api/';
 
 const headers = {
   "Content-Type": "application/json",
@@ -8,159 +13,154 @@ export const PlaceHolder = require("../resources/image-placeholder.png");
 
 export const Logo = require("../resources/SClogo.png");
 
-export const PATH_PREFIX = "/react";
+export const PATH_PREFIX = "";
 
-export const getItem = (baseAddress, itemId) => {
-  return axios.get("http://" + baseAddress + "/api/items/" + itemId);
-};
-
-export const getItems = (baseAddress, items) => {
-  let requests = items.map((each) => getItem(baseAddress, each));
-  return axios.all(requests);
-};
-
-export const searchItems = (baseAddress, params) => {
-  return axios.get("http://" + baseAddress + "/api/items?per_page=1000", {
-    params: params,
-  });
-};
-
-export const createItem = (userInfo, payload) => {
-  return axios.post("http://" + userInfo.host + "/api/items", payload, {
-    params: {
-      key_identity: userInfo.key_identity,
-      key_credential: userInfo.key_credential,
-    },
-    headers: headers,
-  });
-};
-
-export const getItemSetList = (baseAddress) => {
-  return axios.get("http://" + baseAddress + "/api/item_sets?per_page=1000");
-};
-
-export const getItemSet = (baseAddress, itemSetId) => {
-  return axios.get("http://" + baseAddress + "/api/item_sets/" + itemSetId);
-};
-
-export const getItemsInItemSet = (baseAddress, itemSetId) => {
-  return axios.get(
-    "http://" + baseAddress + "/api/items?item_set_id=" + itemSetId
-  );
-};
-
-export const createItemSet = (userInfo, payload) => {
-  return axios.post("http://" + userInfo.host + "/api/item_sets", payload, {
-    params: {
-      key_identity: userInfo.key_identity,
-      key_credential: userInfo.key_credential,
-    },
-    headers: headers,
-  });
-};
-
-export const addItemsToItemSet = (userInfo, itemSetId, items) => {
-  if (!userInfo || !itemSetId || !items) {
-    return;
+export const getHeadersOrRedirect = () => {
+  let token = null;
+  try {
+    token = JSON.parse(localStorage.getItem('userInfo')).token;
+  } catch { }
+  if (!token) {
+    // Redirect to auth.
+    history.push(PATH_PREFIX + '/login');
+    return null;
   }
-  let requests = items.map((each) => {
-    return axios
-      .get("http://" + userInfo.host + "/api/items/" + each)
-      .then((response) => {
-        let originItemSets = response.data["o:item_set"]
-          ? response.data["o:item_set"]
-          : [];
-        originItemSets.push({ "o:id": itemSetId });
+  return {...headers, "x-access-token": token };
+}
 
-        return axios.patch(
-          "http://" + userInfo.host + "/api/items/" + each,
-          { "o:item_set": originItemSets },
-          {
-            params: {
-              key_identity: userInfo.key_identity,
-              key_credential: userInfo.key_credential,
-            },
-            headers: headers,
-          }
-        );
-      });
-  });
-  return axios.all(requests);
+export const authGet = async (url, config = {}) => {
+  const h = getHeadersOrRedirect();
+  return await axios.get(url, { ...config, headers: h });
+}
+
+export const getItem = (itemId) => {
+  return authGet(`${apiOmekaUrl}items/${itemId}`);
 };
 
-export const getMedium = (baseAddress, medium) => {
-  return axios.get("http://" + baseAddress + "/api/media/" + medium);
+export const getItems = (items) => {
+  let requests = items.map((each) => getItem(each));
+  return authGet(requests);
 };
 
-export const getMedia = (baseAddress, media) => {
-  let requests = media.map((each) => getMedium(baseAddress, each));
-  return axios.all(requests);
-};
-
-export const getMediaInItem = (baseAddress, itemId) => {
-  return axios.get(
-    "http://" + baseAddress + "/api/media?per_page=1000&item_id=" + itemId
-  );
-};
-
-export const searchMedia = (baseAddress, params) => {
-  return axios.get("http://" + baseAddress + "/api/media?per_page=1000", {
+export const searchItems = (params) => {
+  return authGet(`${apiOmekaUrl}items?per_page=${PER_PAGE}`, {
     params: params,
   });
 };
 
-export const getPropertyList = (baseAddress) => {
-  return axios.get("http://" + baseAddress + "/api/properties?per_page=1000");
+export const createItem = async (payload) => {
+  const h = getHeadersOrRedirect();
+  if (!h) return null;
+  return await axios.post(`${apiOmekaUrl}items`, payload, {
+    headers: h,
+  });
 };
 
-export const searchProperties = (baseAddress, params) => {
-  return axios.get("http://" + baseAddress + "/api/properties?per_page=1000", {
+export const getItemSetList = () => {
+  return authGet(`${apiOmekaUrl}item_sets?per_page=${PER_PAGE}`);
+};
+
+export const getItemSet = (itemSetId) => {
+  return authGet(`${apiOmekaUrl}item_sets/${itemSetId}`);
+};
+
+export const getItemsInItemSet = (itemSetId) => {
+  return authGet(`${apiOmekaUrl}items?item_set_id=${itemSetId}`);
+};
+
+export const createItemSet = async (payload) => {
+  const h = getHeadersOrRedirect();
+  if (!h) return null;
+  return await axios.post(`${apiOmekaUrl}item_sets`, payload, {
+    headers: h,
+  });
+};
+
+export const addItemsToItemSet = async (itemSetId, items) => {
+  if (!itemSetId || !items) {
+    return null;
+  }
+  const h = getHeadersOrRedirect();
+  if (!h) return null;
+  let requests = items.map(async (each) => {
+    const response = await authGet(`${apiOmekaUrl}items/${each}`);
+    let originItemSets = response.data["o:item_set"]
+      ? response.data["o:item_set"]
+      : [];
+    originItemSets.push({ "o:id": itemSetId });
+    return await axios.patch(
+      `${apiOmekaUrl}items/${each}`,
+      { "o:item_set": originItemSets },
+      {
+        headers: h,
+      }
+    );
+  });
+  return await axios.all(requests);
+};
+
+export const getMedium = (medium) => {
+  return authGet(`${apiOmekaUrl}media/${medium}`);
+};
+
+export const getMedia = (media) => {
+  let requests = media.map((each) => getMedium(each));
+  return authGet(requests);
+};
+
+export const getMediaInItem = (itemId) => {
+  return authGet(`${apiOmekaUrl}media?per_page=${PER_PAGE}&item_id=${itemId}`);
+};
+
+export const searchMedia = (params) => {
+  return authGet(`${apiOmekaUrl}media?per_page=${PER_PAGE}`, {
     params: params,
   });
 };
 
-export const getResourceClassList = (baseAddress) => {
-  return axios.get(
-    "http://" + baseAddress + "/api/resource_classes?per_page=1000"
-  );
+export const getPropertyList = () => {
+  return authGet(`${apiOmekaUrl}properties?per_page=${PER_PAGE}`);
 };
 
-export const searchResourceClasses = (baseAddress, params) => {
-  return axios.get(
-    "http://" + baseAddress + "/api/resource_classes?per_page=1000",
+export const searchProperties = (params) => {
+  return authGet(`${apiOmekaUrl}properties?per_page=${PER_PAGE}`, {
+    params: params,
+  });
+};
+
+export const getResourceClassList = () => {
+  return authGet(`${apiOmekaUrl}resource_classes?per_page=${PER_PAGE}`);
+};
+
+export const searchResourceClasses = (params) => {
+  return authGet(
+    `${apiOmekaUrl}resource_classes?per_page=${PER_PAGE}`,
     {
       params: params,
     }
   );
 };
 
-export const getResourceTemplateList = (baseAddress) => {
-  return axios.get(
-    "http://" + baseAddress + "/api/resource_templates?per_page=1000"
-  );
+export const getResourceTemplateList = () => {
+  return authGet(`${apiOmekaUrl}resource_templates?per_page=${PER_PAGE}`);
 };
 
-export const getResourceTemplate = (baseAddress, templateId) => {
-  return axios.get(
-    "http://" + baseAddress + "/api/resource_templates/" + templateId
-  );
+export const getResourceTemplate = (templateId) => {
+  return authGet(`${apiOmekaUrl}resource_templates/${templateId}`);
 };
 
-export const getPropertiesInResourceTemplate = (baseAddress, templateId) => {
-  return getResourceTemplate(baseAddress, templateId).then((response) => {
-    let requests = response.data[
-      "o:resource_template_property"
-    ].map((property) => axios.get(property["o:property"]["@id"]));
-    return axios.all(requests);
-  });
+export const getPropertiesInResourceTemplate = async (templateId) => {
+  const response = await getResourceTemplate(templateId);
+  let requests = response.data["o:resource_template_property"]
+    .map((property) => authGet(property["o:property"]["@id"]));
+  return await axios.all(requests);
 };
 
-export const getItemPath = (baseAddress, itemId, path = []) => {
-  return getItem(baseAddress, itemId).then((response) => {
+export const getItemPath = (itemId, path = []) => {
+  return getItem(itemId).then((response) => {
     if (response.data["dcterms:isPartOf"]) {
       path.push(...response.data["dcterms:isPartOf"]);
       return getItemPath(
-        baseAddress,
         response.data["dcterms:isPartOf"][0]["value_resource_id"],
         path
       );
@@ -170,30 +170,26 @@ export const getItemPath = (baseAddress, itemId, path = []) => {
   });
 };
 
-export const patchMedia = (userInfo, mediaId, payload) => {
-  return axios.patch(
-    "http://" + userInfo.host + "/api/media/" + mediaId,
+export const patchMedia = async (mediaId, payload) => {
+  const h = getHeadersOrRedirect();
+  if (!h) return null;
+  return await axios.patch(
+    `${apiOmekaUrl}media/${mediaId}`,
     payload,
     {
-      params: {
-        key_identity: userInfo.key_identity,
-        key_credential: userInfo.key_credential,
-      },
-      headers: headers,
+      headers: h,
     }
   );
 };
 
-export const patchItem = (userInfo, itemId, payload) => {
-  return axios.patch(
-    "http://" + userInfo.host + "/api/items/" + itemId,
+export const patchItem = async (itemId, payload) => {
+  const h = getHeadersOrRedirect();
+  if (!h) return null;
+  return await axios.patch(
+    `${apiOmekaUrl}items/${itemId}`,
     payload,
     {
-      params: {
-        key_identity: userInfo.key_identity,
-        key_credential: userInfo.key_credential,
-      },
-      headers: headers,
+      headers: h,
     }
   );
 };

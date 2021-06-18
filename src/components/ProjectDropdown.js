@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Menu, Spin, Dropdown } from "antd";
 import { getItemSetList } from "../utils/Utils";
-import { useCookies } from "react-cookie";
 import { DownOutlined } from "@ant-design/icons";
 
 // onMenuSelect
 const ProjectDropdown = (props) => {
   const [loading, setLoading] = useState(true);
   const [projectList, setProjectList] = useState([]);
-  const [cookies] = useCookies(["userInfo"]);
   const [menuSelected, setMenuSelected] = useState({
     "o:title": "Select A Project",
   });
@@ -37,10 +35,10 @@ const ProjectDropdown = (props) => {
 
   useEffect(() => {
     setLoading(true);
-    getItemSetList(cookies.userInfo.host).then((response) => {
+    getItemSetList().then((response) => {
       setProjectList(response.data);
     });
-  }, [cookies.userInfo]);
+  }, []);
 
   useEffect(() => {
     setLoading(false);

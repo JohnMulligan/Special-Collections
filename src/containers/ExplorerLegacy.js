@@ -1,14 +1,13 @@
 import React, { useState } from "react";
-import QueryBuilder from "../components/QueryBuilder";
+import { Row, Col } from "antd";
 
-import { Layout, Row, Col, Divider } from "antd";
-
-import Visualizer from "./Visualizer";
-import PropertySelector from "../components/PropertySelector";
-import TemplateSelector from "../components/TemplateSelector";
 import ItemSetSelector from "../components/ItemSetSelector";
+import TemplateSelectorLegacy from "../components/TemplateSelectorLegacy";
+import PropertySelectorLegacy from "../components/PropertySelectorLegacy";
+import QueryBuilder from "../components/QueryBuilder";
+import Visualizer from "./Visualizer";
 
-const Explorer = (props) => {
+const ExplorerLegacy = (props) => {
   const [availableProperties, setAvailableProperties] = useState();
   const [activeProperties, setActiveProperties] = useState([]);
 
@@ -22,10 +21,10 @@ const Explorer = (props) => {
       <Row gutter={[HORIZONTAL_GUTTER, VERTICAL_GUTTER]}>
         <Col span={LEFT_SPAN}>
           <ItemSetSelector />
-          <TemplateSelector setAvailableProperties={setAvailableProperties} />
+          <TemplateSelectorLegacy setAvailableProperties={setAvailableProperties} />
         </Col>
         <Col span={RIGHT_SPAN}>
-          <PropertySelector
+          <PropertySelectorLegacy
             availableProperties={availableProperties}
             setActiveProperties={setActiveProperties}
           />
@@ -47,4 +46,4 @@ const Explorer = (props) => {
   );
 };
 
-export default Explorer;
+export default ExplorerLegacy;

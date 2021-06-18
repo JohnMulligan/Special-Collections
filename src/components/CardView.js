@@ -1,143 +1,72 @@
-import React, { useEffect, useState } from "react";
-import { Card, Col, Row, Pagination } from "antd";
+import React from "react";
 import { connect } from "react-redux";
-import { fetch, fetchOne } from "../utils/OmekaS";
-import { useCookies } from "react-cookie";
 
-const chunk = (array, size) => {
-  if (!array) return [];
-  const firstChunk = array.slice(0, size);
-  if (!firstChunk.length) {
-    return array;
-  }
-  return [firstChunk].concat(chunk(array.slice(size, array.length), size));
-};
+import { Button } from 'primereact/button';
+
+import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
+
+import '../assets/css/CardView.css';
 
 const CardView = (props) => {
-  const [cookies] = useCookies(["userInfo"]);
-
-  const [items, setItems] = useState([]);
-  const [cards, setCards] = useState([]);
-  const [cardGrid, setCardGrid] = useState(<></>);
-
-  const PAGESIZE = 20;
-
-  useEffect(() => {
-    const fetchInitial = async () => {
-      const data = await fetch(
-        cookies.userInfo.host,
-        props.query.endpoint,
-        props.query.item_set_id,
-        props.query.params,
-        0,
-        PAGESIZE
-      );
-
-      setItems(data);
-    };
-
-    fetchInitial();
-  }, [props.query, cookies.userInfo.host]);
-
-  useEffect(() => {
-    const genCards = async (items) => {
-      const cardPromises = items.map(async (item) => {
-        let thumbnailUrl = "";
-        if (item["o:media"].length !== 0) {
-          const media = await fetchOne(
-            cookies.userInfo.host,
-            "media",
-            item["o:media"][0]["o:id"]
-          );
-
-          thumbnailUrl = media["o:thumbnail_urls"].square;
-        }
-
-        const body = props.activeProperties.map((property) => {
-          const label = property["o:label"];
-          const value = item[property["o:term"]];
-
-          const line =
-            value && value.length > 0 ? (
-              <p>
-                <b>{label}: </b> {value[0]["@value"]}
-              </p>
-            ) : (
-              ""
-            );
-
-          return line;
-        });
-
-        const str = item["@type"][item["@type"].length - 1];
-        const n = str.lastIndexOf(":");
-        const typeString = str.substring(n + 1);
-
-        return (
-          <Card
-            key={item["o:id"]}
-            title={item["o:title"] ?? "(no 'title' found)"}
-            bordered={false}
-            cover={
-              thumbnailUrl ? <img alt="example" src={thumbnailUrl} /> : null
-            }
-          >
-            <p>
-              <b>Omeka-S Type: </b> {typeString}
-            </p>
-            {body}
-          </Card>
-        );
+  if (props.cardData !== undefined) {
+      let dialogCardViewTitle = null;
+      let dialogCardViewItems = props.properties.map((property, i) => {
+          if (property['o:label'] === 'Title' || property['o:label'] === 'name') {
+              dialogCardViewTitle = props.cardData[property['o:label']];
+          } else if (props.cardData[property['o:label']]) {
+              let itemTemplate = props.getCellTemplate(props.cardData[property['o:label']], property['o:label'], 'accordion', props.showRelatedItens);
+              if (typeof(itemTemplate) === 'string') {
+                  return (
+                      <div className="card-field">
+                          <span className="card-field-title">{property['o:label'] + ':'}</span> {itemTemplate}
+                      </div>
+                  );
+              } else if (itemTemplate) {
+                  return (
+                      <div className="card-field">
+                          {itemTemplate}
+                      </div>
+                  );
+              }
+          }
+          return null;
       });
 
-      Promise.all(cardPromises).then((cards) => setCards(cards));
-    };
-
-    genCards(items);
-  }, [props.activeProperties, items, cookies.userInfo.host]);
-
-  useEffect(() => {
-    const cardCols = cards.map((card, i) => (
-      <Col key={i} span={6}>
-        {card}
-      </Col>
-    ));
-    const rows = chunk(cardCols, 4).map((chunk, i) => (
-      <Row key={i} gutter={[16, 16]}>
-        {chunk}
-      </Row>
-    ));
-
-    setCardGrid(rows);
-  }, [cards]);
-
-  const handleChange = (page, pageSize) => {
-    fetch(
-      cookies.userInfo.host,
-      props.query.endpoint,
-      props.query.item_set_id,
-      props.query.params,
-      (page - 1) * pageSize,
-      PAGESIZE
-    ).then((data) => setItems(data));
-  };
-
-  return (
-    <>
-      {cardGrid}
-      <Pagination
-        defaultCurrent={1}
-        total={props.query.size}
-        onChange={handleChange}
-      />
-    </>
-  );
+      return (
+          <div className={props.cardClassName}>
+              <div className="card-grid card">
+                  <div className="card-grid-content">
+                      <div className="card-image">
+                          {
+                              props.cardData['thumbnail_url']
+                              ? <img src={props.cardData['thumbnail_url']} title={dialogCardViewTitle} alt={dialogCardViewTitle} onError={(e) => e.target.src=PlaceHolder} />
+                              : <img src={PlaceHolder} title={dialogCardViewTitle} alt={dialogCardViewTitle} />
+                          }
+                      </div>
+                      <div className="card-title p-text-nowrap p-text-truncate" title={dialogCardViewTitle}>{dialogCardViewTitle}</div>
+                      <div className="card-fields-div">
+                        {dialogCardViewItems}
+                      </div>
+                  </div>
+                  <div className="card-grid-bottom">
+                      <Button
+                          className="p-button-sm p-button-raised p-button-text"
+                          icon="pi pi-eye"
+                          label="View Details"
+                          onClick={() => window.open(PATH_PREFIX + "/items/" + props.cardData['id'], "_blank")}>
+                      </Button>
+                  </div>
+              </div>
+          </div>
+      );
+  } else {
+      return null;
+  }
 };
 
 const mapStateToProps = (state, props) => {
   return {
-    ...props,
-    query: state.query,
+    ...props
   };
 };
 

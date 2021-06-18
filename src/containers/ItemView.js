@@ -4,7 +4,6 @@ import { useParams } from "react-router-dom";
 import ImageView from "../components/ImageView";
 import Metadata from "../components/Metadata";
 import ItemBreadcrumb from "../components/ItemBreadcrumb";
-import { useCookies } from "react-cookie";
 import { getItem, getMediaInItem, PATH_PREFIX } from "../utils/Utils";
 import AddNoteButton from "../components/AddNoteButton";
 import AddToProjectModal from "../components/AddToProjectModal";
@@ -25,22 +24,21 @@ const ItemView = (props) => {
   const [mediaLoading, setMediaLoading] = useState(true);
   const [data, setData] = useState([]);
   const [media, setMedia] = useState([]);
-  const [cookies] = useCookies(["userInfo"]);
   const [colCountKey, setColCountKey] = useState(4);
 
   if (itemId === undefined) itemId = props.itemId;
 
   useEffect(() => {
     setLoading(true);
-    getItem(cookies.userInfo.host, itemId).then((response) => {
+    getItem(itemId).then((response) => {
       setData(response.data);
     });
     setMediaLoading(true);
-    getMediaInItem(cookies.userInfo.host, itemId).then((response) => {
+    getMediaInItem(itemId).then((response) => {
       setMedia(response.data);
       setMediaLoading(false);
     });
-  }, [itemId, cookies.userInfo]);
+  }, [itemId]);
 
   useEffect(() => {
     setLoading(false);
@@ -53,7 +51,6 @@ const ItemView = (props) => {
   ) : (
     <div style={{ padding: 20 }}>
       <ItemBreadcrumb
-        baseAddress={cookies.userInfo.host}
         itemId={itemId}
         itemTitle={data["o:title"] ? data["o:title"] : "[Untitled]"}
       />
@@ -93,9 +90,7 @@ const ItemView = (props) => {
                   <Button
                     onClick={() => {
                       const win = window.open(
-                        "http://" +
-                          cookies.userInfo.host +
-                          "/item/" +
+                        "/item/" +
                           itemId +
                           "/play",
                         "_blank"
@@ -160,9 +155,7 @@ const ItemView = (props) => {
           <Button
             onClick={() => {
               const win = window.open(
-                "http://" +
-                  cookies.userInfo.host +
-                  "/admin/item/" +
+                "/admin/item/" +
                   itemId +
                   "/edit",
                 "_blank"

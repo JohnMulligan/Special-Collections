@@ -1,0 +1,29 @@
+version: "2"
+services:
+  db:
+    image: mysql:5.7
+    container_name: omeka_db
+    restart: unless-stopped
+    volumes:
+      - ./data/mysql/:/var/lib/mysql
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: q1w2e3
+      MYSQL_DATABASE: special_collections
+      MYSQL_USER: special_collections_user
+      MYSQL_PASSWORD: q1w2e3
+  omeka:
+    image: docker_special_collections/omekas
+    container_name: omeka_app
+    restart: unless-stopped
+    volumes:
+      - ./omeka/config:/config
+      - ./omeka/files:/var/www/html/files
+    build: ./omeka
+    depends_on:
+      - db
+    links:
+      - db:db
+    ports:
+      - 80:80

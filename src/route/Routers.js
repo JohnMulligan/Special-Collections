@@ -1,29 +1,32 @@
 import React from "react";
 import {
   Switch,
-  BrowserRouter as Router,
+  Router,
   Route,
   Redirect,
 } from "react-router-dom";
 import MainPage from "../containers/Mainpage";
 import TranscriptView from "../containers/TranscriptView";
 import NoteView from "../containers/NoteView";
-import Welcome from "../containers/Welcome";
+import Login from "../containers/Login";
 import Home from "../containers/Home";
+import HomeLegacy from "../containers/HomeLegacy";
 import ProjectsPage from "../containers/ProjectsPage";
 import ItemView from "../containers/ItemView";
 import RelationGraph from "../components/RelationGraph";
-import { useCookies } from "react-cookie";
 import { PATH_PREFIX } from "../utils/Utils";
 import NetworkContainer from "../containers/NetworkContainer";
+import { createBrowserHistory } from "history";
+import { isLogged } from '../containers/Login'
+
+export const history = createBrowserHistory();
 
 function PrivateRoute({ children, ...rest }) {
-  const [cookies] = useCookies(["userInfo"]);
   return (
     <Route
       {...rest}
       render={(props) =>
-        cookies.userInfo !== undefined ? (
+        isLogged() ? (
           children
         ) : (
           <Redirect
@@ -47,6 +50,9 @@ export const MainpageRouter = () => {
       <PrivateRoute path={PATH_PREFIX + "/admin/home"}>
         <Home />
       </PrivateRoute>
+      <PrivateRoute path={PATH_PREFIX + "/admin/home-legacy"}>
+        <HomeLegacy />
+      </PrivateRoute>
       <PrivateRoute path={PATH_PREFIX + "/admin/network"}>
         <NetworkContainer />
       </PrivateRoute>
@@ -57,7 +63,7 @@ export const MainpageRouter = () => {
 
 export const MainRouter = () => {
   return (
-    <Router>
+    <Router history={history}>
       <Switch>
         <PrivateRoute path={PATH_PREFIX + "/media/:mediaList"}>
           <TranscriptView />
@@ -75,7 +81,7 @@ export const MainRouter = () => {
           <MainPage />
         </PrivateRoute>
         <Route path={PATH_PREFIX + "/login"}>
-          <Welcome />
+          <Login />
         </Route>
         <Redirect to={PATH_PREFIX + "/admin"} />
       </Switch>

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import NoteInput from "../components/NoteInput";
 import { useParams, Link } from "react-router-dom";
 import { getItems, PATH_PREFIX } from "../utils/Utils";
-import { useCookies } from "react-cookie";
 import axios from "axios";
 import { Spin, Row, Col, Layout, Table, Space, Popconfirm } from "antd";
 import LogoHeader from "../components/LogoHeader";
@@ -10,7 +9,6 @@ import LogoHeader from "../components/LogoHeader";
 const { Content } = Layout;
 // In this component, I've hardcoded the property ID of "dcterms:references" as 36, "dcterms:isReferencedBy" as 35. I think it is a default configuration of Omeka S
 const NoteView = () => {
-  const [cookies] = useCookies(["userInfo"]);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
   const { targetList } = useParams();
@@ -18,7 +16,7 @@ const NoteView = () => {
   useEffect(() => {
     let targets = JSON.parse(targetList);
     setLoading(true);
-    getItems(cookies.userInfo.host, targets).then(
+    getItems(targets).then(
       axios.spread((...responses) => {
         let data = responses.map((each) => ({
           key: each.data["o:id"],
@@ -27,7 +25,7 @@ const NoteView = () => {
         setData(data);
       })
     );
-  }, [cookies.userInfo, targetList]);
+  }, [targetList]);
 
   useEffect(() => {
     setLoading(false);

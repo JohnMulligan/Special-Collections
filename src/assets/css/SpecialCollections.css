@@ -1,0 +1,12 @@
+.text-align-center {
+	text-align: center !important;
+}
+
+.header-title {
+	font-family: "Goudy Old Style";
+	font-style: italic;
+	font-size: 36px;
+	font-weight: bolder;
+	line-height: 26.4px;
+	color: #093eba;
+}

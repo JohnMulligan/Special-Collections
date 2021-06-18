@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useCookies } from "react-cookie";
 import { Select } from "antd";
 import { setItemSet } from "../redux/actions";
 
@@ -10,12 +9,11 @@ const { Option } = Select;
 
 const ItemSetSelector = (props) => {
   const [options, setOptions] = useState([]);
-  const [cookies] = useCookies(["userInfo"]);
 
   useEffect(() => {
     // get templates options on load
     const fetchOptions = async () => {
-      const res = await fetchItemSets(cookies.userInfo.host);
+      const res = await fetchItemSets();
 
       const itemSetOptions = res.map((template) => (
         <Option key={template["o:id"]} value={template["o:id"]}>
@@ -33,7 +31,7 @@ const ItemSetSelector = (props) => {
     };
 
     fetchOptions();
-  }, [cookies]);
+  }, []);
 
   const handleChange = async (value) => {
     props.setItemSet(value);

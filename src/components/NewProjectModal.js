@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import { Modal, Input } from "antd";
 import { createItemSet, addItemsToItemSet } from "../utils/Utils";
-import { useCookies } from "react-cookie";
 
 // visible, selectedRowKeys, onClose
 const NewProjectModal = (props) => {
   const [projectName, setProjectName] = useState("");
   const [projectDescribe, setProjectDescribe] = useState("");
-  const [cookies] = useCookies(["userInfo"]);
 
   const onCreateProject = () => {
     if (projectName === undefined || projectName.length === 0) {
@@ -36,9 +34,9 @@ const NewProjectModal = (props) => {
         },
       ],
     };
-    createItemSet(cookies.userInfo, payload).then((response) => {
+    createItemSet(payload).then((response) => {
       let projectId = response.data["o:id"];
-      addItemsToItemSet(cookies.userInfo, projectId, props.selectedRowKeys)
+      addItemsToItemSet(projectId, props.selectedRowKeys)
         .then(() => {
           Modal.success({
             title: "Success!",

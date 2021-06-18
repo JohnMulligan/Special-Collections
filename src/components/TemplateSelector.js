@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useCookies } from "react-cookie";
-import { Select } from "antd";
+
+import { Dropdown } from 'primereact/dropdown';
+import '../assets/css/Dropdown.css';
 
 import { connect } from "react-redux";
 
 import { clearQuery, setQuery } from "../redux/actions";
 
 import { fetchTemplates } from "../utils/OmekaS";
-import { fetchSize } from "../utils/OmekaS";
 
 import Axios from "axios";
-
-const { Option } = Select;
+import { authGet } from "../utils/Utils";
 
 const mapStateToProps = (state, props) => {
   return {
@@ -21,81 +20,83 @@ const mapStateToProps = (state, props) => {
 };
 
 const TemplateSelector = (props) => {
-  const defaultId = 6; // Default is "Source"
-  // May be able to initially define availableProperties and options?
+    const [options, setOptions] = useState([]);
+    const [selectedTemplate, setSelectedTemplate] = useState(null);
+  
+    // May be able to initially define availableProperties and options?
+    const defaultTemplate = {'template': 'Source', 'id': 6}; // Default is "Source"
 
-  const [options, setOptions] = useState([]);
-  const [templates, setTemplates] = useState([]);
+    const onTemplateChange = async (e) => {
+        const templateSelected = (e === undefined) ? defaultTemplate : e.value;
 
-  const [cookies] = useCookies(["userInfo"]);
+        setSelectedTemplate(templateSelected);
+        props.setActiveTemplate(templateSelected);
 
-  useEffect(() => {
-    // get templates options on load
-    const fetchOptions = async () => {
-      const res = await fetchTemplates(cookies.userInfo.host);
-      setTemplates(res);
+        const template = props.templates.filter(
+            (template) => template["o:id"] === templateSelected['id']
+        )[0];
 
-      setOptions(
-        res.map((template) => (
-          <Option key={template["o:id"]} value={template["o:id"]}>
-            {template["o:label"]}
-          </Option>
-        ))
-      );
-    };
+        if (template) {
+            const propertiesDetailsRequests = template["o:resource_template_property"].map((property) => {
+                return authGet(property["o:property"]["@id"]);
+            });
 
-    fetchOptions();
-  }, [cookies]);
+            const propertiesDetailsResults = await Axios.all(propertiesDetailsRequests);
+            const properties = propertiesDetailsResults.map((result, key) => {
+                return {
+                  ...template["o:resource_template_property"][key],
+                  ...result.data
+                };
+            });
 
-  const handleChange = async (value) => {
-    const template = templates.filter(
-      (template) => template["o:id"] === value
-    )[0];
+            props.setAvailableProperties(properties);
+            props.clearQuery("items");
 
-    const requests = template["o:resource_template_property"].map((property) =>
-      Axios.get(property["o:property"]["@id"])
-    );
-
-    const res = await Axios.all(requests);
-    const properties = res.map((inner) => inner.data);
-
-    props.setAvailableProperties(properties);
-    props.clearQuery("items");
-
-    // console.log("query before")
-    // console.log(props.query)
-
-    const search = {};
-    search["resource_class_id"] = template["o:resource_class"]["o:id"];
-    props.setQuery("items", search, 99999);
-
-    // console.log("query after")
-    // console.log(props.query)
-
-    // fetchSize(cookies.userInfo.host, "items", props.query["params"]).then((count) =>
-    //   props.setQuery("items", {}, count)
-    // );
-  };
+            const search = {};
+            search["resource_class_id"] = template["o:resource_class"]["o:id"];
+            props.setQuery("items", search, 99999);
+        }
+  }
 
   useEffect(() => {
-    if (templates.length > 0) {
-      handleChange(defaultId);
-    }
-  }, [templates]);
+      // get templates options on load
+      const initComponent = async () => {
+          const templates = await fetchTemplates();
+          props.setTemplates(templates);
+
+          setOptions(
+            templates.map((template) => {
+              let option = {
+                template: template['o:label'],
+                id: template['o:id'],
+              };
+              return option;
+            })
+          );
+        
+          // onTemplateChange();
+      };
+
+      initComponent();
+
+  }, []);
 
   return (
-    <Select
-      style={{ width: "100%" }}
-      placeholder="Please select template"
-      onChange={handleChange}
-      defaultValue={defaultId}
-    >
-      {options}
-    </Select>
+      <div className="dropdown-component">
+          <div className="card">
+              <Dropdown
+                  value={selectedTemplate}
+                  options={options}
+                  disabled={!(props.screenMode === 'view')}
+                  onChange={onTemplateChange}
+                  optionLabel="template"
+                  placeholder="Select a template"
+              />
+          </div>
+      </div>
   );
 };
 
-//export default TemplateSelector;
 export default connect(mapStateToProps, { clearQuery, setQuery })(
-  TemplateSelector
+    TemplateSelector
 );

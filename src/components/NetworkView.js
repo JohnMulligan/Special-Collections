@@ -2,10 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import * as d3 from "d3";
 import { Slider, Button, Modal, Descriptions } from "antd";
 import AddNoteButton from "./AddNoteButton";
-import { useCookies } from "react-cookie";
 import { fetch, fetchOne, fetchResourceTemplates } from "../utils/OmekaS";
-import { connect } from "react-redux";
-import { svg, text } from "d3";
+import { svg } from "d3";
 import * as d3Legend from "d3-svg-legend";
 
 /*
@@ -24,8 +22,6 @@ import * as d3Legend from "d3-svg-legend";
  */
 
 const NetworkView = () => {
-  const [cookies] = useCookies(["userInfo"]);
-
   const height = 1000;
   const width = 1500;
   const radiusCoefficient = 8;
@@ -154,7 +150,8 @@ const NetworkView = () => {
         .on("dblclick", function (d, i) {
           // if shifting select the node, else display modal
           if (d.shiftKey) {
-            let [r, g, b, _opacity] = d3.select(this).style("fill").split(", ");
+            let [r, g, b] = d3.select(this).style("fill").split(", ");
+            // let [r, g, b, _opacity] = d3.select(this).style("fill").split(", ");
             r = r.substring(r.indexOf("(") + 1);
             if (b[b.length - 1] === ")") {
               b = b.substring(0, b.length - 1);
@@ -181,7 +178,6 @@ const NetworkView = () => {
               let thumbnailUrl = "";
               if (i["o:media"].length !== 0) {
                 const media = await fetchOne(
-                  cookies.userInfo.host,
                   "media",
                   i["o:media"][0]["o:id"]
                 );
@@ -305,14 +301,13 @@ const NetworkView = () => {
     console.log("fetching...");
 
     const getResourceTemplateProperties = async () => {
-      const templates = await fetchResourceTemplates(cookies.userInfo.host);
+      const templates = await fetchResourceTemplates();
       const template2properties = await Promise.all(
         templates.map(async (template) => {
           const properties = await Promise.all(
             template["o:resource_template_property"].map(
               async (property) =>
                 await fetchOne(
-                  cookies.userInfo.host,
                   "properties",
                   property["o:property"]["o:id"]
                 )
@@ -328,7 +323,6 @@ const NetworkView = () => {
 
     const getData = async () => {
       const res = await fetch(
-        cookies.userInfo.host,
         "items",
         -1,
         {},
@@ -340,7 +334,7 @@ const NetworkView = () => {
 
     getResourceTemplateProperties();
     getData();
-  }, [cookies]);
+  }, []);
 
   useEffect(() => {
     if (nodeData.length === 0) return;
