@@ -76,6 +76,7 @@
     "react-transition-group": "^4.4.1",
     "react-treeview": "^0.4.7",
     "react-viewer": "^3.2.1",
+    "replaceall": "^0.1.6",
     "resolve": "1.15.0",
     "resolve-url-loader": "^3.1.2",
     "sass-loader": "8.0.2",
