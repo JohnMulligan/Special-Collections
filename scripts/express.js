@@ -74,7 +74,7 @@ const baseProxyConfig = {
   }
 };
 
-const apiUrlReplace = replaceall("/","\\\/",omekaUrl);
+const apiUrlReplace = replaceall("\\\/","/",omekaUrl);
 
 const apiProxyConfig = {
   ...baseProxyConfig,
@@ -85,8 +85,9 @@ const apiProxyConfig = {
     // TODO: check if there is a configuration option in Omeka S to
     // disable the base url from being exported in the response.
     const response = responseBuffer.toString('utf8');
-    //console.log(apiUrlReplace)
-    //console.log(baseUrl)
+    //console.log(response.code);
+    console.log("replace this:",baseUrl);
+    console.log("with this:",apiUrlReplace);
     const x = replaceall(apiUrlReplace,baseUrl,response);
     
     //console.log(x);
@@ -243,6 +244,7 @@ app.post('/auth', express.json(), async (req, res) => {
 app.use('/react', [
   function (req, res, next) {
     req.url = req.url.replace('/react/', '/');
+    //theregottobeabetterway.gif
     next();
   }, express.static(path.join(__dirname, "..", "build"))]);
 
