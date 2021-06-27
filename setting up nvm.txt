@@ -1,0 +1,15 @@
+ProxyRequests On
+ProxyPass / http://localhost:3000/
+ProxyPassReverse / http://localhost:3000/
+
+
+
+sudo git clone https://github.com/nvm-sh/nvm 
+cd nvm
+sudo sh install.sh
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm
+npm install 14.0.0
+
+
