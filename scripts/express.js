@@ -74,7 +74,7 @@ const baseProxyConfig = {
   }
 };
 
-const apiUrlReplace = replaceall("\\\/","/",omekaUrl);
+const apiUrlReplace = replaceall("/","\\\/",omekaUrl);
 
 const apiProxyConfig = {
   ...baseProxyConfig,
@@ -86,8 +86,8 @@ const apiProxyConfig = {
     // disable the base url from being exported in the response.
     const response = responseBuffer.toString('utf8');
     //console.log(response.code);
-    console.log("replace this:",baseUrl);
-    console.log("with this:",apiUrlReplace);
+    //console.log("replace this:",baseUrl);
+    //console.log("with this:",apiUrlReplace);
     const x = replaceall(apiUrlReplace,baseUrl,response);
     
     //console.log(x);
