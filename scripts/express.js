@@ -224,7 +224,9 @@ app.post('/changepassword', verifyJWT, express.json(), async (req, res) => {
 
 // Login.
 app.post('/auth', express.json(), async (req, res) => {
+  console.log(req.body)
   const { userName, password } = req.body;
+  
   let ok = false;
   if (userName && password) {
     const u = users[userName];
