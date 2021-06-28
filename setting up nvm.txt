@@ -13,3 +13,7 @@ nvm
 npm install 14.0.0
 
 
+npm install pm2
+pm2 start scripts/express.js
+pm2 list
+pm2 stop [pid]
