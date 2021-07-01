@@ -321,15 +321,31 @@ const NetworkView = () => {
       setResourceTemplateProperties(Object.fromEntries(template2properties));
     };
 
+
+
     const getData = async () => {
-      const res = await fetch(
-        "items",
-        -1,
-        {},
-        0,
-        QUERY_LIMIT
-      );
-      setNodeData(res);
+      let records = [];
+      let keepGoing=true;
+      let offset=0;
+		  while (keepGoing){
+			   let response = await fetch(
+					"items",
+					-1,
+					{},
+					offset,
+					QUERY_LIMIT
+				  );
+			  await records.push.apply(records,response);
+			  offset += QUERY_LIMIT;
+			  console.log(response);
+			  if (response.length<QUERY_LIMIT) {
+			      keepGoing=false;
+                  //return records
+		       };
+		  };
+	  console.log("done!")
+	  console.log(records)
+      setNodeData(records);
     };
 
     getResourceTemplateProperties();

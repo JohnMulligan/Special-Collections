@@ -1,0 +1,38 @@
+apache conf for omeka + special collections
+
+<VirtualHost *:5000>
+  
+ServerName localhost
+
+ProxyRequests On
+ProxyPass / http://localhost:5000/
+ProxyPassReverse / http://localhost:5000/
+
+ServerAdmin jcm10@rice.edu
+ErrorLog ${APACHE_LOG_DIR}/error.log
+CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+Header add Access-Control-Allow-Origin "*"
+Header add Access-Control-Allow-Headers "origin, x-requested-with, content-type"
+Header add Access-Control-Allow-Methods "GET, POST, OPTIONS"
+
+</VirtualHost>
+<VirtualHost *:80>
+
+ServerName localhost
+
+ServerAdmin jcm10@rice.edu
+ErrorLog ${APACHE_LOG_DIR}/error.log
+CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+Alias "/omeka" "/var/www/omeka-s"
+DocumentRoot "/var/www/omeka-s"
+<Directory "/var/www/omeka-s">
+AllowOverride All
+Options -Indexes
+Header add Access-Control-Allow-Origin "*"
+Header add Access-Control-Allow-Headers "origin, x-requested-with, content-type"
+Header add Access-Control-Allow-Methods "GET, POST, OPTIONS"
+</Directory>
+
+</VirtualHost>
