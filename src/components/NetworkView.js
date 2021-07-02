@@ -26,7 +26,8 @@ const NetworkView = () => {
   const width = 1500;
   const radiusCoefficient = 8;
 
-  const QUERY_LIMIT = 200;
+  const RESULTS_PER_PAGE = 200;
+  const MAX_RESULTS=700;
 
   const d3Container = useRef(null);
   const color = d3.scaleOrdinal(d3.schemeCategory10);
@@ -326,25 +327,23 @@ const NetworkView = () => {
     const getData = async () => {
       let records = [];
       let keepGoing=true;
+      //there might be an easy way to add nodes dynamically here
+      //as the results come back
       let offset=0;
-		  while (keepGoing){
+		  while (records.length<MAX_RESULTS){
 			   let response = await fetch(
 					"items",
 					-1,
 					{},
 					offset,
-					QUERY_LIMIT
+					RESULTS_PER_PAGE
 				  );
 			  await records.push.apply(records,response);
-			  offset += QUERY_LIMIT;
-			  console.log(response);
-			  if (response.length<QUERY_LIMIT) {
-			      keepGoing=false;
-                  //return records
-		       };
+			  offset += RESULTS_PER_PAGE;
+			  //console.log(response);
 		  };
-	  console.log("done!")
-	  console.log(records)
+	  //console.log("done!")
+	  //console.log(records)
       setNodeData(records);
     };
 
