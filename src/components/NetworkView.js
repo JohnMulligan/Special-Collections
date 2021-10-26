@@ -26,7 +26,8 @@ const NetworkView = () => {
   const width = 1500;
   const radiusCoefficient = 8;
 
-  const QUERY_LIMIT = 200;
+  const RESULTS_PER_PAGE = 200;
+  const MAX_RESULTS=700;
 
   const d3Container = useRef(null);
   const color = d3.scaleOrdinal(d3.schemeCategory10);
@@ -321,15 +322,29 @@ const NetworkView = () => {
       setResourceTemplateProperties(Object.fromEntries(template2properties));
     };
 
+
+
     const getData = async () => {
-      const res = await fetch(
-        "items",
-        -1,
-        {},
-        0,
-        QUERY_LIMIT
-      );
-      setNodeData(res);
+      let records = [];
+      let keepGoing=true;
+      //there might be an easy way to add nodes dynamically here
+      //as the results come back
+      let offset=0;
+		  while (records.length<MAX_RESULTS){
+			   let response = await fetch(
+					"items",
+					-1,
+					{},
+					offset,
+					RESULTS_PER_PAGE
+				  );
+			  await records.push.apply(records,response);
+			  offset += RESULTS_PER_PAGE;
+			  //console.log(response);
+		  };
+	  //console.log("done!")
+	  //console.log(records)
+      setNodeData(records);
     };
 
     getResourceTemplateProperties();

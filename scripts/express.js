@@ -1,4 +1,5 @@
 const path = require("path");
+const replaceall = require("replaceall");
 const express = require("express");
 const { createProxyMiddleware, responseInterceptor } = require('http-proxy-middleware');
 const app = express(); // create express app
@@ -73,7 +74,7 @@ const baseProxyConfig = {
   }
 };
 
-const apiUrlRegex = new RegExp(omekaUrl, "g");
+const apiUrlReplace = replaceall("/","\\\/",omekaUrl);
 
 const apiProxyConfig = {
   ...baseProxyConfig,
@@ -84,7 +85,19 @@ const apiProxyConfig = {
     // TODO: check if there is a configuration option in Omeka S to
     // disable the base url from being exported in the response.
     const response = responseBuffer.toString('utf8');
-    return response.replace(apiUrlRegex, baseUrl);
+    //console.log(response.code);
+    //console.log("replace this:",baseUrl);
+    //console.log("with this:",apiUrlReplace);
+    const x = replaceall(apiUrlReplace,baseUrl,response);
+    
+    //console.log(x);
+   //	 console.log(apiUrlRegex);
+    //const x = replaceall("10.134.196.127\\\/omeka",baseUrl,response);
+
+    return x;
+  //  console.log(response.replace(apiUrlRegex, baseUrl));
+//    return response.replace(apiUrlRegex, baseUrl);
+    
   })
 };
 
@@ -211,7 +224,9 @@ app.post('/changepassword', verifyJWT, express.json(), async (req, res) => {
 
 // Login.
 app.post('/auth', express.json(), async (req, res) => {
+  console.log(req.body)
   const { userName, password } = req.body;
+  
   let ok = false;
   if (userName && password) {
     const u = users[userName];
@@ -231,6 +246,7 @@ app.post('/auth', express.json(), async (req, res) => {
 app.use('/react', [
   function (req, res, next) {
     req.url = req.url.replace('/react/', '/');
+    //theregottobeabetterway.gif
     next();
   }, express.static(path.join(__dirname, "..", "build"))]);
 
