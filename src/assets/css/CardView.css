@@ -28,7 +28,7 @@
 }
 
 .card-grid .card-fields-div {
-    height: 200px;
+    height: 75vh;
     overflow: auto;
 }
 

@@ -8,6 +8,7 @@ import { OverlayPanel } from 'primereact/overlaypanel';
 import { DataView } from 'primereact/dataview';
 import { Accordion, AccordionTab } from 'primereact/accordion';
 import { Button } from 'primereact/button';
+import { Chip } from 'primereact/chip';
 
 import TemplateSelector from "../components/TemplateSelector";
 import PropertySelector from "../components/PropertySelector";
@@ -117,7 +118,8 @@ const Home = (props) => {
 
     const parseItem = (row, properties) => {
         if (properties && properties.length > 0) {
-            let item = {'id': row['o:id']};
+            let item = {'id': row['o:id'], 'hasMedia': false};
+            console.log(row);
             properties.map((property) => {
                 let label = property['o:label'];
                 let value = null;
@@ -126,15 +128,27 @@ const Home = (props) => {
                     if (row[property['o:term']][0]['type'] === 'resource') {
                         value = row[property['o:term']];
                     } else {
-                        let separator = '';
-                        value = '';
-                        row[property['o:term']].map((subItem) => {
-                            if (subItem['@value'] !== undefined) {
-                                value += separator + subItem['@value'];
-                                separator = ' | ';
-                            }
-                            return null;
-                        });
+                        value = [];
+                        if (row[property['o:term']].length == 1) { // && eh muito grande
+                            value.push(row[property['o:term']][0]['@value']);
+                        } else {
+                            row[property['o:term']].map((subItem) => {
+                                if (subItem['@value'] !== undefined) {
+                                    value.push(subItem['@value']);
+                                }
+                                return null;
+                            });
+                        }
+                        
+                        // let separator = '';
+                        // value = '';
+                        // row[property['o:term']].map((subItem) => {
+                        //     if (subItem['@value'] !== undefined) {
+                        //         value += separator + subItem['@value'];
+                        //         separator = ' | ';
+                        //     }
+                        //     return null;
+                        // });
                     }
                 }
 
@@ -146,6 +160,10 @@ const Home = (props) => {
                 item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
             }
 
+            if (row['o:media'].length > 0) {
+                item['hasMedia'] = true;
+            }
+
             return item;
         }
         return [];
@@ -153,8 +171,20 @@ const Home = (props) => {
 
     const getCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
         if (cellData && (typeof cellData) === 'object') {
-            if (showRelatedItens) {
-                return relatedItemsButtonTemplate(cellData);
+            if (cellData instanceof Array && (typeof cellData[0]) === 'string') {
+                var chips = [];
+                cellData.map((subItem) => {
+                    chips.push(<Chip label={subItem} className="p-mr-2 p-mb-2" />);
+                });
+                return (
+                    <div className="p-d-flex p-ai-center p-flex-wrap">
+                        {chips}
+                    </div>
+                );
+            } else {
+                if (showRelatedItens) {
+                    return relatedItemsButtonTemplate(cellData);
+                }
             }
         } else {
             if (cellData && cellData.length > textMaxLength) {
@@ -295,13 +325,13 @@ const Home = (props) => {
             <Dialog
                 header={dialogHeader}
                 visible={displayDialog}
-                maximizable
+                maximized
                 style={{ width: '50vw' }}
                 onHide={closeDialog}
             >
                 {dialogContent}
             </Dialog>
-            <OverlayPanel ref={overlayPanel} showCloseIcon id="overlay_panel" style={{width: '450px'}}>
+            <OverlayPanel ref={overlayPanel} showCloseIcon id="overlay_panel" style={{width: '75vw'}}>
                 <DataView
                     value={dataViewCollection}
                     layout="grid"

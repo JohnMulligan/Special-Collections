@@ -8,6 +8,7 @@ import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { InputNumber } from 'primereact/inputnumber';
+import { Chips } from 'primereact/chips';
 import { Tooltip } from 'primereact/tooltip';
 import { Button } from 'primereact/button';
 import { Toolbar } from 'primereact/toolbar';
@@ -161,6 +162,49 @@ const DataTableContainer = (props) => {
         }
     }
 
+    // const editorTemplate = (columnProperties, originalRow, cellProperty) => {
+    //     let value = columnProperties.rowData[cellProperty['o:label']] ? columnProperties.rowData[cellProperty['o:label']] : "";
+
+    //     if (originalRow[cellProperty['o:term']] && originalRow[cellProperty['o:term']].length > 1) {
+    //         return (
+    //             <React.Fragment>
+    //                 <div className="p-col-12">
+    //                     <Tooltip target=".info-icon" />
+    //                     <i className="info-icon pi pi-question-circle p-text-secondary p-overlay-badge" data-pr-tooltip="use ' | ' as separator for list items" data-pr-position="right" data-pr-at="right+5 top" data-pr-my="left center-2" style={{ fontSize: '2rem', cursor: 'pointer' }}></i>
+    //                 </div>
+    //                 <div className="p-col-12">
+    //                     <InputTextarea
+    //                         value={value}
+    //                         onChange={(e) => onEditorValueChange(columnProperties, e.target.value)}
+    //                         rows={5}
+    //                         cols={20}
+    //                     />
+    //                 </div>
+    //             </React.Fragment>
+    //         );
+    //     } else if (cellProperty['o:data_type'].length > 0 && cellProperty['o:data_type'].includes('numeric:timestamp')) {
+    //         return (
+    //             <InputNumber
+    //                 value={value ? parseInt(value) : ""}
+    //                 onChange={(e) => onEditorValueChange(columnProperties, e.value)}
+    //                 useGrouping={false}
+    //                 showButtons
+    //                 buttonLayout="vertical"
+    //                 style={{width: '75px'}}
+    //             />
+    //         );
+    //     } else {
+    //         return (
+    //             <InputTextarea
+    //                 value={value}
+    //                 onChange={(e) => onEditorValueChange(columnProperties, e.target.value)}
+    //                 rows={5}
+    //                 cols={20}
+    //             />
+    //         );
+    //     }
+    // }
+
     const editorTemplate = (columnProperties, originalRow, cellProperty) => {
         let value = columnProperties.rowData[cellProperty['o:label']] ? columnProperties.rowData[cellProperty['o:label']] : "";
 
@@ -172,11 +216,9 @@ const DataTableContainer = (props) => {
                         <i className="info-icon pi pi-question-circle p-text-secondary p-overlay-badge" data-pr-tooltip="use ' | ' as separator for list items" data-pr-position="right" data-pr-at="right+5 top" data-pr-my="left center-2" style={{ fontSize: '2rem', cursor: 'pointer' }}></i>
                     </div>
                     <div className="p-col-12">
-                        <InputTextarea
+                        <Chips
                             value={value}
                             onChange={(e) => onEditorValueChange(columnProperties, e.target.value)}
-                            rows={5}
-                            cols={20}
                         />
                     </div>
                 </React.Fragment>
@@ -194,11 +236,9 @@ const DataTableContainer = (props) => {
             );
         } else {
             return (
-                <InputTextarea
+                <Chips
                     value={value}
                     onChange={(e) => onEditorValueChange(columnProperties, e.target.value)}
-                    rows={5}
-                    cols={20}
                 />
             );
         }
@@ -290,6 +330,10 @@ const DataTableContainer = (props) => {
         ).then(data => {
             props.availableProperties.map((property) => {
                 let editedValue = event.data[property['o:label']]
+
+                // console.log(property['o:label']);
+                // console.log(editedValue);
+                // console.log(typeof(editedValue));
                 
                 //TO DO: Check how to clean a subitem (removing an author, for example)
 
@@ -309,11 +353,34 @@ const DataTableContainer = (props) => {
                                 }
                                 return null;
                             });
+                        // } else {
+                        //     if (data[property['o:term']] !== undefined) {
+                        //         data[property['o:term']][0]['@value'] = parseInt(editedValue);
+                        //     } else {
+                        //         data[property['o:term']] = [getNewItem(property, parseInt(editedValue))];
+                        //     }
+                        // }
+                        
                         } else {
-                            if (data[property['o:term']] !== undefined) {
-                                data[property['o:term']][0]['@value'] = parseInt(editedValue);
+                            if (editedValue instanceof Array) {
+                                editedValue.map((value, key) => {
+                                    if (data[property['o:term']] !== undefined) {
+                                        if (data[property['o:term']][key] !== undefined) {
+                                            data[property['o:term']][key]['@value'] = value;
+                                        } else {
+                                            data[property['o:term']][key] = getNewItem(property, value);
+                                        }
+                                    } else {
+                                        data[property['o:term']] = [getNewItem(property, value)];
+                                    }
+                                    return null;
+                                });
                             } else {
-                                data[property['o:term']] = [getNewItem(property, parseInt(editedValue))];
+                                if (data[property['o:term']] !== undefined) {
+                                    data[property['o:term']][0]['@value'] = parseInt(editedValue);
+                                } else {
+                                    data[property['o:term']] = [getNewItem(property, parseInt(editedValue))];
+                                }
                             }
                         }
                     } else {
