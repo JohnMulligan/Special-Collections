@@ -28,7 +28,7 @@ start:
 	@cd $(DIR) && docker-compose -f docker-compose.yml up -d
 
 npm-watch:
-	@cd $(DIR) && docker exec -it $(shell cd $(DIR) && docker-compose ps -q php) bash -c "npm run watch"
+	npm run watch
 
 stop:
 	@cd $(DIR) && docker-compose -f docker-compose.yml down -v

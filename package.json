@@ -84,6 +84,7 @@
     "style-loader": "0.23.1",
     "terser-webpack-plugin": "^2.3.8",
     "ts-pnp": "1.1.6",
+    "universalviewer": "^4.0.0-pre.55",
     "url-loader": "2.3.0",
     "vis-network": "^7.10.2",
     "webpack": "4.42.0",
@@ -92,11 +93,17 @@
     "workbox-webpack-plugin": "4.3.1"
   },
   "scripts": {
+    "copy": "npm run copy-uv-assets && npm run copy-uv-dist-umd && npm run copy-uv-html && npm run copy-uv-css",
+    "copy-uv-assets": "cp -R node_modules/universalviewer/dist/uv-assets ./public",
+    "copy-uv-dist-umd": "cp -R node_modules/universalviewer/dist/uv-dist-umd ./public",
+    "copy-uv-html": "cp -R node_modules/universalviewer/dist/uv.html ./public",
+    "copy-uv-css": "cp -R node_modules/universalviewer/dist/uv.css ./public",
     "start": "node scripts/start.js",
     "express": "node scripts/express.js",
     "build": "node scripts/build.js",
     "watch": "npm-watch",
-    "test": "node scripts/test.js"
+    "test": "node scripts/test.js",
+    "postinstall": "npm run copy"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -168,7 +175,8 @@
       "patterns": [
         "src"
       ],
-      "extensions": "js,jsx"
+      "extensions": "js,jsx",
+      "runOnChangeOnly": true
     }
   },
   "babel": {

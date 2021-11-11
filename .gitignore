@@ -4,6 +4,10 @@
 /node_modules
 /.pnp
 .pnp.js
+/public/uv-assets/
+/public/uv-dist-umd/
+/public/uv.css
+/public/uv.html
 
 # testing
 /coverage
