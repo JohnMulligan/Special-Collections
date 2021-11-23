@@ -124,7 +124,7 @@ const Home = (props) => {
                 let label = property['o:label'];
                 let value = null;
 
-                if (row[property['o:term']] !== undefined) {
+                if (row[property['o:term']] !== undefined && row[property['o:term']].length > 0) {
                     if (row[property['o:term']][0]['type'] === 'resource') {
                         value = row[property['o:term']];
                     } else {
@@ -139,7 +139,7 @@ const Home = (props) => {
                                 return null;
                             });
                         }
-                        
+
                         // let separator = '';
                         // value = '';
                         // row[property['o:term']].map((subItem) => {
@@ -171,16 +171,18 @@ const Home = (props) => {
 
     const getCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
         if (cellData && (typeof cellData) === 'object') {
-            if (cellData instanceof Array && (typeof cellData[0]) === 'string') {
-                var chips = [];
-                cellData.map((subItem) => {
-                    chips.push(<Chip label={subItem} className="p-mr-2 p-mb-2" />);
-                });
-                return (
-                    <div className="p-d-flex p-ai-center p-flex-wrap">
-                        {chips}
-                    </div>
-                );
+            if (cellData instanceof Array) {
+                if ((typeof cellData[0]) === 'string') {
+                    var chips = [];
+                    cellData.map((subItem) => {
+                        chips.push(<Chip label={subItem} className="p-mr-2 p-mb-2" />);
+                    });
+                    return (
+                        <div className="p-d-flex p-ai-center p-flex-wrap">
+                            {chips}
+                        </div>
+                    );
+                }
             } else {
                 if (showRelatedItens) {
                     return relatedItemsButtonTemplate(cellData);

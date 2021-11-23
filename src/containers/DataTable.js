@@ -330,13 +330,7 @@ const DataTableContainer = (props) => {
         ).then(data => {
             props.availableProperties.map((property) => {
                 let editedValue = event.data[property['o:label']]
-
-                // console.log(property['o:label']);
-                // console.log(editedValue);
-                // console.log(typeof(editedValue));
                 
-                //TO DO: Check how to clean a subitem (removing an author, for example)
-
                 if (!props.propertyIsRelation(property)) {
                     if (editedValue) {
                         if (typeof(editedValue) === 'string') {
@@ -353,28 +347,14 @@ const DataTableContainer = (props) => {
                                 }
                                 return null;
                             });
-                        // } else {
-                        //     if (data[property['o:term']] !== undefined) {
-                        //         data[property['o:term']][0]['@value'] = parseInt(editedValue);
-                        //     } else {
-                        //         data[property['o:term']] = [getNewItem(property, parseInt(editedValue))];
-                        //     }
-                        // }
-                        
                         } else {
                             if (editedValue instanceof Array) {
+                                var newData = [];
                                 editedValue.map((value, key) => {
-                                    if (data[property['o:term']] !== undefined) {
-                                        if (data[property['o:term']][key] !== undefined) {
-                                            data[property['o:term']][key]['@value'] = value;
-                                        } else {
-                                            data[property['o:term']][key] = getNewItem(property, value);
-                                        }
-                                    } else {
-                                        data[property['o:term']] = [getNewItem(property, value)];
-                                    }
+                                    newData.push(getNewItem(property, value))
                                     return null;
                                 });
+                                data[property['o:term']] = newData;
                             } else {
                                 if (data[property['o:term']] !== undefined) {
                                     data[property['o:term']][0]['@value'] = parseInt(editedValue);
