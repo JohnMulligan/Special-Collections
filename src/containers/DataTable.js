@@ -6,12 +6,12 @@ import $ from 'jquery';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
-import { InputTextarea } from 'primereact/inputtextarea';
 import { InputNumber } from 'primereact/inputnumber';
-import { Chips } from 'primereact/chips';
-import { Tooltip } from 'primereact/tooltip';
 import { Button } from 'primereact/button';
 import { Toolbar } from 'primereact/toolbar';
+
+import AutoMultiValueField from "../components/AutoMultiValueField";
+import { makeGenericItem } from "../components/AutoMultiValueField";
 
 import { fetchItems, fetchOne, patchResourceItem } from "../utils/OmekaS";
 import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
@@ -162,68 +162,10 @@ const DataTableContainer = (props) => {
         }
     }
 
-    // const editorTemplate = (columnProperties, originalRow, cellProperty) => {
-    //     let value = columnProperties.rowData[cellProperty['o:label']] ? columnProperties.rowData[cellProperty['o:label']] : "";
-
-    //     if (originalRow[cellProperty['o:term']] && originalRow[cellProperty['o:term']].length > 1) {
-    //         return (
-    //             <React.Fragment>
-    //                 <div className="p-col-12">
-    //                     <Tooltip target=".info-icon" />
-    //                     <i className="info-icon pi pi-question-circle p-text-secondary p-overlay-badge" data-pr-tooltip="use ' | ' as separator for list items" data-pr-position="right" data-pr-at="right+5 top" data-pr-my="left center-2" style={{ fontSize: '2rem', cursor: 'pointer' }}></i>
-    //                 </div>
-    //                 <div className="p-col-12">
-    //                     <InputTextarea
-    //                         value={value}
-    //                         onChange={(e) => onEditorValueChange(columnProperties, e.target.value)}
-    //                         rows={5}
-    //                         cols={20}
-    //                     />
-    //                 </div>
-    //             </React.Fragment>
-    //         );
-    //     } else if (cellProperty['o:data_type'].length > 0 && cellProperty['o:data_type'].includes('numeric:timestamp')) {
-    //         return (
-    //             <InputNumber
-    //                 value={value ? parseInt(value) : ""}
-    //                 onChange={(e) => onEditorValueChange(columnProperties, e.value)}
-    //                 useGrouping={false}
-    //                 showButtons
-    //                 buttonLayout="vertical"
-    //                 style={{width: '75px'}}
-    //             />
-    //         );
-    //     } else {
-    //         return (
-    //             <InputTextarea
-    //                 value={value}
-    //                 onChange={(e) => onEditorValueChange(columnProperties, e.target.value)}
-    //                 rows={5}
-    //                 cols={20}
-    //             />
-    //         );
-    //     }
-    // }
-
     const editorTemplate = (columnProperties, originalRow, cellProperty) => {
         let value = columnProperties.rowData[cellProperty['o:label']] ? columnProperties.rowData[cellProperty['o:label']] : "";
 
-        if (originalRow[cellProperty['o:term']] && originalRow[cellProperty['o:term']].length > 1) {
-            return (
-                <React.Fragment>
-                    <div className="p-col-12">
-                        <Tooltip target=".info-icon" />
-                        <i className="info-icon pi pi-question-circle p-text-secondary p-overlay-badge" data-pr-tooltip="use ' | ' as separator for list items" data-pr-position="right" data-pr-at="right+5 top" data-pr-my="left center-2" style={{ fontSize: '2rem', cursor: 'pointer' }}></i>
-                    </div>
-                    <div className="p-col-12">
-                        <Chips
-                            value={value}
-                            onChange={(e) => onEditorValueChange(columnProperties, e.target.value)}
-                        />
-                    </div>
-                </React.Fragment>
-            );
-        } else if (cellProperty['o:data_type'].length > 0 && cellProperty['o:data_type'].includes('numeric:timestamp')) {
+        if (cellProperty['o:data_type'].length > 0 && cellProperty['o:data_type'].includes('numeric:timestamp')) {
             return (
                 <InputNumber
                     value={value ? parseInt(value) : ""}
@@ -235,10 +177,16 @@ const DataTableContainer = (props) => {
                 />
             );
         } else {
+            if (!Array.isArray(value)) {
+                value = [value];
+            }
+            value = value.map(makeGenericItem);
+
             return (
-                <Chips
-                    value={value}
-                    onChange={(e) => onEditorValueChange(columnProperties, e.target.value)}
+                <AutoMultiValueField
+                    values={value}
+                    // TO DO - Change item.text to accept 'link'
+                    onChange={(value) => onEditorValueChange(columnProperties, value.map(item => item.text))} 
                 />
             );
         }
@@ -316,14 +264,13 @@ const DataTableContainer = (props) => {
     }
 
     const onEditorValueChange = (properties, value) => {
-        let updatedProducts = [...properties.value];
-        updatedProducts[properties.rowIndex][properties.field] = value;
-        setCollection(updatedProducts);
+        let updatedProperties = [...properties.value];
+        updatedProperties[properties.rowIndex][properties.field] = value;
+        setCollection(updatedProperties);
     }
 
     const onRowEditSave = (event) => {
         $('.p-row-editor-init').each(function(){$(this).show()});
-        let separator = ' | ';
         fetchOne(
             props.query.endpoint,
             event.data['id']
@@ -331,40 +278,35 @@ const DataTableContainer = (props) => {
             props.availableProperties.map((property) => {
                 let editedValue = event.data[property['o:label']]
                 
-                if (!props.propertyIsRelation(property)) {
-                    if (editedValue) {
-                        if (typeof(editedValue) === 'string') {
-                            let values = editedValue.split(separator);
-                            values.map((value, key) => {
-                                if (data[property['o:term']] !== undefined) {
-                                    if (data[property['o:term']][key] !== undefined) {
-                                        data[property['o:term']][key]['@value'] = value;
-                                    } else {
-                                        data[property['o:term']][key] = getNewItem(property, value);
-                                    }
+                if (!props.propertyIsRelation(property) && editedValue) {
+                    if (typeof(editedValue) === 'string') {
+                        editedValue.map((value, key) => {
+                            if (data[property['o:term']] !== undefined) {
+                                if (data[property['o:term']][key] !== undefined) {
+                                    data[property['o:term']][key]['@value'] = value;
                                 } else {
-                                    data[property['o:term']] = [getNewItem(property, value)];
+                                    data[property['o:term']][key] = getNewItem(property, value);
                                 }
+                            } else {
+                                data[property['o:term']] = [getNewItem(property, value)];
+                            }
+                            return null;
+                        });
+                    } else {
+                        if (editedValue instanceof Array) {
+                            var newData = [];
+                            editedValue.map((value, key) => {
+                                newData.push(getNewItem(property, value))
                                 return null;
                             });
+                            data[property['o:term']] = newData;
                         } else {
-                            if (editedValue instanceof Array) {
-                                var newData = [];
-                                editedValue.map((value, key) => {
-                                    newData.push(getNewItem(property, value))
-                                    return null;
-                                });
-                                data[property['o:term']] = newData;
+                            if (data[property['o:term']] !== undefined) {
+                                data[property['o:term']][0]['@value'] = parseInt(editedValue);
                             } else {
-                                if (data[property['o:term']] !== undefined) {
-                                    data[property['o:term']][0]['@value'] = parseInt(editedValue);
-                                } else {
-                                    data[property['o:term']] = [getNewItem(property, parseInt(editedValue))];
-                                }
+                                data[property['o:term']] = [getNewItem(property, parseInt(editedValue))];
                             }
                         }
-                    } else {
-                        //TO DO: Check how to clean empty properties
                     }
                 }
                 return null;
@@ -448,10 +390,10 @@ const DataTableContainer = (props) => {
                 buttons.push(<Button key="add-note" label="Add Note" className="p-button-sm p-button-raised p-button-text p-mr-2" onClick={() => { addNote(); }} />);
                 buttons.push(<Button key="add-to-project" label="Add to Project" className="p-button-sm p-button-raised p-button-text p-mr-2" onClick={() => { addToProject(); }} />);
                 buttons.push(<Button key="create-project" label="Create Project" className="p-button-sm p-button-raised p-mr-2" onClick={() => { createProject(); }} />);
-                buttons.push(<Button key="edit-mode" label="Edit Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" onClick={() => { toggleScreenMode('edit'); }} />);
+                buttons.push(<Button key="edit-mode" label="Edit Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" icon="pi pi-pencil" onClick={() => { toggleScreenMode('edit'); }} />);
             break;
             case 'edit':
-                buttons.push(<Button key="view-mode" label="View Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" disabled={originalRow !== null} onClick={() => { toggleScreenMode('view'); }} />);
+                buttons.push(<Button key="view-mode" label="View Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" disabled={originalRow !== null} icon="pi pi-eye" onClick={() => { toggleScreenMode('view'); }} />);
             break;
             case 'select':
                 switch (selectButtonMode) {
@@ -484,7 +426,10 @@ const DataTableContainer = (props) => {
     const renderHeader = () => {
         return (
             <div className="table-header">
-                <Toolbar left={headerLeftContents} right={headerRightContents} />
+                <Toolbar
+                    left={headerLeftContents}
+                    right={headerRightContents}
+                />
             </div>
         );
     }

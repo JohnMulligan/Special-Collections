@@ -2,6 +2,10 @@
 	text-align: center !important;
 }
 
+.no-border {
+    border: 0 none !important;
+}
+
 .header-title {
 	font-family: "Goudy Old Style";
 	font-style: italic;

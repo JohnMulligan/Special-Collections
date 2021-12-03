@@ -16,6 +16,9 @@ import PropertySelector from "../components/PropertySelector";
 import DataTableContainer from "../containers/DataTable";
 import DataViewCardContainer from "../containers/DataViewCard";
 
+import AutoMultiValueField from "../components/AutoMultiValueField";
+import { makeGenericItem } from "../components/AutoMultiValueField";
+
 import CardView from "../components/CardView";
 
 import { fetchOne } from "../utils/OmekaS";
@@ -119,7 +122,6 @@ const Home = (props) => {
     const parseItem = (row, properties) => {
         if (properties && properties.length > 0) {
             let item = {'id': row['o:id'], 'hasMedia': false};
-            console.log(row);
             properties.map((property) => {
                 let label = property['o:label'];
                 let value = null;
@@ -139,16 +141,6 @@ const Home = (props) => {
                                 return null;
                             });
                         }
-
-                        // let separator = '';
-                        // value = '';
-                        // row[property['o:term']].map((subItem) => {
-                        //     if (subItem['@value'] !== undefined) {
-                        //         value += separator + subItem['@value'];
-                        //         separator = ' | ';
-                        //     }
-                        //     return null;
-                        // });
                     }
                 }
 
@@ -173,13 +165,16 @@ const Home = (props) => {
         if (cellData && (typeof cellData) === 'object') {
             if (cellData instanceof Array) {
                 if ((typeof cellData[0]) === 'string') {
-                    var chips = [];
+                    var values = [];
                     cellData.map((subItem) => {
-                        chips.push(<Chip label={subItem} className="p-mr-2 p-mb-2" />);
+                        values.push(subItem);
                     });
                     return (
                         <div className="p-d-flex p-ai-center p-flex-wrap">
-                            {chips}
+                            <AutoMultiValueField
+                                readonly={true}
+                                values={values.map(makeGenericItem)}
+                            />
                         </div>
                     );
                 }
@@ -255,7 +250,9 @@ const Home = (props) => {
                 cardData={rowData}
                 properties={properties}
                 showRelatedItens={showRelatedItens}
+                editModeEnabled={true}
                 getCellTemplate={getCellTemplate}
+                propertyIsRelation={propertyIsRelation}
             />
         );
     }

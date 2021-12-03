@@ -4,7 +4,6 @@
     border-radius: 10px;
     padding: 10px;
     min-height: 300px;
-    max-height: 500px;
 }
 
 .card-grid .card-grid-content {
@@ -28,7 +27,6 @@
 }
 
 .card-grid .card-fields-div {
-    height: 75vh;
     overflow: auto;
 }
 
@@ -38,7 +36,6 @@
 
 .card-grid .card-field {
     text-align: left;
-    margin: 10px;
 }
 
 .card-grid .card-grid-bottom {

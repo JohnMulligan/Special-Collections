@@ -99,6 +99,7 @@ const DataViewCardContainer = (props) => {
                 cardData={data}
                 properties={props.activeProperties}
                 showRelatedItens={true}
+                editModeEnabled={false}
                 openDialog={props.openDialog}
                 openOverlayPanel={true}
                 getCellTemplate={props.getCellTemplate}
