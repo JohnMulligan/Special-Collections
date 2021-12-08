@@ -6,6 +6,11 @@
     border: 0 none !important;
 }
 
+.border-default {
+	border: 1px solid #808080;
+    border-radius: 3px;
+}
+
 .header-title {
 	font-family: "Goudy Old Style";
 	font-style: italic;

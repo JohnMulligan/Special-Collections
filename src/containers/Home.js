@@ -8,7 +8,6 @@ import { OverlayPanel } from 'primereact/overlaypanel';
 import { DataView } from 'primereact/dataview';
 import { Accordion, AccordionTab } from 'primereact/accordion';
 import { Button } from 'primereact/button';
-import { Chip } from 'primereact/chip';
 
 import TemplateSelector from "../components/TemplateSelector";
 import PropertySelector from "../components/PropertySelector";
@@ -161,27 +160,23 @@ const Home = (props) => {
         return [];
     }
 
-    const getCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
+    const getDataTableCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
         if (cellData && (typeof cellData) === 'object') {
-            if (cellData instanceof Array) {
-                if ((typeof cellData[0]) === 'string') {
-                    var values = [];
-                    cellData.map((subItem) => {
-                        values.push(subItem);
-                    });
-                    return (
-                        <div className="p-d-flex p-ai-center p-flex-wrap">
-                            <AutoMultiValueField
-                                readonly={true}
-                                values={values.map(makeGenericItem)}
-                            />
-                        </div>
-                    );
-                }
-            } else {
-                if (showRelatedItens) {
-                    return relatedItemsButtonTemplate(cellData);
-                }
+            if ((typeof cellData[0]) === 'string') {
+                var values = [];
+                cellData.map((subItem) => {
+                    values.push(subItem);
+                });
+                return (
+                    <div className="p-d-flex p-ai-center p-flex-wrap">
+                        <AutoMultiValueField
+                            readonly={true}
+                            values={values.map(makeGenericItem)}
+                        />
+                    </div>
+                );
+            } else if (showRelatedItens) {
+                return relatedItemsButtonTemplate(cellData);
             }
         } else {
             if (cellData && cellData.length > textMaxLength) {
@@ -191,6 +186,23 @@ const Home = (props) => {
             }
         }
         return null;
+    }
+
+    const getDataViewCardCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
+        if (cellData) {
+            if (cellData instanceof Array) {
+                if (showRelatedItens) {
+                    return relatedItemsButtonTemplate(cellData);
+                }
+            } else if ((typeof cellData) === 'object') {
+                return cellData;
+            } else if ((typeof cellData) === 'string') {
+                if (cellData.length > textMaxLength) {
+                    return longTextTemplate(field, cellData, textMaxLength, longTextOption);
+                }
+            }
+        }
+        return cellData;
     }
 
     const relatedItemsButtonTemplate = (items) => {
@@ -240,21 +252,35 @@ const Home = (props) => {
             return null;
         }
 
-        return cardViewTemplate(rowData, dataViewProperties, false);
+        return cardViewTemplate(rowData, dataViewProperties, false, null);
     }
 
-    const cardViewTemplate = (rowData, properties, showRelatedItens) => {
+    const cardViewTemplate = (rowData, properties, showRelatedItens, onCardSave) => {
         return (
             <CardView
                 cardClassName="p-col-12"
                 cardData={rowData}
+                onCardSave={onCardSave}
+                availableProperties={availableProperties}
                 properties={properties}
+                showToast={showToast}
                 showRelatedItens={showRelatedItens}
                 editModeEnabled={true}
-                getCellTemplate={getCellTemplate}
+                getCellTemplate={getDataTableCellTemplate}
                 propertyIsRelation={propertyIsRelation}
+                getNewItem={getNewItem}
             />
         );
+    }
+
+    const getNewItem = (property, value) => {
+        return {
+            '@value': value,
+            'is_public': true,
+            'property_id': property['o:id'],
+            'property_label': property['o:label'],
+            'type': property['o:data_type'][0] !== undefined ? property['o:data_type'][0] : 'literal',
+        };
     }
 
     const containerContent = () => {
@@ -270,17 +296,21 @@ const Home = (props) => {
                     openDialog={openDialog}
                     propertyIsRelation={propertyIsRelation}
                     parseItem={parseItem}
-                    getCellTemplate={getCellTemplate}
+                    getCellTemplate={getDataTableCellTemplate}
                     cardViewTemplate={cardViewTemplate}
+                    getNewItem={getNewItem}
                 />
             );
         } else {
             return (
                 <DataViewCardContainer
                     activeTemplate={activeTemplate}
+                    availableProperties={availableProperties}
                     activeProperties={activeProperties}
+                    showToast={showToast}
                     propertyIsRelation={propertyIsRelation}
-                    getCellTemplate={getCellTemplate}
+                    getCellTemplate={getDataViewCardCellTemplate}
+                    getNewItem={getNewItem}
                 />
             );
         }

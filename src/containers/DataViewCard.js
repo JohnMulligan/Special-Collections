@@ -4,6 +4,7 @@ import { connect } from "react-redux";
 import { DataView } from 'primereact/dataview';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
+import { Chip } from 'primereact/chip';
 
 import CardView from "../components/CardView";
 
@@ -61,25 +62,17 @@ const DataViewCardContainer = (props) => {
             let item = {'id': row['o:id']};
             properties.map((property) => {
                 let label = property['o:label'];
-                let value = null;
-
-                if (row[property['o:term']] !== undefined) {
-                    if (row[property['o:term']][0]['type'] === 'resource') {
-                        value = row[property['o:term']];
+                if (row[property['o:term']] !== undefined && row[property['o:term']].length > 0) {
+                    if (property['o:label'] === 'Title' || property['o:label'] === 'name') {
+                        item[label] = row[property['o:term']][0]['@value'];
+                    } else if (row[property['o:term']][0]['type'] === 'resource') {
+                        item[label] = row[property['o:term']];
                     } else {
-                        let separator = '';
-                        value = '';
-                        row[property['o:term']].map((subItem) => {
-                            if (subItem['@value'] !== undefined) {
-                                value += separator + subItem['@value'];
-                                separator = ' | ';
-                            }
-                            return null;
-                        });
+                        item[label] = itemChipsTemplate(row[property['o:term']]);
                     }
+                } else {
+                    item[label] = null;
                 }
-
-                item[label] = value;
                 return null;
             });
 
@@ -92,17 +85,38 @@ const DataViewCardContainer = (props) => {
         return [];
     }
 
+    const itemChipsTemplate = (rowData) => {
+        let itemChips = [];
+        if (rowData !== undefined && rowData[0]['type'] !== 'resource') {
+            rowData.map((subItem) => {
+                if (subItem['@value'] !== undefined) {
+                    itemChips.push(<Chip label={subItem['@value']} className="p-mr-2 p-mb-2" style={{ 'font-size': "12px" }} />);
+                }
+                return null;
+            });
+        }
+
+        return (
+            <React.Fragment>
+                {itemChips}
+            </React.Fragment>
+        );
+    }
+
     const itemCardTemplate = (data) => {
         return (
             <CardView
                 cardClassName="p-col-3"
                 cardData={data}
+                availableProperties={props.availableProperties}
                 properties={props.activeProperties}
+                showToast={props.showToast}
                 showRelatedItens={true}
                 editModeEnabled={false}
                 openDialog={props.openDialog}
                 openOverlayPanel={true}
                 getCellTemplate={props.getCellTemplate}
+                getNewItem={props.getNewItem}
             />
         );
     }

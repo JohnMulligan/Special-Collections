@@ -18,6 +18,30 @@ import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
 
 import '../assets/css/DataTable.css';
 
+const RowCardView = ({rowData, collection, openDialog, cardViewTemplate, activeProperties, onRowEditSave}) => {
+    if (!!rowData) {
+        const index = collection.findIndex(element => element.id === rowData.id);
+    
+        const editSave = (data) => {
+            onRowEditSave({data, index});
+        };
+
+        return (
+            <React.Fragment>
+                <Button
+                    className="p-button-sm p-button-raised"
+                    icon="pi pi-eye"
+                    title="View"
+                    // TO DO - Change to use props
+                    onClick={() => { openDialog(null, cardViewTemplate(rowData, activeProperties, true, editSave)); } }>
+                </Button>
+            </React.Fragment>
+        );
+    } else {
+        return null;
+    }
+}
+
 const DataTableContainer = (props) => {
     const [loading, setLoading] = useState(false);
     const [displayContent, setDisplayContent] = useState(false);
@@ -112,10 +136,7 @@ const DataTableContainer = (props) => {
                     body={cellTemplate}
                     editor={(columnProperties) => {
                         if(!fieldIsRelation) {
-                            var originalRow = originalCollection.filter(
-                                (row) => row['o:id'] === columnProperties.rowData['id']
-                            )[0];
-                            return editorTemplate(columnProperties, originalRow, property);
+                            return editorTemplate(columnProperties, property);
                         }
                     }}
                 />
@@ -134,27 +155,28 @@ const DataTableContainer = (props) => {
     }
 
     const viewTemplate = (rowData) => {
-        if (rowData !== undefined) {
-            return (
-                <React.Fragment>
-                    <Button
-                        className="p-button-sm p-button-raised"
-                        icon="pi pi-eye"
-                        title="View"
-                        onClick={() => { props.openDialog(null, props.cardViewTemplate(rowData, props.activeProperties, true)); } }>
-                    </Button>
-                </React.Fragment>
-            );
-        } else {
-            return null;
-        }
+        return (
+            <RowCardView
+                rowData={rowData}
+                collection={collection}
+                onRowEditSave={onRowEditSave}
+                {...props}
+            />
+        );
     }
 
     const thumbnailTemplate = (rowData) => {
         if (rowData !== undefined && rowData['thumbnail_url']) {
             return (
                 <React.Fragment>
-                    <img src={rowData['thumbnail_url']} width="100" height="100" alt="" onError={(e) => e.target.src=PlaceHolder} />
+                    <img
+                        src={rowData['thumbnail_url']}
+                        class="border-default"
+                        width="100"
+                        height="100"
+                        alt=""
+                        onError={(e) => e.target.src=PlaceHolder}
+                    />
                 </React.Fragment>
             );
         } else {
@@ -162,7 +184,7 @@ const DataTableContainer = (props) => {
         }
     }
 
-    const editorTemplate = (columnProperties, originalRow, cellProperty) => {
+    const editorTemplate = (columnProperties, cellProperty) => {
         let value = columnProperties.rowData[cellProperty['o:label']] ? columnProperties.rowData[cellProperty['o:label']] : "";
 
         if (cellProperty['o:data_type'].length > 0 && cellProperty['o:data_type'].includes('numeric:timestamp')) {
@@ -270,6 +292,7 @@ const DataTableContainer = (props) => {
     }
 
     const onRowEditSave = (event) => {
+        // TO DO - Use effect
         $('.p-row-editor-init').each(function(){$(this).show()});
         fetchOne(
             props.query.endpoint,
@@ -285,27 +308,25 @@ const DataTableContainer = (props) => {
                                 if (data[property['o:term']][key] !== undefined) {
                                     data[property['o:term']][key]['@value'] = value;
                                 } else {
-                                    data[property['o:term']][key] = getNewItem(property, value);
+                                    data[property['o:term']][key] = props.getNewItem(property, value);
                                 }
                             } else {
-                                data[property['o:term']] = [getNewItem(property, value)];
+                                data[property['o:term']] = [props.getNewItem(property, value)];
                             }
                             return null;
                         });
+                    } else if (editedValue instanceof Array) {
+                        var newData = [];
+                        editedValue.map((value, key) => {
+                            newData.push(props.getNewItem(property, value))
+                            return null;
+                        });
+                        data[property['o:term']] = newData;
                     } else {
-                        if (editedValue instanceof Array) {
-                            var newData = [];
-                            editedValue.map((value, key) => {
-                                newData.push(getNewItem(property, value))
-                                return null;
-                            });
-                            data[property['o:term']] = newData;
+                        if (data[property['o:term']] !== undefined) {
+                            data[property['o:term']][0]['@value'] = parseInt(editedValue);
                         } else {
-                            if (data[property['o:term']] !== undefined) {
-                                data[property['o:term']][0]['@value'] = parseInt(editedValue);
-                            } else {
-                                data[property['o:term']] = [getNewItem(property, parseInt(editedValue))];
-                            }
+                            data[property['o:term']] = [props.getNewItem(property, parseInt(editedValue))];
                         }
                     }
                 }
@@ -317,18 +338,10 @@ const DataTableContainer = (props) => {
             rows[event.index] = props.parseItem(data, props.activeProperties);
             setOriginalRow(null);
 
+            setCollection(rows);
+
             props.showToast('success', 'Success', 'Item successfully updated!');
         });
-    }
-
-    const getNewItem = (property, value) => {
-        return {
-            '@value': value,
-            'is_public': true,
-            'property_id': property['o:id'],
-            'property_label': property['o:label'],
-            'type': property['o:data_type'][0] !== undefined ? property['o:data_type'][0] : 'literal',
-        };
     }
 
     const toggleScreenMode = (toggleToMode) => {
@@ -442,7 +455,7 @@ const DataTableContainer = (props) => {
                 <div className="card">
                     <DataTable
                         loading={loading}
-                        className="p-datatable-collection p-datatable-striped p-datatable-responsive"
+                        className="p-datatable-collection p-datatable-responsive"
                         emptyMessage="No items found"
                         lazy
                         ref={dt}

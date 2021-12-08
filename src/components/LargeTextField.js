@@ -9,6 +9,7 @@ import { OverlayPanel } from "primereact/overlaypanel";
 
 export const LargeTextField = ({
     text,
+    className,
     onChange,
     onFinish,
     readonly = false,
@@ -81,13 +82,9 @@ export const LargeTextField = ({
             }}
             onClick={readonly ? null : activate}
             ref={displayArea}
-            class="p-p-2"
+            class={className}
             style={{
-                borderColor: "lightgray",
                 boxShadow: mode < 1 ? "" : "0 .15rem 0.3rem rgba(0,0,0,.35)",
-                borderStyle: readonly ? "" : "solid",
-                borderWidth: readonly ? "0px" : "1px",
-                borderRadius: "3px",
                 cursor: !readonly || isTruncated ? "cell" : "default",
                 visibility: popupMode <= 1 ? "visible" : "collapse"
             }}

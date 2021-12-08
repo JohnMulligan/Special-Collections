@@ -189,8 +189,7 @@ const AutoMultiValueField = ({
             <div className="p-grid">
                 <div className="p-col-12">
                     <Toolbar
-                        class="p-m-2"
-                        style={{ border: "1px solid #dee2e6" }}
+                        class="no-border p-m-2"
                         left={toolbarItems}
                         right={rightToolbarItems}
                     />
@@ -200,6 +199,7 @@ const AutoMultiValueField = ({
                 <div className="p-col-12">
                     {singleItemTemplate || (
                         <LargeTextField
+                            className="border-default p-p-2"
                             onChange={setSingleItem}
                             onFinish={(v) => {
                                 setSingleItem(null);
@@ -229,8 +229,7 @@ const AutoMultiValueField = ({
                 <div className="p-col-12">
                     {!readonly && (
                         <Toolbar
-                            class="p-m-2"
-                            style={{ border: "1px solid #dee2e6" }}
+                            class="no-border p-m-2"
                             left={toolbarItems}
                             right={rightToolbarItems}
                         />
@@ -240,14 +239,13 @@ const AutoMultiValueField = ({
             <div className="p-grid">
                 <div className="p-col-12">
                     <ListBox
-                        class="p-p-2"
+                        className="border-default p-p-2"
                         listStyle={{
                             backgroundColor: "#FFFFFF"
                         }}
                         style={{
                             maxHeight: "120px",
                             overflow: "auto",
-                            border: "1px solid #dee2e6"
                         }}
                         value={selected}
                         options={options}
