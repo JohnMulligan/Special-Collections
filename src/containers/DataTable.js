@@ -139,6 +139,7 @@ const DataTableContainer = (props) => {
                             return editorTemplate(columnProperties, property);
                         }
                     }}
+                    exportable={!fieldIsRelation}
                 />
             );
             return null;
@@ -403,6 +404,7 @@ const DataTableContainer = (props) => {
                 buttons.push(<Button key="add-note" label="Add Note" className="p-button-sm p-button-raised p-button-text p-mr-2" onClick={() => { addNote(); }} />);
                 buttons.push(<Button key="add-to-project" label="Add to Project" className="p-button-sm p-button-raised p-button-text p-mr-2" onClick={() => { addToProject(); }} />);
                 buttons.push(<Button key="create-project" label="Create Project" className="p-button-sm p-button-raised p-mr-2" onClick={() => { createProject(); }} />);
+                buttons.push(<Button key="export" icon="pi pi-download" label="Export CSV" className="p-button-sm p-button-raised p-mr-2" onClick={() => { dt.current.exportCSV(); }} />);
                 buttons.push(<Button key="edit-mode" label="Edit Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" icon="pi pi-pencil" onClick={() => { toggleScreenMode('edit'); }} />);
             break;
             case 'edit':
