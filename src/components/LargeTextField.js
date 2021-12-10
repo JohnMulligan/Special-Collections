@@ -96,7 +96,7 @@ export const LargeTextField = ({
             }}
             onClick={readonly ? null : activate}
         >
-            <span style={{ opacity: text.length === 0 ? 0.5 : 1.0, whiteSpace: "pre" }}>
+            <span style={{ opacity: text.length === 0 ? 0.5 : 1.0, whiteSpace: "pre", display: "inline-block" }}>
                 {isTruncated ? text.substring(0, maxChars) : text || emptyLabel()}
             </span>
             {!isTruncated || dots}

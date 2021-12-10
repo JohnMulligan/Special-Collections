@@ -16,7 +16,8 @@ import DataTableContainer from "../containers/DataTable";
 import DataViewCardContainer from "../containers/DataViewCard";
 
 import AutoMultiValueField from "../components/AutoMultiValueField";
-import { makeGenericItem } from "../components/AutoMultiValueField";
+import { genericEditableItemType, makeGenericItem, makeNumberItem } from "../components/AutoMultiValueField";
+import { makeLinkItem } from '../components/OmekaLinking'
 
 import CardView from "../components/CardView";
 
@@ -121,31 +122,25 @@ const Home = (props) => {
     const parseItem = (row, properties) => {
         if (properties && properties.length > 0) {
             let item = {'id': row['o:id'], 'hasMedia': false};
-            properties.map((property) => {
+            for (const property of properties) {
                 let label = property['o:label'];
-                let value = null;
+                let value = [];
 
                 if (row[property['o:term']] !== undefined && row[property['o:term']].length > 0) {
-                    if (row[property['o:term']][0]['type'] === 'resource') {
-                        value = row[property['o:term']];
-                    } else {
-                        value = [];
-                        if (row[property['o:term']].length == 1) { // && eh muito grande
-                            value.push(row[property['o:term']][0]['@value']);
-                        } else {
-                            row[property['o:term']].map((subItem) => {
-                                if (subItem['@value'] !== undefined) {
-                                    value.push(subItem['@value']);
-                                }
-                                return null;
-                            });
+                    for (const subItem of row[property['o:term']]) {
+                        let vtype = subItem.type;
+                        if (vtype === 'literal') {
+                            value.push(makeGenericItem(subItem['@value'] || ""));
+                        } else if (vtype === 'numeric:timestamp') {
+                            value.push(makeNumberItem(subItem['@value'] || ""));
+                        } else if (vtype === 'resource') {
+                            value.push(makeLinkItem(subItem));
                         }
                     }
                 }
 
                 item[label] = value;
-                return null;
-            });
+            }
 
             if (row['thumbnail_display_urls']['square']) {
                 item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
@@ -161,32 +156,20 @@ const Home = (props) => {
     }
 
     const getDataTableCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
-        if (cellData && (typeof cellData) === 'object') {
-            if ((typeof cellData[0]) === 'string') {
-                var values = [];
-                cellData.map((subItem) => {
-                    values.push(subItem);
-                });
-                return (
-                    <div className="p-d-flex p-ai-center p-flex-wrap">
-                        <AutoMultiValueField
-                            values={values.map(makeGenericItem)}
-                            fieldClassName="no-border bg-white p-p-1"
-                            readonly={true}
-                        />
-                    </div>
-                );
-            } else if (showRelatedItens) {
-                return relatedItemsButtonTemplate(cellData);
-            }
-        } else {
-            if (cellData && cellData.length > textMaxLength) {
-                return longTextTemplate(field, cellData, textMaxLength, longTextOption);
-            } else {
-                return cellData;
-            }
+        if (!cellData) return null;
+        if (field === 'Has Part') {   
+            return relatedItemsButtonTemplate(cellData);
         }
-        return null;
+        return (
+            <div className="p-d-flex p-ai-center p-flex-wrap">
+                <AutoMultiValueField
+                    values={cellData}
+                    fieldClassName="no-border bg-white p-p-1"
+                    readonly={true}
+                    itemTypesAllowed={[genericEditableItemType, {...genericEditableItemType, id: 1}]}
+                />
+            </div>
+        );
     }
 
     const getDataViewCardCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
@@ -211,7 +194,7 @@ const Home = (props) => {
             <Button
                 icon="pi pi-plus-circle"
                 className="p-button-sm p-button-raised p-button-text"
-                label={Object.keys(items).length + " related items"}
+                label={items.length + " related items"}
                 onClick={(e) => openOverlayPanel(e, items) }
                 aria-haspopup aria-controls="overlay_panel"
             />
@@ -276,13 +259,35 @@ const Home = (props) => {
     }
 
     const getNewItem = (property, value) => {
-        return {
-            '@value': value,
-            'is_public': true,
-            'property_id': property['o:id'],
-            'property_label': property['o:label'],
-            'type': property['o:data_type'][0] !== undefined ? property['o:data_type'][0] : 'literal',
-        };
+        if (value.itemTypeId === 0) {
+            return {
+                '@value': value.text,
+                'is_public': true,
+                'property_id': property['o:id'],
+                'property_label': property['o:label'],
+                'type': 'literal'
+            };
+        } else if (value.itemTypeId === 1) {
+            return {
+                '@value': value.text,
+                'is_public': true,
+                'property_id': property['o:id'],
+                'property_label': property['o:label'],
+                'type': 'numeric:timestamp'
+            };
+        } else if (value.itemTypeId === 2) {
+            // TODO: test this!
+            return {
+                'value_resource_id': value['value_resource_id'],
+                'value_resource_name': value['value_resource_name'],
+                'is_public': true,
+                'property_id': property['o:id'],
+                'property_label': property['o:label'],
+                'type': 'resource'
+            };
+        }
+        console.log(value);
+        alert('Not handled!');
     }
 
     const containerContent = () => {

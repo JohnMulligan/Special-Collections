@@ -10,8 +10,9 @@ import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
 import { Toolbar } from 'primereact/toolbar';
 
-import AutoMultiValueField from "../components/AutoMultiValueField";
-import { makeGenericItem } from "../components/AutoMultiValueField";
+import AutoMultiValueField, { genericEditableItemType } from "../components/AutoMultiValueField";
+import { makeNumberItem } from "../components/AutoMultiValueField";
+import { linkableItemType } from "../components/OmekaLinking";
 
 import { fetchItems, fetchOne, patchResourceItem } from "../utils/OmekaS";
 import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
@@ -191,8 +192,8 @@ const DataTableContainer = (props) => {
         if (cellProperty['o:data_type'].length > 0 && cellProperty['o:data_type'].includes('numeric:timestamp')) {
             return (
                 <InputNumber
-                    value={value ? parseInt(value) : ""}
-                    onChange={(e) => onEditorValueChange(columnProperties, e.value)}
+                    value={value && value.length === 1 ? parseInt(value[0].text) : ""}
+                    onChange={(e) => onEditorValueChange(columnProperties, [makeNumberItem(e.value)])}
                     useGrouping={false}
                     showButtons
                     buttonLayout="vertical"
@@ -203,14 +204,16 @@ const DataTableContainer = (props) => {
             if (!Array.isArray(value)) {
                 value = [value];
             }
-            value = value.map(makeGenericItem);
-
+            const editTypesAllowed = [genericEditableItemType];
+            if (cellProperty['o:data_type'].includes('resource:item')) {
+                editTypesAllowed.push(linkableItemType(v => alert(JSON.stringify(v))))
+            }
             return (
                 <AutoMultiValueField
                     values={value}
                     fieldClassName="border-default bg-white p-p-1"
-                    // TO DO - Change item.text to accept 'link'
-                    onChange={(value) => onEditorValueChange(columnProperties, value.map(item => item.text))} 
+                    onChange={(value) => onEditorValueChange(columnProperties, value)}
+                    itemTypesAllowed={editTypesAllowed}
                 />
             );
         }
@@ -304,24 +307,9 @@ const DataTableContainer = (props) => {
                 let editedValue = event.data[property['o:label']]
                 
                 if (!props.propertyIsRelation(property) && editedValue) {
-                    if (typeof(editedValue) === 'string') {
-                        editedValue.map((value, key) => {
-                            if (data[property['o:term']] !== undefined) {
-                                if (data[property['o:term']][key] !== undefined) {
-                                    data[property['o:term']][key]['@value'] = value;
-                                } else {
-                                    data[property['o:term']][key] = props.getNewItem(property, value);
-                                }
-                            } else {
-                                data[property['o:term']] = [props.getNewItem(property, value)];
-                            }
-                            return null;
-                        });
-                    } else if (editedValue instanceof Array) {
-                        var newData = [];
-                        editedValue.map((value, key) => {
-                            newData.push(props.getNewItem(property, value))
-                            return null;
+                    if (editedValue instanceof Array) {
+                        var newData = editedValue.map((value) => {
+                            return props.getNewItem(property, value);
                         });
                         data[property['o:term']] = newData;
                     } else {

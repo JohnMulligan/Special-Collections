@@ -4,22 +4,12 @@ import { ListBox } from "primereact/listbox";
 import { Toolbar } from "primereact/toolbar";
 
 import { LargeTextField } from "./LargeTextField";
-// import { EntityLinkingButton } from "./EntityLinkingButton";
 
 import '../assets/css/AutoMultiValueField.css';
 
 export const makeGenericItem = (value) => ({ text: value, itemTypeId: 0 });
 
-// export const [mixedValues, setMixedValues] = useState([]);
-// export const [linkSearchText, setLinkSearchText] = useState("");
-// export const [searchResults, setSearchResults] = useState([]);
-
-export const linkableItemTemplate = (item) => (
-    <div>
-        <button>[LINK]</button>
-        <span>{item.text}</span>
-    </div>
-);
+export const makeNumberItem = num => ({ text: num, itemTypeId: 1 });
 
 export const genericEditableItemType = {
     id: 0,
@@ -34,38 +24,6 @@ export const genericEditableItemType = {
     ),
     singleItemTemplate: null
 };
-
-// export const linkableItemType = {
-//     id: 1,
-//     description: "Omeka-S link",
-//     customToolbarItems: [
-//         <EntityLinkingButton
-//             searchText={linkSearchText}
-//             onSearchTextChange={setLinkSearchText}
-//             searchResults={searchResults}
-//             resultsTemplate={(r) => <span>{r.text}</span>}
-//             onSearchEntity={(v) => {
-//               // Generate fake results for now.
-//                 const results = [];
-//                 for (let i = 0; i < 5; ++i) {
-//                     results[i] = {
-//                         id: i + 1,
-//                         itemTypeId: 1,
-//                         text: `${v} Match #${i + 1}`
-//                     };
-//                 }
-//                 setSearchResults(results);
-//             }}
-//             onLink={(v) => {
-//                 setLinkSearchText("");
-//                 setSearchResults([]);
-//                 mixedValues.push(v);
-//             }}
-//         />
-//     ],
-//     singleItemTemplate: linkableItemTemplate,
-//     itemTemplate: linkableItemTemplate
-// };
 
 const AutoMultiValueField = ({
     values,
@@ -254,7 +212,7 @@ const AutoMultiValueField = ({
     );
 
     return (
-        <div>
+        <div style={{ maxWidth: "100%" }}>
             {edit === null || (
                 <div style={{ position: "absolute" }}>
                     <LargeTextField

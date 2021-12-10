@@ -149,8 +149,7 @@ const CardView = (props) => {
                         <AutoMultiValueField
                             values={value}
                             fieldClassName="border-default bg-white p-p-1"
-                            // TO DO - Change item.text to accept 'link'
-                            onChange={(value) => onEditorValueChange(property['o:label'], value.map(item => item.text))} 
+                            onChange={(value) => onEditorValueChange(property['o:label'], value)} 
                         />
                     </div>
                 );
