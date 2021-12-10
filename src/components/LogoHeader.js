@@ -33,11 +33,11 @@ const LogoHeader = () => {
               </div>
               <div className="p-col-6">
                   <div className="p-d-flex p-jc-end">
-                      <Button key="home" label="Home" className="p-button-sm p-button-raised p-button-info p-mr-2" icon="pi pi-folder" onClick={() => { openPath('admin/home'); }}/>
+                      <Button key="home" label="Home" className="p-button-sm p-button-raised p-mr-2" icon="pi pi-folder" onClick={() => { openPath('admin/home'); }}/>
                       <Button key="home" label="Home Legacy" className="p-button-sm p-button-raised p-button-danger p-mr-2" icon="pi pi-folder" onClick={() => { openPath('admin/home-legacy'); }}/>
                       <Button key="network" label="Network" className="p-button-sm p-button-raised p-button-info p-mr-2" icon="pi pi-share-alt" onClick={() => { openPath('admin/network'); }}/>
-                      <Button key="learn-more" label="Learn More" className="p-button-sm p-button-raised p-mr-2" icon="pi pi-link" onClick={() => { window.open("https://github.com/Yudai-Chen/Special-Collections/", "_blank").focus(); }}/>
-                      <Button key="logout" label="Logout" className="p-button-sm p-button-raised p-button-warning p-mr-2" icon="pi pi-sign-out" onClick={() => { logout(); }} />
+                      <Button key="learn-more" label="Learn More" className="p-button-sm p-button-raised p-button-text p-mr-2" icon="pi pi-link" onClick={() => { window.open("https://github.com/Yudai-Chen/Special-Collections/", "_blank").focus(); }}/>
+                      <Button key="logout" label="Logout" className="p-button-sm p-button-raised p-button-danger p-mr-2" icon="pi pi-sign-out" onClick={() => { logout(); }} />
                   </div>
               </div>
           </div>

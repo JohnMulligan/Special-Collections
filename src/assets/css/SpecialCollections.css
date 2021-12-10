@@ -11,6 +11,14 @@
     border-radius: 3px;
 }
 
+.bg-white {
+	background-color: #ffffff !important;
+}
+
+.p-listbox .p-listbox-list .p-listbox-item.p-highlight {
+	background-color: #ffffff !important;
+}
+
 .header-title {
 	font-family: "Goudy Old Style";
 	font-style: italic;

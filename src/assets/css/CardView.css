@@ -14,8 +14,12 @@
     margin-bottom: 10px;
 }
 
+.card-grid .card-image-div {
+    height: 120px;
+}
+
 .card-grid img {
-    width: 150px;
+    width: 100px;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
     margin: 10px 0;
 }
@@ -27,7 +31,16 @@
 }
 
 .card-grid .card-fields-div {
-    overflow: auto;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dataview-card .card-grid {
+    height: 500px;
+}
+
+.fullscreen-card .card-grid .card-fields-div {
+    max-height: 540px;
 }
 
 .card-grid .card-field-title {

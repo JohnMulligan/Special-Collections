@@ -2,17 +2,14 @@ import React, {useState} from "react";
 import { connect } from "react-redux";
 
 import { Button } from 'primereact/button';
-import { InputTextarea } from 'primereact/inputtextarea';
 import { InputNumber } from 'primereact/inputnumber';
-import { Chip } from 'primereact/chip';
 import { Toolbar } from 'primereact/toolbar';
 
 import AutoMultiValueField from "./AutoMultiValueField";
 import { makeGenericItem } from "./AutoMultiValueField";
 import UniversalViewer from "./UniversalViewer";
 
-import { fetchOne, patchResourceItem } from "../utils/OmekaS";
-import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
+import { PlaceHolder } from "../utils/Utils";
 
 import '../assets/css/CardView.css';
 
@@ -38,41 +35,49 @@ const CardView = (props) => {
         <Button key="cancel-btn" label="Cancel" className="p-button-sm p-button-raised p-button-text p-mr-2" icon="pi pi-times" onClick={() => { onEditorCancel(); }} />
     );
 
-    const leftToolbarItems = () => {
-        let buttons = [];
-        switch (singleItemMode) {
-            case 'view': 
-            break;
+    const toolbarTemplate = () => {
+        let leftToolbarItems = [];
+        let rightToolbarItems = [];
 
-            case 'edit':
-                buttons.push(saveBtn);
-                buttons.push(cancelBtn);
-            break;
-
-            default:
-            break;
-        }
-
-        return buttons;
-    }
-
-    const rightToolbarItems = () => {
-        let buttons = [];
         switch (singleItemMode) {
             case 'view':
                 if(props.editModeEnabled && !!onCardSave) {
-                    buttons.push(editModeBtn);
+                    rightToolbarItems.push(editModeBtn);
                 }
             break;
-            
-            case 'edit':
-            break;
 
-            default:
+            case 'edit':
+                leftToolbarItems.push(saveBtn);
+                leftToolbarItems.push(cancelBtn);
             break;
         }
 
-        return buttons;
+        if (leftToolbarItems.length > 0 || rightToolbarItems.length > 0) {
+            return (
+                <Toolbar
+                    left={leftToolbarItems}
+                    right={rightToolbarItems}
+                />
+            );
+        } else {
+            return null;
+        }
+    }
+
+    const cardThumbnailTemplate = () => {
+        if (cardData['thumbnail_url']) {
+            return (
+                <React.Fragment>
+                    <img
+                        src={cardData['thumbnail_url']}
+                        class="border-default"
+                        onError={(e) => e.target.src=PlaceHolder}
+                    />
+                </React.Fragment>
+            );
+        } else {
+            return null;
+        }
     }
 
     const viewTemplate = (property) => {
@@ -80,7 +85,7 @@ const CardView = (props) => {
             let itemTemplate = props.getCellTemplate(editCardData[property['o:label']], property['o:label'], 'accordion', props.showRelatedItens);
             if (typeof(itemTemplate) === 'string' || ((editCardData[property['o:label']] instanceof Array) && typeof(editCardData[property['o:label']][0]) === 'string')) {
                 return (
-                    <div className="card-field p-col-6 p-p-3">
+                    <div className="card-field p-col-6 p-p-2">
                         <span className="card-field-title">
                             {property['o:label']}
                         </span>
@@ -89,11 +94,13 @@ const CardView = (props) => {
                 );
             } else if (itemTemplate) {
                 return (
-                    <div className="card-field p-col-12 p-p-3">
+                    <div className="card-field p-col-12 p-p-2">
                         <div className="p-grid">
-                            <span className="p-col-12">
-                                {property['o:label']}
-                            </span>
+                            <div className="p-col-12">
+                                <span className="card-field-title">
+                                    {property['o:label']}
+                                </span>
+                            </div>
                             <div className="p-col-12">
                                 {itemTemplate}
                             </div>
@@ -114,7 +121,7 @@ const CardView = (props) => {
         if (!fieldIsRelation) {
             if (property['o:data_type'].length > 0 && property['o:data_type'].includes('numeric:timestamp')) {
                 return (
-                    <div className="p-field p-col-6 p-p-3">
+                    <div className="p-field p-col-6 p-p-2">
                         <span className="p-float-label p-text-bold p-mb-3">
                             <label htmlFor={property['o:label']}>{property['o:label']}</label>
                         </span>
@@ -135,12 +142,13 @@ const CardView = (props) => {
                 value = value.map(makeGenericItem);
 
                 return (
-                    <div className={fieldIsTitle ? 'p-field p-col-12 p-p-3' : 'p-field p-col-6 p-p-3'}>
+                    <div className={fieldIsTitle ? 'p-field p-col-12 p-p-2' : 'p-field p-col-6 p-p-2'}>
                         <span className="p-float-label p-text-bold p-mb-3">
                             <label htmlFor={property['o:label']}>{property['o:label']}</label>
                         </span>
                         <AutoMultiValueField
                             values={value}
+                            fieldClassName="border-default bg-white p-p-1"
                             // TO DO - Change item.text to accept 'link'
                             onChange={(value) => onEditorValueChange(property['o:label'], value.map(item => item.text))} 
                         />
@@ -204,14 +212,14 @@ const CardView = (props) => {
                         <div className="p-grid">
                             {universalViewer}
                             <div className={universalViewer ? 'p-col-6' : 'p-col-12'}>
-                                <Toolbar
-                                    left={leftToolbarItems}
-                                    right={rightToolbarItems}
-                                />
+                                {toolbarTemplate()}
+                                <div className="card-image-div">
+                                    {cardThumbnailTemplate()}
+                                </div>
                                 <div className="card-title p-text-nowrap p-text-truncate" title={cardViewTitle}>
                                     {cardViewTitle}
                                 </div>
-                                <div className="card-fields-div p-grid p-mt-2">
+                                <div className="card-fields-div p-grid p-mt-1">
                                     {cardViewItems}
                                 </div>
                             </div>

@@ -106,17 +106,15 @@ const DataViewCardContainer = (props) => {
     const itemCardTemplate = (data) => {
         return (
             <CardView
-                cardClassName="p-col-3"
                 cardData={data}
+                cardClassName="p-col-3 dataview-card"
                 availableProperties={props.availableProperties}
                 properties={props.activeProperties}
-                showToast={props.showToast}
-                showRelatedItens={true}
                 editModeEnabled={false}
-                openDialog={props.openDialog}
-                openOverlayPanel={true}
+                showRelatedItens={true}
                 getCellTemplate={props.getCellTemplate}
                 getNewItem={props.getNewItem}
+                showToast={props.showToast}
             />
         );
     }

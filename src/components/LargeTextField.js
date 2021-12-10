@@ -1,8 +1,3 @@
-import "primereact/resources/themes/saga-blue/theme.css";
-import "primereact/resources/primereact.css";
-import "primeflex/primeflex.css";
-import "primeicons/primeicons.css";
-
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { InputTextarea } from "primereact/inputtextarea";
 import { OverlayPanel } from "primereact/overlaypanel";
@@ -32,10 +27,12 @@ export const LargeTextField = ({
 
     const opRef = useCallback(
         (node) => {
-          if (node !== null) {
-            setOverlay(node);
-          }
-          if (popupMode > 0) setMode(1);
+            if (node !== null) {
+                setOverlay(node);
+            }
+            if (popupMode > 0) {
+                setMode(1);
+            } 
         },
         [popupMode]
     );
@@ -63,7 +60,7 @@ export const LargeTextField = ({
             ref={dotsArea}
             style={{ letterSpacing: ".1rem" }}
             onClick={(e) => {
-            activate();
+                activate();
                 e.stopPropagation();
             }}
         >
@@ -74,13 +71,6 @@ export const LargeTextField = ({
     const preview = (
         <div
             tabIndex="0"
-            onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                    e.preventDefault();
-                    activate(e);
-                }
-            }}
-            onClick={readonly ? null : activate}
             ref={displayArea}
             class={className}
             style={{
@@ -98,6 +88,13 @@ export const LargeTextField = ({
                     dotsArea.current.style.background = "";
                 }
             }}
+            onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    activate(e);
+                }
+            }}
+            onClick={readonly ? null : activate}
         >
             <span style={{ opacity: text.length === 0 ? 0.5 : 1.0, whiteSpace: "pre" }}>
                 {isTruncated ? text.substring(0, maxChars) : text || emptyLabel()}
@@ -115,11 +112,11 @@ export const LargeTextField = ({
             onShow={() => setMode(2)}
             onHide={() => {
                 if (!!onFinish) {
-                  onFinish(textArea.current.value);
+                    onFinish(textArea.current.value);
                 }
                 setMode(0);
                 if (popupMode < 2 && displayArea.current) {
-                  displayArea.current.focus();
+                    displayArea.current.focus();
                 }
             }}
         >

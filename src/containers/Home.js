@@ -170,8 +170,9 @@ const Home = (props) => {
                 return (
                     <div className="p-d-flex p-ai-center p-flex-wrap">
                         <AutoMultiValueField
-                            readonly={true}
                             values={values.map(makeGenericItem)}
+                            fieldClassName="no-border bg-white p-p-1"
+                            readonly={true}
                         />
                     </div>
                 );
@@ -258,17 +259,18 @@ const Home = (props) => {
     const cardViewTemplate = (rowData, properties, showRelatedItens, onCardSave) => {
         return (
             <CardView
-                cardClassName="p-col-12"
                 cardData={rowData}
+                fieldClassName="border-default bg-white p-p-1"
+                cardClassName="p-col-12 fullscreen-card"
                 onCardSave={onCardSave}
                 availableProperties={availableProperties}
                 properties={properties}
-                showToast={showToast}
-                showRelatedItens={showRelatedItens}
                 editModeEnabled={true}
+                showRelatedItens={showRelatedItens}
                 getCellTemplate={getDataTableCellTemplate}
-                propertyIsRelation={propertyIsRelation}
                 getNewItem={getNewItem}
+                propertyIsRelation={propertyIsRelation}
+                showToast={showToast}
             />
         );
     }

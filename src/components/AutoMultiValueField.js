@@ -1,8 +1,3 @@
-import "primereact/resources/themes/saga-blue/theme.css";
-import "primereact/resources/primereact.css";
-import "primeflex/primeflex.css";
-import "primeicons/primeicons.css";
-
 import React, { useState } from "react";
 import { Button } from "primereact/button";
 import { ListBox } from "primereact/listbox";
@@ -10,6 +5,8 @@ import { Toolbar } from "primereact/toolbar";
 
 import { LargeTextField } from "./LargeTextField";
 // import { EntityLinkingButton } from "./EntityLinkingButton";
+
+import '../assets/css/AutoMultiValueField.css';
 
 export const makeGenericItem = (value) => ({ text: value, itemTypeId: 0 });
 
@@ -72,6 +69,7 @@ export const genericEditableItemType = {
 
 const AutoMultiValueField = ({
     values,
+    fieldClassName = "",
     onChange,
     readonly = false,
     itemTypesAllowed = [genericEditableItemType]
@@ -105,7 +103,7 @@ const AutoMultiValueField = ({
 
     const addItemBtn = readonly ? null : (
         <Button
-            className="p-button-sm p-button-raised p-mr-2"
+            className="p-button-sm p-button-raised p-mx-1"
             icon="pi pi-plus-circle"
             title="Add"
             onClick={() => setEdit({ selected: null, text: "" })}
@@ -115,7 +113,7 @@ const AutoMultiValueField = ({
 
     const editItemBtn = (
         <Button
-            className="p-button-sm p-button-info p-mr-2"
+            className="p-button-sm p-button-info p-mx-1"
             icon="pi pi-pencil"
             title="Edit"
             onClick={() => {
@@ -134,7 +132,7 @@ const AutoMultiValueField = ({
 
     const deleteItemBtn = (
         <Button
-            className="p-button-sm p-button-danger p-mr-2"
+            className="p-button-sm p-button-danger p-mx-1"
             icon="pi pi-trash"
             title="Delete"
             onClick={() => {
@@ -187,9 +185,9 @@ const AutoMultiValueField = ({
     const inputWithCmdButtons = (
         <React.Fragment>
             <div className="p-grid">
-                <div className="p-col-12">
+                <div className="p-col-12 p-pb-0 toolbar-edit-field-container">
                     <Toolbar
-                        class="no-border p-m-2"
+                        className="p-p-1 no-border toolbar-edit-field"
                         left={toolbarItems}
                         right={rightToolbarItems}
                     />
@@ -199,7 +197,7 @@ const AutoMultiValueField = ({
                 <div className="p-col-12">
                     {singleItemTemplate || (
                         <LargeTextField
-                            className="border-default p-p-2"
+                            className={fieldClassName}
                             onChange={setSingleItem}
                             onFinish={(v) => {
                                 setSingleItem(null);
@@ -226,10 +224,10 @@ const AutoMultiValueField = ({
     const multiValuedField = (
         <React.Fragment>
             <div className="p-grid">
-                <div className="p-col-12">
+                <div className="p-col-12 p-pb-0 toolbar-edit-field-container">
                     {!readonly && (
                         <Toolbar
-                            class="no-border p-m-2"
+                            className="p-p-1 no-border toolbar-edit-field"
                             left={toolbarItems}
                             right={rightToolbarItems}
                         />
@@ -239,10 +237,8 @@ const AutoMultiValueField = ({
             <div className="p-grid">
                 <div className="p-col-12">
                     <ListBox
-                        className="border-default p-p-2"
-                        listStyle={{
-                            backgroundColor: "#FFFFFF"
-                        }}
+                        className={fieldClassName}
+                        listClassName="bg-white"
                         style={{
                             maxHeight: "120px",
                             overflow: "auto",

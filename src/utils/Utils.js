@@ -1,3 +1,5 @@
+// TO DO - Clean functions and check use on app
+
 import axios from "axios";
 import { history } from "../route/Routers"
 

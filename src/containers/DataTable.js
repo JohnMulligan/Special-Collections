@@ -208,6 +208,7 @@ const DataTableContainer = (props) => {
             return (
                 <AutoMultiValueField
                     values={value}
+                    fieldClassName="border-default bg-white p-p-1"
                     // TO DO - Change item.text to accept 'link'
                     onChange={(value) => onEditorValueChange(columnProperties, value.map(item => item.text))} 
                 />
@@ -389,6 +390,10 @@ const DataTableContainer = (props) => {
         props.openDialog('Create new project', 'TO DO');
     }
 
+    const exportData = () => {
+        dt.current.exportCSV();
+    }
+
     const headerLeftContents = () => {
         return (
             <React.Fragment>
@@ -404,7 +409,7 @@ const DataTableContainer = (props) => {
                 buttons.push(<Button key="add-note" label="Add Note" className="p-button-sm p-button-raised p-button-text p-mr-2" onClick={() => { addNote(); }} />);
                 buttons.push(<Button key="add-to-project" label="Add to Project" className="p-button-sm p-button-raised p-button-text p-mr-2" onClick={() => { addToProject(); }} />);
                 buttons.push(<Button key="create-project" label="Create Project" className="p-button-sm p-button-raised p-mr-2" onClick={() => { createProject(); }} />);
-                buttons.push(<Button key="export" icon="pi pi-download" label="Export CSV" className="p-button-sm p-button-raised p-mr-2" onClick={() => { dt.current.exportCSV(); }} />);
+                buttons.push(<Button key="export-data" label="Export CSV" className="p-button-sm p-button-raised p-button-warning p-mr-2" icon="pi pi-download" onClick={() => { exportData(); }} />);
                 buttons.push(<Button key="edit-mode" label="Edit Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" icon="pi pi-pencil" onClick={() => { toggleScreenMode('edit'); }} />);
             break;
             case 'edit':
