@@ -17,7 +17,7 @@ import DataViewCardContainer from "../containers/DataViewCard";
 
 import AutoMultiValueField from "../components/AutoMultiValueField";
 import { genericEditableItemType, makeGenericItem, makeNumberItem } from "../components/AutoMultiValueField";
-import { makeLinkItem } from '../components/OmekaLinking'
+import { linkableItemType, makeLinkItem } from '../components/OmekaLinking'
 
 import CardView from "../components/CardView";
 
@@ -134,7 +134,7 @@ const Home = (props) => {
                         } else if (vtype === 'numeric:timestamp') {
                             value.push(makeNumberItem(subItem['@value'] || ""));
                         } else if (vtype === 'resource') {
-                            value.push(makeLinkItem(subItem));
+                            value.push(makeLinkItem({...subItem, 'text': subItem['display_title']}));
                         }
                     }
                 }
@@ -157,7 +157,7 @@ const Home = (props) => {
 
     const getDataTableCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
         if (!cellData) return null;
-        if (field === 'Has Part') {   
+        if (field === 'Has Part') {
             return relatedItemsButtonTemplate(cellData);
         }
         return (
@@ -166,24 +166,27 @@ const Home = (props) => {
                     values={cellData}
                     fieldClassName="no-border bg-white p-p-1"
                     readonly={true}
-                    itemTypesAllowed={[genericEditableItemType, {...genericEditableItemType, id: 1}]}
+                    itemTypesAllowed={[
+                        genericEditableItemType,
+                        {...genericEditableItemType, id: 1},
+                        {...linkableItemType(props, null), id: 2}]
+                    }
                 />
             </div>
         );
     }
 
     const getDataViewCardCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
-        if (cellData) {
-            if (cellData instanceof Array) {
-                if (showRelatedItens) {
-                    return relatedItemsButtonTemplate(cellData);
-                }
-            } else if ((typeof cellData) === 'object') {
-                return cellData;
-            } else if ((typeof cellData) === 'string') {
-                if (cellData.length > textMaxLength) {
-                    return longTextTemplate(field, cellData, textMaxLength, longTextOption);
-                }
+        if (!cellData) return null;
+        if (cellData instanceof Array) {
+            if (showRelatedItens) {
+                return relatedItemsButtonTemplate(cellData);
+            }
+        } else if ((typeof cellData) === 'object') {
+            return cellData;
+        } else if ((typeof cellData) === 'string') {
+            if (cellData.length > textMaxLength) {
+                return longTextTemplate(field, cellData, textMaxLength, longTextOption);
             }
         }
         return cellData;
@@ -276,18 +279,15 @@ const Home = (props) => {
                 'type': 'numeric:timestamp'
             };
         } else if (value.itemTypeId === 2) {
-            // TODO: test this!
             return {
+                'display_title': value['text'],
                 'value_resource_id': value['value_resource_id'],
-                'value_resource_name': value['value_resource_name'],
                 'is_public': true,
                 'property_id': property['o:id'],
                 'property_label': property['o:label'],
                 'type': 'resource'
             };
         }
-        console.log(value);
-        alert('Not handled!');
     }
 
     const containerContent = () => {

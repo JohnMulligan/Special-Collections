@@ -1,48 +1,68 @@
 import React, { useEffect, useRef, useState } from "react";
+import { connect } from "react-redux";
+
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { ListBox } from "primereact/listbox";
 import { OverlayPanel } from "primereact/overlaypanel";
 
+import { LargeTextField } from "./LargeTextField";
+
+import { fetchItems } from "../utils/OmekaS";
+
 export const makeLinkItem = (subItem) => ({
-    id: 2,
-    text: subItem['value_resource_id'] || "",
-    value_resource_name: subItem['value_resource_name'],
+    itemTypeId: 2,
+    text: subItem['text'] || "",
     value_resource_id: subItem['value_resource_id'],
 });
 
 export const linkableItemTemplate = (item) => (
     <div>
-        <button>[LINK]</button>
-        <span>{item.text}</span>
+        <LargeTextField
+            readonly={true}
+            maxChars={30}
+            text={item.text}
+        />
     </div>
 );
 
-export const linkableItemType = (onLink) => ({
+export const linkableItemType = (props, onLink) => ({
     id: 2,
-    description: "Omeka-S link",
     customToolbarItems: [
         <EntityLinkingButton
             resultsTemplate={(r) => <span>{r.text}</span>}
-            onSearchEntity={(v) => {
-                // Generate fake results for now.
-                const results = [];
-                for (let i = 0; i < 5; ++i) {
-                    // TODO call makeLinkItem?
-                    results[i] = {
-                        itemTypeId: 2,
-                        text: `${v} Match #${i + 1}`,
-                        value_resource_name: "value_resource_name",
-                        value_resource_id: i + 1
-                    };
-                }
-                return results;
+            onSearchEntity={(searchText) => {
+                let lazyParams = {
+                    first: 0,
+                    rows: 10,
+                    sortField: 'o:id',
+                    sortOrder: 1,
+                    sortDirection: 'asc',
+                };
+
+                return fetchItems(
+                    props.query.endpoint,
+                    props.query.item_set_id,
+                    [],
+                    lazyParams.first,
+                    lazyParams.rows,
+                    lazyParams.sortField,
+                    lazyParams.sortDirection,
+                    searchText
+                ).then(data => {
+                    return data.items.map((row) => {
+                        return {
+                            text: row['o:title'],
+                            value_resource_id: row['o:id']
+                        };
+                    });
+                });
             }}
             onLink={onLink}
         />
     ],
-    singleItemTemplate: linkableItemTemplate,
-    itemTemplate: linkableItemTemplate
+    itemTemplate: linkableItemTemplate,
+    singleItemTemplate: linkableItemTemplate
 });
 
 export const EntityLinkingButton = ({
@@ -62,10 +82,11 @@ export const EntityLinkingButton = ({
     // user stopped changing the text.
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
+            setSearchResults([]);
             if (searchText !== "") {
-                const results = onSearchEntity(searchText);
-                // TODO: promise?
-                setSearchResults(results);
+                onSearchEntity(searchText).then((data) => {
+                    setSearchResults(data);
+                });
             }
         }, debounceTime);
 
@@ -73,17 +94,15 @@ export const EntityLinkingButton = ({
     }, [debounceTime, searchText, onSearchEntity]);
     
     useEffect(() => {
-            if (popupState === 1 && searchBox.current) {
-              searchBox.current.focus();
-            }
-        },
-        [searchBox, popupState]
-    );
+        if (popupState === 1 && searchBox.current) {
+          searchBox.current.focus();
+        }
+    }, [searchBox, popupState]);
 
     return (
         <Button
-            className="p-button-sm p-button-raised p-mr-2"
-            icon="pi pi-plus-circle"
+            className="p-button-sm p-button-raised p-mx-1"
+            icon="pi pi-link"
             title="Add Link"
             onClick={(e) => {
                 setPopupState(1);
@@ -116,3 +135,12 @@ export const EntityLinkingButton = ({
         </Button>
     );
 };
+
+const mapStateToProps = (state, props) => {
+  return {
+    ...props,
+    query: state.query,
+  };
+};
+
+export default connect(mapStateToProps)(linkableItemType);

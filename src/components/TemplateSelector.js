@@ -56,7 +56,7 @@ const TemplateSelector = (props) => {
             search["resource_class_id"] = template["o:resource_class"]["o:id"];
             props.setQuery("items", search, 99999);
         }
-  }
+    }
 
   useEffect(() => {
       // get templates options on load

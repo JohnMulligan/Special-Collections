@@ -7,14 +7,13 @@ import { LargeTextField } from "./LargeTextField";
 
 import '../assets/css/AutoMultiValueField.css';
 
-export const makeGenericItem = (value) => ({ text: value, itemTypeId: 0 });
+export const makeGenericItem = (value) => ({ itemTypeId: 0, text: value });
 
-export const makeNumberItem = num => ({ text: num, itemTypeId: 1 });
+export const makeNumberItem = (num) => ({ itemTypeId: 1, text: num });
 
 export const genericEditableItemType = {
     id: 0,
     customToolbarItems: [],
-    description: "generic",
     itemTemplate: (item) => (
         <LargeTextField
             readonly={true}
@@ -108,14 +107,19 @@ const AutoMultiValueField = ({
                     onChange(changed);
                 }
             }}
-            disabled={disableActionBtn(0)}
+            disabled={disableActionBtn(0) && disableActionBtn(2)}
         >
         </Button>
     );
 
     const listBoxItemTemplate = (option) => {
         const { item } = option;
-        return itemTypesAllowed[item.itemTypeId].itemTemplate(item);
+
+        for (const itemType of itemTypesAllowed) {
+            if (itemType.id == item.itemTypeId) {
+                return itemType.itemTemplate(item);
+            }
+        }
     };
 
     const toolbarItems = [deleteItemBtn];

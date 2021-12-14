@@ -8,7 +8,7 @@ export const LargeTextField = ({
     onChange,
     onFinish,
     readonly = false,
-    maxChars = 40,
+    maxChars = 30,
     popupMode = 0,
     placeholder = "Click to edit",
 }) => {

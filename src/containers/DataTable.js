@@ -12,7 +12,7 @@ import { Toolbar } from 'primereact/toolbar';
 
 import AutoMultiValueField, { genericEditableItemType } from "../components/AutoMultiValueField";
 import { makeNumberItem } from "../components/AutoMultiValueField";
-import { linkableItemType } from "../components/OmekaLinking";
+import { makeLinkItem, linkableItemType } from "../components/OmekaLinking";
 
 import { fetchItems, fetchOne, patchResourceItem } from "../utils/OmekaS";
 import { PATH_PREFIX, PlaceHolder } from "../utils/Utils";
@@ -151,7 +151,7 @@ const DataTableContainer = (props) => {
 
     const cellTemplate = (rowData, index) => {
         if (rowData !== undefined) {
-            return props.getCellTemplate(rowData[index.field], index.field, 'dialog', true);            
+            return props.getCellTemplate(rowData[index.field], index.field, true);            
         }
         return null;
     }
@@ -206,7 +206,7 @@ const DataTableContainer = (props) => {
             }
             const editTypesAllowed = [genericEditableItemType];
             if (cellProperty['o:data_type'].includes('resource:item')) {
-                editTypesAllowed.push(linkableItemType(v => alert(JSON.stringify(v))))
+                editTypesAllowed.push(linkableItemType(props, (linkItem) => onRowLinkItem(columnProperties, linkItem, value)));
             }
             return (
                 <AutoMultiValueField
@@ -278,6 +278,13 @@ const DataTableContainer = (props) => {
     const onRowEditInit = (event) => {
         setOriginalRow({ ...collection[event.index] });
         $('.p-row-editor-init').each(function(){$(this).hide()});
+    }
+
+    const onRowLinkItem = (properties, linkItem, arrayItems) => {
+        const changed = arrayItems.slice();
+        changed.push(makeLinkItem(linkItem));
+
+        onEditorValueChange(properties, changed);
     }
 
     const onRowEditCancel = (event) => {
