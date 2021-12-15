@@ -6,7 +6,7 @@ import { InputText } from "primereact/inputtext";
 import { ListBox } from "primereact/listbox";
 import { OverlayPanel } from "primereact/overlaypanel";
 
-import { LargeTextField } from "./LargeTextField";
+import { LargeTextField } from "../components/LargeTextField";
 
 import { fetchItems } from "../utils/OmekaS";
 
@@ -14,6 +14,7 @@ export const makeLinkItem = (subItem) => ({
     itemTypeId: 2,
     text: subItem['text'] || "",
     value_resource_id: subItem['value_resource_id'],
+    value_resource_name: 'items',
 });
 
 export const linkableItemTemplate = (item) => (

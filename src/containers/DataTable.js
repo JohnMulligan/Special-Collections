@@ -10,8 +10,9 @@ import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
 import { Toolbar } from 'primereact/toolbar';
 
-import AutoMultiValueField, { genericEditableItemType } from "../components/AutoMultiValueField";
-import { makeNumberItem } from "../components/AutoMultiValueField";
+import { propertyIsNumericTimestamp, propertyIsRelation } from "../containers/Home";
+
+import AutoMultiValueField, { genericEditableItemType, makeNumberItem } from "../components/AutoMultiValueField";
 import { makeLinkItem, linkableItemType } from "../components/OmekaLinking";
 
 import { fetchItems, fetchOne, patchResourceItem } from "../utils/OmekaS";
@@ -120,7 +121,7 @@ const DataTableContainer = (props) => {
         builtColumns.push(<Column key="thumbnail" columnKey="thumbnail" header="Thumbnail" headerStyle={{ width: '150px' }} reorderable={false} className="p-datatable-column text-align-center" body={thumbnailTemplate} />);
 
         properties.map((property, i) => {
-            let fieldIsRelation = props.propertyIsRelation(property);
+            let fieldIsRelation = propertyIsRelation(property);
             builtColumns.push(
                 <Column
                     key={property['o:id']}
@@ -189,7 +190,7 @@ const DataTableContainer = (props) => {
     const editorTemplate = (columnProperties, cellProperty) => {
         let value = columnProperties.rowData[cellProperty['o:label']] ? columnProperties.rowData[cellProperty['o:label']] : "";
 
-        if (cellProperty['o:data_type'].length > 0 && cellProperty['o:data_type'].includes('numeric:timestamp')) {
+        if (propertyIsNumericTimestamp(cellProperty)) {
             return (
                 <InputNumber
                     value={value && value.length === 1 ? parseInt(value[0].text) : ""}
@@ -313,7 +314,7 @@ const DataTableContainer = (props) => {
             props.availableProperties.map((property) => {
                 let editedValue = event.data[property['o:label']]
                 
-                if (!props.propertyIsRelation(property) && editedValue) {
+                if (!propertyIsRelation(property) && editedValue) {
                     if (editedValue instanceof Array) {
                         var newData = editedValue.map((value) => {
                             return props.getNewItem(property, value);

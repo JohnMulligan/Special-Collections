@@ -6,6 +6,8 @@ import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Chip } from 'primereact/chip';
 
+import { propertyIsTitle } from "../containers/Home";
+
 import CardView from "../components/CardView";
 
 import { fetchItems } from "../utils/OmekaS";
@@ -63,7 +65,7 @@ const DataViewCardContainer = (props) => {
             properties.map((property) => {
                 let label = property['o:label'];
                 if (row[property['o:term']] !== undefined && row[property['o:term']].length > 0) {
-                    if (property['o:label'] === 'Title' || property['o:label'] === 'name') {
+                    if (propertyIsTitle(property)) {
                         item[label] = row[property['o:term']][0]['@value'];
                     } else if (row[property['o:term']][0]['type'] === 'resource') {
                         item[label] = row[property['o:term']];
@@ -108,10 +110,11 @@ const DataViewCardContainer = (props) => {
             <CardView
                 cardData={data}
                 cardClassName="p-col-3 dataview-card"
+                fieldEditorClassName="border-default bg-white p-p-1"
                 availableProperties={props.availableProperties}
                 properties={props.activeProperties}
                 editModeEnabled={false}
-                showRelatedItens={true}
+                showRelatedItems={true}
                 getCellTemplate={props.getCellTemplate}
                 getNewItem={props.getNewItem}
                 showToast={props.showToast}

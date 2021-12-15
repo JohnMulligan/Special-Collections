@@ -15,14 +15,25 @@ import PropertySelector from "../components/PropertySelector";
 import DataTableContainer from "../containers/DataTable";
 import DataViewCardContainer from "../containers/DataViewCard";
 
-import AutoMultiValueField from "../components/AutoMultiValueField";
-import { genericEditableItemType, makeGenericItem, makeNumberItem } from "../components/AutoMultiValueField";
+import AutoMultiValueField, { genericEditableItemType, makeGenericItem, makeNumberItem } from "../components/AutoMultiValueField";
 import { linkableItemType, makeLinkItem } from '../components/OmekaLinking'
 
 import CardView from "../components/CardView";
 
 import { fetchOne } from "../utils/OmekaS";
 import { authGet } from "../utils/Utils";
+
+export const propertyIsTitle = (property) => {
+    return property['o:label'] === 'Title' || property['o:label'] === 'name';
+}
+
+export const propertyIsNumericTimestamp = (property) => {
+    return property['o:data_type'].length > 0 && property['o:data_type'].includes('numeric:timestamp');
+}
+
+export const propertyIsRelation = (property) => {
+    return property['o:local_name'] && property['o:local_name'] === 'hasPart';
+}
 
 const textMaxLength = 150;
 
@@ -92,10 +103,6 @@ const Home = (props) => {
         loadLazyDataViewData(overlayPanelItems[startIndex]);
     }
 
-    const propertyIsRelation = (property) => {
-        return property['o:local_name'] && property['o:local_name'] === 'hasPart';
-    }
-
     const loadLazyDataViewData = async (item) => {
         setDataViewLoading(true);
         fetchOne(
@@ -128,12 +135,11 @@ const Home = (props) => {
 
                 if (row[property['o:term']] !== undefined && row[property['o:term']].length > 0) {
                     for (const subItem of row[property['o:term']]) {
-                        let vtype = subItem.type;
-                        if (vtype === 'literal') {
+                        if (subItem.type === 'literal') {
                             value.push(makeGenericItem(subItem['@value'] || ""));
-                        } else if (vtype === 'numeric:timestamp') {
+                        } else if (subItem.type === 'numeric:timestamp') {
                             value.push(makeNumberItem(subItem['@value'] || ""));
-                        } else if (vtype === 'resource') {
+                        } else if (subItem.type === 'resource') {
                             value.push(makeLinkItem({...subItem, 'text': subItem['display_title']}));
                         }
                     }
@@ -155,10 +161,10 @@ const Home = (props) => {
         return [];
     }
 
-    const getDataTableCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
+    const getDataTableCellTemplate = (cellData, field, longTextOption, showRelatedItems = true) => {
         if (!cellData) return null;
         if (field === 'Has Part') {
-            return relatedItemsButtonTemplate(cellData);
+            return showRelatedItems ? relatedItemsButtonTemplate(cellData) : null;
         }
         return (
             <div className="p-d-flex p-ai-center p-flex-wrap">
@@ -176,13 +182,12 @@ const Home = (props) => {
         );
     }
 
-    const getDataViewCardCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
+    const getDataViewCardCellTemplate = (cellData, field, longTextOption, showRelatedItems) => {
         if (!cellData) return null;
-        if (cellData instanceof Array) {
-            if (showRelatedItens) {
-                return relatedItemsButtonTemplate(cellData);
-            }
-        } else if ((typeof cellData) === 'object') {
+        if (field === 'Has Part') {
+            return showRelatedItems ? relatedItemsButtonTemplate(cellData) : null;
+        }
+        if ((typeof cellData) === 'object') {
             return cellData;
         } else if ((typeof cellData) === 'string') {
             if (cellData.length > textMaxLength) {
@@ -242,20 +247,20 @@ const Home = (props) => {
         return cardViewTemplate(rowData, dataViewProperties, false, null);
     }
 
-    const cardViewTemplate = (rowData, properties, showRelatedItens, onCardSave) => {
+    const cardViewTemplate = (rowData, properties, showRelatedItems, onCardSave) => {
         return (
             <CardView
                 cardData={rowData}
-                fieldClassName="border-default bg-white p-p-1"
                 cardClassName="p-col-12 fullscreen-card"
+                fieldViewClassName="card-field p-col-6 p-p-2"
+                fieldEditorClassName="border-default bg-white p-p-1"
                 onCardSave={onCardSave}
                 availableProperties={availableProperties}
                 properties={properties}
                 editModeEnabled={true}
-                showRelatedItens={showRelatedItens}
+                showRelatedItems={showRelatedItems}
                 getCellTemplate={getDataTableCellTemplate}
                 getNewItem={getNewItem}
-                propertyIsRelation={propertyIsRelation}
                 showToast={showToast}
             />
         );
@@ -282,6 +287,7 @@ const Home = (props) => {
             return {
                 'display_title': value['text'],
                 'value_resource_id': value['value_resource_id'],
+                'value_resource_name': value['value_resource_name'],
                 'is_public': true,
                 'property_id': property['o:id'],
                 'property_label': property['o:label'],
@@ -301,7 +307,6 @@ const Home = (props) => {
                     activeProperties={activeProperties}
                     showToast={showToast}
                     openDialog={openDialog}
-                    propertyIsRelation={propertyIsRelation}
                     parseItem={parseItem}
                     getCellTemplate={getDataTableCellTemplate}
                     cardViewTemplate={cardViewTemplate}
@@ -315,7 +320,6 @@ const Home = (props) => {
                     availableProperties={availableProperties}
                     activeProperties={activeProperties}
                     showToast={showToast}
-                    propertyIsRelation={propertyIsRelation}
                     getCellTemplate={getDataViewCardCellTemplate}
                     getNewItem={getNewItem}
                 />

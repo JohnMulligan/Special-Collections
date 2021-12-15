@@ -17,6 +17,7 @@
 
 .p-listbox .p-listbox-list .p-listbox-item.p-highlight {
 	background-color: #ffffff !important;
+	color: #000;
 }
 
 .header-title {

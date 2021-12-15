@@ -3,7 +3,7 @@ import { Button } from "primereact/button";
 import { ListBox } from "primereact/listbox";
 import { Toolbar } from "primereact/toolbar";
 
-import { LargeTextField } from "./LargeTextField";
+import { LargeTextField } from "../components/LargeTextField";
 
 import '../assets/css/AutoMultiValueField.css';
 
