@@ -470,7 +470,7 @@ const DataTableContainer = (props) => {
                         header={header}
                         scrollable
                         scrollHeight="600px"
-                        style={{width: '1320px'}}
+                        style={{width: '100%'}}
                         globalFilter={lazyParams.globalFilter}
                         filters={lazyParams.filters}
                         onFilter={onFilter}

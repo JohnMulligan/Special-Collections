@@ -330,7 +330,7 @@ const Home = (props) => {
 
     return (
         <div className="home-container">
-            <div className="p-grid p-ai-center p-py-1 p-px-3 p-mr-0">
+            <div className="p-grid p-ai-center p-py-1 p-px-2 p-mx-0">
                 <div className="p-col-2">
                     <div className="p-d-flex p-jc-end">
                         <TemplateSelector

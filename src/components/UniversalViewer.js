@@ -35,6 +35,7 @@ const UV = ({manifest, width = '100vw', height = '100vh'}) => {
 export default function UniversalViewer(props) {
   return (
     <UV manifest={props.manifest} width="100%" height="75vh" />
+    // <UV manifest="https://iiif.wellcomecollection.org/presentation/v3/b18035723" width="100%" height="75vh" />
     // <UV manifest="https://iiif.wellcomecollection.org/presentation/v2/b18035723" width="50vw" height="50vh" />
     // <UV manifest="http://150.136.1.167/iiif/3/1921/manifest" width="50vw" height="50vh" />
     // <UV manifest="https://wellcomelibrary.org/iiif/b18035723/manifest" width="50vw" height="50vh" />
