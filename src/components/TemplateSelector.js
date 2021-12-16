@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 
 import { Dropdown } from 'primereact/dropdown';
-import '../assets/css/Dropdown.css';
 
 import { connect } from "react-redux";
 
@@ -82,7 +81,7 @@ const TemplateSelector = (props) => {
   }, []);
 
   return (
-      <div className="dropdown-component">
+      <div className="dropdown-component p-w-100">
           <div className="card">
               <Dropdown
                   value={selectedTemplate}
@@ -91,6 +90,7 @@ const TemplateSelector = (props) => {
                   onChange={onTemplateChange}
                   optionLabel="template"
                   placeholder="Select a template"
+                  className="p-w-100"
               />
           </div>
       </div>

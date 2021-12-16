@@ -18,7 +18,7 @@ const LogoHeader = () => {
 
   return (
       <div className="header-toolbar">
-          <div className="p-grid p-ai-center">
+          <div className="p-grid p-ai-center p-mr-0">
               <div className="p-col-2">
                   <div className="p-d-flex p-jc-center">
                     <Link to={PATH_PREFIX + "/admin/home"}>

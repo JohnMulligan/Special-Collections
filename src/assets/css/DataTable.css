@@ -59,6 +59,7 @@
 .datatable-component th.p-filter-column input {
     padding-top: 3.5px;
     padding-bottom: 3.5px;
+    width:  100%;
 }
 
 @media screen and (max-width: 960px) {

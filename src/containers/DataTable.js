@@ -131,10 +131,11 @@ const DataTableContainer = (props) => {
                     field={property['o:label']}
                     filterField={property['o:id'].toString()}
                     sortField={property['o:term']}
-                    sortable={!fieldIsRelation && props.screenMode === 'view'}
+                    sortable={!fieldIsRelation && props.screenMode === 'view' && !lazyParams.globalFilter}
                     filter={!fieldIsRelation && props.screenMode === 'view'}
                     filterPlaceholder={"Search by " + property['o:label']}
                     className="p-datatable-column"
+                    style={{ width: '200px' }}
                     body={cellTemplate}
                     editor={(columnProperties) => {
                         if(!fieldIsRelation) {
@@ -242,6 +243,9 @@ const DataTableContainer = (props) => {
         let _lazyParams = {
             ...lazyParams,
             ...event,
+            sortField: 'o:id',
+            sortOrder: 1,
+            sortDirection: 'asc',
             'first': 0,
             'globalFilter': event.target.value,
         };
@@ -458,7 +462,7 @@ const DataTableContainer = (props) => {
                 <div className="card">
                     <DataTable
                         loading={loading}
-                        className="p-datatable-collection p-datatable-responsive"
+                        className="p-datatable-collection p-datatable-responsive p-m-auto"
                         emptyMessage="No items found"
                         lazy
                         ref={dt}
@@ -466,6 +470,7 @@ const DataTableContainer = (props) => {
                         header={header}
                         scrollable
                         scrollHeight="600px"
+                        style={{width: '1320px'}}
                         globalFilter={lazyParams.globalFilter}
                         filters={lazyParams.filters}
                         onFilter={onFilter}

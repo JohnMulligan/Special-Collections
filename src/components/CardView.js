@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import { connect } from "react-redux";
 
 import { Button } from 'primereact/button';
@@ -20,6 +20,10 @@ const CardView = (props) => {
 
     const [singleItemMode, setSingleItemMode] = useState('view');
     const [editCardData, setEditCardData] = useState(cardData);
+
+    useEffect(() => {
+        setEditCardData(cardData);
+    }, [cardData]);
 
     const viewModeBtn = (
         <Button key="view-mode" label="View Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" icon="pi pi-eye" onClick={() => { setSingleItemMode('view'); }} />
@@ -194,12 +198,20 @@ const CardView = (props) => {
     if (!!editCardData) {
         let cardViewTitle = null;
         let universalViewer = null;
+        let thumbnailDiv = null;
+
         if (editCardData['hasMedia']) {
             universalViewer = (
                 <div className="p-col-6">
                     <UniversalViewer manifest={"/iiif/3/" + editCardData['id'] + "/manifest"}/>
                 </div>
             )
+        } else {
+            thumbnailDiv = (
+                <div className="card-image-div">
+                    {cardThumbnailTemplate()}
+                </div>
+            );
         }
 
         let cardViewItems = props.properties.map((property, i) => {
@@ -207,8 +219,8 @@ const CardView = (props) => {
                 if (propertyIsTitle(property)) {
                     if (typeof(editCardData[property['o:label']]) === 'string') {
                         cardViewTitle = editCardData[property['o:label']];
-                    } else {
-                        cardViewTitle = editCardData[property['o:label']][0]['text'];
+                    } else if (!!editCardData[property['o:label']][0] && !!editCardData[property['o:label']][0]['text']) {
+                        cardViewTitle = editCardData[property['o:label']][0]['text'] || "[Untitled]";
                     }
                 } else if (editCardData[property['o:label']]) {
                     return viewTemplate(property);
@@ -227,9 +239,7 @@ const CardView = (props) => {
                             {universalViewer}
                             <div className={universalViewer ? 'p-col-6' : 'p-col-12'}>
                                 {toolbarTemplate()}
-                                <div className="card-image-div">
-                                    {cardThumbnailTemplate()}
-                                </div>
+                                {thumbnailDiv}
                                 <div className="card-title p-text-nowrap p-text-truncate" title={cardViewTitle}>
                                     {cardViewTitle}
                                 </div>

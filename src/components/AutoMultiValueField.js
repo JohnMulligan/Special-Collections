@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "primereact/button";
 import { ListBox } from "primereact/listbox";
 import { Toolbar } from "primereact/toolbar";
+
+import $ from 'jquery';
 
 import { LargeTextField } from "../components/LargeTextField";
 
@@ -17,7 +19,7 @@ export const genericEditableItemType = {
     itemTemplate: (item) => (
         <LargeTextField
             readonly={true}
-            maxChars={30}
+            maxChars={20}
             text={item.text}
         />
     ),
@@ -34,6 +36,10 @@ const AutoMultiValueField = ({
     const [selected, setSelected] = useState(null);
     const [edit, setEdit] = useState(null);
     const [singleItem, setSingleItem] = useState(null);
+
+    useEffect(() => {
+        $(".p-listbox-item .p-ink").hide();
+    }, []);
 
     if (!Array.isArray(values)) {
         values = [values];
@@ -172,6 +178,7 @@ const AutoMultiValueField = ({
                                 onChange(v === "" ? [] : [makeGenericItem(v)]);
                             }}
                             text={singleItem || ""}
+                            maxChars={30}
                             readonly={
                                 values.length > 1 ||
                                 (values.length === 1 && values[0].itemTypeId !== 0)
