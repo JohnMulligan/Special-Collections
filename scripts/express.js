@@ -150,7 +150,7 @@ app.use('/application', readOnlyOmeka, omekaStaticProxy);
 app.use('/iiif', readOnlyOmeka, omekaStaticProxy);
 
 app.post('/adduser', verifyJWT, express.json(), async (req, res) => {
-  if (req.user?.role !== 'admin') return res.status(401).json(jwtFailure);
+  if (req.user.role !== 'admin') return res.status(401).json(jwtFailure);
   // We got an admin user logged asking for a new user to be created!
   const { userName, role } = req.body;
   if (userName && role) {
@@ -171,7 +171,7 @@ app.post('/adduser', verifyJWT, express.json(), async (req, res) => {
 });
 
 app.post('/resetpassword', verifyJWT, express.json(), async (req, res) => {
-  if (req.user?.role !== 'admin') return res.status(401).json(jwtFailure);
+  if (req.user.role !== 'admin') return res.status(401).json(jwtFailure);
   // We got an admin user logged asking for a new user to be created!
   const { userName } = req.body;
   // The user must exist.
@@ -184,7 +184,7 @@ app.post('/resetpassword', verifyJWT, express.json(), async (req, res) => {
 });
 
 app.post('/changerole', verifyJWT, express.json(), async (req, res) => {
-  if (req.user?.role !== 'admin') return res.status(401).json(jwtFailure);
+  if (req.user.role !== 'admin') return res.status(401).json(jwtFailure);
   // We got an admin user logged asking for a new user to be created!
   const { userName, role } = req.body;
   if (userName && role) {
