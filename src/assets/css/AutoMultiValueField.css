@@ -1,0 +1,12 @@
+.toolbar-edit-field-container {
+	/*height: 65px;*/
+}
+
+.toolbar-edit-field {
+	border-radius: 2px 2px 0 0 !important;
+	/*display: none;*/
+}
+
+.toolbar-edit-field:hover {
+	/*display: block;*/
+}

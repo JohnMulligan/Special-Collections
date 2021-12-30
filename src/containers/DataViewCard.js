@@ -4,6 +4,9 @@ import { connect } from "react-redux";
 import { DataView } from 'primereact/dataview';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
+import { Chip } from 'primereact/chip';
+
+import { propertyIsTitle } from "../containers/Home";
 
 import CardView from "../components/CardView";
 
@@ -43,7 +46,7 @@ const DataViewCardContainer = (props) => {
                 lazyParams.rows,
                 lazyParams.sortField,
                 lazyParams.sortDirection,
-                null,
+                lazyParams.globalFilter,
                 lazyParams.search,
             ).then(data => {
                 setTotalRecords(data.total);
@@ -61,25 +64,17 @@ const DataViewCardContainer = (props) => {
             let item = {'id': row['o:id']};
             properties.map((property) => {
                 let label = property['o:label'];
-                let value = null;
-
-                if (row[property['o:term']] !== undefined) {
-                    if (row[property['o:term']][0]['type'] === 'resource') {
-                        value = row[property['o:term']];
+                if (row[property['o:term']] !== undefined && row[property['o:term']].length > 0) {
+                    if (propertyIsTitle(property)) {
+                        item[label] = row[property['o:term']][0]['@value'];
+                    } else if (row[property['o:term']][0]['type'] === 'resource') {
+                        item[label] = row[property['o:term']];
                     } else {
-                        let separator = '';
-                        value = '';
-                        row[property['o:term']].map((subItem) => {
-                            if (subItem['@value'] !== undefined) {
-                                value += separator + subItem['@value'];
-                                separator = ' | ';
-                            }
-                            return null;
-                        });
+                        item[label] = itemChipsTemplate(row[property['o:term']]);
                     }
+                } else {
+                    item[label] = null;
                 }
-
-                item[label] = value;
                 return null;
             });
 
@@ -92,92 +87,47 @@ const DataViewCardContainer = (props) => {
         return [];
     }
 
+    const itemChipsTemplate = (rowData) => {
+        let itemChips = [];
+        if (rowData !== undefined && rowData[0]['type'] !== 'resource') {
+            rowData.map((subItem) => {
+                if (subItem['@value'] !== undefined) {
+                    itemChips.push(<Chip label={subItem['@value']} className="p-mr-2 p-mb-2" style={{ 'font-size': "12px" }} />);
+                }
+                return null;
+            });
+        }
+
+        return (
+            <React.Fragment>
+                {itemChips}
+            </React.Fragment>
+        );
+    }
+
     const itemCardTemplate = (data) => {
         return (
             <CardView
-                cardClassName="p-col-3"
                 cardData={data}
+                cardClassName="p-col-3 dataview-card"
+                fieldEditorClassName="border-default bg-white p-p-1"
+                availableProperties={props.availableProperties}
                 properties={props.activeProperties}
-                showRelatedItens={true}
-                openDialog={props.openDialog}
-                openOverlayPanel={true}
+                editModeEnabled={false}
+                showRelatedItems={true}
                 getCellTemplate={props.getCellTemplate}
+                getNewItem={props.getNewItem}
+                showToast={props.showToast}
             />
         );
     }
 
-    const propertiesFilters = () => {
-        let builtFilters = [];
-        props.activeProperties.map((property, i) => {
-            if (!props.propertyIsRelation(property)) {
-                builtFilters.push(
-                    <div className="p-col-12 p-my-2">
-                        <div className="p-d-flex p-jc-end">
-                            <InputText
-                                type="text"
-                                className="p-d-block p-py-1"
-                                onChange={(e) => onChangeFilter(property, e.target.value)}
-                                placeholder={"Search by " + property['o:label']}
-                            />
-                        </div>
-                    </div>
-                );
-            }
-            return null;
-        });
-
-        if (builtFilters.length > 0) {
-            builtFilters.push(
-                <div className="p-col-12 p-my-2">
-                    <div className="p-d-flex p-jc-end">
-                        <Button
-                            className="p-button-sm p-button-raised"
-                            icon="pi pi-search"
-                            label="Search"
-                            onClick={(e) => onFilter()}>
-                        </Button>
-                    </div>
-                </div>
-            );
-        }
-
-        return builtFilters;
-    }
-
-    const onChangeFilter = (property, value) => {
-        if (value) {
-            lazyParams.filter[property['o:id']] = value;
-        } else {
-            delete lazyParams.filter[property['o:id']];
-        }
-    }
-
-    const onFilter = () => {
-        let search = {};
-        let filters = {};
-        let counter = 0;
-
-        lazyParams.filter.map((value, propertyId) => {
-            search['property[' + counter + '][joiner]'] = 'and';
-            search['property[' + counter + '][property]'] = propertyId;
-            search['property[' + counter + '][type]'] = 'in';
-            search['property[' + counter + '][text]'] = value;
-
-            filters[propertyId] = {
-                'matchMode': 'startsWith',
-                'value': value
-            };
-
-            counter++;
-
-            return null;
-        });
-
+    const onGlobalFilter = (event) => {
         let _lazyParams = {
             ...lazyParams,
+            ...event,
             'first': 0,
-            'search': (Object.keys(search).length > 0) ? search : null,
-            'filters': (Object.keys(filters).length > 0) ? filters : null,
+            'globalFilter': event.target.value,
         };
         setLazyParams(_lazyParams);
     }
@@ -190,14 +140,31 @@ const DataViewCardContainer = (props) => {
         setLazyParams(_lazyParams);
     }
 
+    const renderHeader = () => {
+        return (
+            <div className="p-grid p-nogutter">
+                <div className="p-col-12" style={{textAlign: 'right'}}>
+                    <span className="p-input-icon-left">
+                        <i className="pi pi-search" />
+                        <InputText
+                            type="search"
+                            className="p-d-block p-py-1"
+                            onChange={onGlobalFilter}
+                            placeholder={"Global Search"}
+                        />
+                    </span>
+                </div>
+            </div>
+        );
+    }
+
+    const header = renderHeader();
+
     if (displayContent) {
         return (
             <div className="dataview-component">
                 <div className="p-grid">
-                    <div className="p-col-2">
-                        {propertiesFilters()}
-                    </div>
-                    <div className="p-col-10">
+                    <div className="p-col-12">
                         <div className="card">
                             <DataView
                                 loading={loading}
@@ -214,6 +181,7 @@ const DataViewCardContainer = (props) => {
                                 paginator
                                 paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                                 onPage={onPage}
+                                header={header}
                             />
                         </div>
                     </div>

@@ -15,10 +15,25 @@ import PropertySelector from "../components/PropertySelector";
 import DataTableContainer from "../containers/DataTable";
 import DataViewCardContainer from "../containers/DataViewCard";
 
+import AutoMultiValueField, { genericEditableItemType, makeGenericItem, makeNumberItem } from "../components/AutoMultiValueField";
+import { linkableItemType, makeLinkItem } from '../components/OmekaLinking'
+
 import CardView from "../components/CardView";
 
 import { fetchOne } from "../utils/OmekaS";
 import { authGet } from "../utils/Utils";
+
+export const propertyIsTitle = (property) => {
+    return property['o:label'] === 'Title' || property['o:label'] === 'name';
+}
+
+export const propertyIsNumericTimestamp = (property) => {
+    return property['o:data_type'].length > 0 && property['o:data_type'].includes('numeric:timestamp');
+}
+
+export const propertyIsRelation = (property) => {
+    return property['o:local_name'] && property['o:local_name'] === 'hasPart';
+}
 
 const textMaxLength = 150;
 
@@ -88,10 +103,6 @@ const Home = (props) => {
         loadLazyDataViewData(overlayPanelItems[startIndex]);
     }
 
-    const propertyIsRelation = (property) => {
-        return property['o:local_name'] && property['o:local_name'] === 'hasPart';
-    }
-
     const loadLazyDataViewData = async (item) => {
         setDataViewLoading(true);
         fetchOne(
@@ -117,33 +128,32 @@ const Home = (props) => {
 
     const parseItem = (row, properties) => {
         if (properties && properties.length > 0) {
-            let item = {'id': row['o:id']};
-            properties.map((property) => {
+            let item = {'id': row['o:id'], 'hasMedia': false};
+            for (const property of properties) {
                 let label = property['o:label'];
-                let value = null;
+                let value = [];
 
-                if (row[property['o:term']] !== undefined) {
-                    if (row[property['o:term']][0]['type'] === 'resource') {
-                        value = row[property['o:term']];
-                    } else {
-                        let separator = '';
-                        value = '';
-                        row[property['o:term']].map((subItem) => {
-                            if (subItem['@value'] !== undefined) {
-                                value += separator + subItem['@value'];
-                                separator = ' | ';
-                            }
-                            return null;
-                        });
+                if (row[property['o:term']] !== undefined && row[property['o:term']].length > 0) {
+                    for (const subItem of row[property['o:term']]) {
+                        if (subItem.type === 'literal') {
+                            value.push(makeGenericItem(subItem['@value'] || ""));
+                        } else if (subItem.type === 'numeric:timestamp') {
+                            value.push(makeNumberItem(subItem['@value'] || ""));
+                        } else if (subItem.type === 'resource') {
+                            value.push(makeLinkItem({...subItem, 'text': subItem['display_title']}));
+                        }
                     }
                 }
 
                 item[label] = value;
-                return null;
-            });
+            }
 
             if (row['thumbnail_display_urls']['square']) {
                 item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
+            }
+
+            if (row['o:media'].length > 0) {
+                item['hasMedia'] = true;
             }
 
             return item;
@@ -151,19 +161,40 @@ const Home = (props) => {
         return [];
     }
 
-    const getCellTemplate = (cellData, field, longTextOption, showRelatedItens) => {
-        if (cellData && (typeof cellData) === 'object') {
-            if (showRelatedItens) {
-                return relatedItemsButtonTemplate(cellData);
-            }
-        } else {
-            if (cellData && cellData.length > textMaxLength) {
+    const getDataTableCellTemplate = (cellData, field, longTextOption, showRelatedItems = true) => {
+        if (!cellData) return null;
+        if (field === 'Has Part') {
+            return showRelatedItems ? relatedItemsButtonTemplate(cellData) : null;
+        }
+        return (
+            <div className="p-d-flex p-ai-center p-flex-wrap">
+                <AutoMultiValueField
+                    values={cellData}
+                    fieldClassName="no-border bg-white p-p-1"
+                    readonly={true}
+                    itemTypesAllowed={[
+                        genericEditableItemType,
+                        {...genericEditableItemType, id: 1},
+                        {...linkableItemType(props, null), id: 2}]
+                    }
+                />
+            </div>
+        );
+    }
+
+    const getDataViewCardCellTemplate = (cellData, field, longTextOption, showRelatedItems) => {
+        if (!cellData) return null;
+        if (field === 'Has Part') {
+            return showRelatedItems ? relatedItemsButtonTemplate(cellData) : null;
+        }
+        if ((typeof cellData) === 'object') {
+            return cellData;
+        } else if ((typeof cellData) === 'string') {
+            if (cellData.length > textMaxLength) {
                 return longTextTemplate(field, cellData, textMaxLength, longTextOption);
-            } else {
-                return cellData;
             }
         }
-        return null;
+        return cellData;
     }
 
     const relatedItemsButtonTemplate = (items) => {
@@ -171,9 +202,10 @@ const Home = (props) => {
             <Button
                 icon="pi pi-plus-circle"
                 className="p-button-sm p-button-raised p-button-text"
-                label={Object.keys(items).length + " related items"}
+                label={items.length + " related items"}
                 onClick={(e) => openOverlayPanel(e, items) }
                 aria-haspopup aria-controls="overlay_panel"
+                disabled={!items.length}
             />
       );
     }
@@ -213,19 +245,56 @@ const Home = (props) => {
             return null;
         }
 
-        return cardViewTemplate(rowData, dataViewProperties, false);
+        return cardViewTemplate(rowData, dataViewProperties, false, null);
     }
 
-    const cardViewTemplate = (rowData, properties, showRelatedItens) => {
+    const cardViewTemplate = (rowData, properties, showRelatedItems, onCardSave) => {
         return (
             <CardView
-                cardClassName="p-col-12"
                 cardData={rowData}
+                cardClassName="p-col-12 fullscreen-card"
+                fieldViewClassName="card-field p-col-6 p-p-2"
+                fieldEditorClassName="border-default bg-white p-p-1"
+                onCardSave={onCardSave}
+                availableProperties={availableProperties}
                 properties={properties}
-                showRelatedItens={showRelatedItens}
-                getCellTemplate={getCellTemplate}
+                editModeEnabled={true}
+                showRelatedItems={showRelatedItems}
+                getCellTemplate={getDataTableCellTemplate}
+                getNewItem={getNewItem}
+                showToast={showToast}
             />
         );
+    }
+
+    const getNewItem = (property, value) => {
+        if (value.itemTypeId === 0) {
+            return {
+                '@value': value.text,
+                'is_public': true,
+                'property_id': property['o:id'],
+                'property_label': property['o:label'],
+                'type': 'literal'
+            };
+        } else if (value.itemTypeId === 1) {
+            return {
+                '@value': value.text,
+                'is_public': true,
+                'property_id': property['o:id'],
+                'property_label': property['o:label'],
+                'type': 'numeric:timestamp'
+            };
+        } else if (value.itemTypeId === 2) {
+            return {
+                'display_title': value['text'],
+                'value_resource_id': value['value_resource_id'],
+                'value_resource_name': value['value_resource_name'],
+                'is_public': true,
+                'property_id': property['o:id'],
+                'property_label': property['o:label'],
+                'type': 'resource'
+            };
+        }
     }
 
     const containerContent = () => {
@@ -239,19 +308,21 @@ const Home = (props) => {
                     activeProperties={activeProperties}
                     showToast={showToast}
                     openDialog={openDialog}
-                    propertyIsRelation={propertyIsRelation}
                     parseItem={parseItem}
-                    getCellTemplate={getCellTemplate}
+                    getCellTemplate={getDataTableCellTemplate}
                     cardViewTemplate={cardViewTemplate}
+                    getNewItem={getNewItem}
                 />
             );
         } else {
             return (
                 <DataViewCardContainer
                     activeTemplate={activeTemplate}
+                    availableProperties={availableProperties}
                     activeProperties={activeProperties}
-                    propertyIsRelation={propertyIsRelation}
-                    getCellTemplate={getCellTemplate}
+                    showToast={showToast}
+                    getCellTemplate={getDataViewCardCellTemplate}
+                    getNewItem={getNewItem}
                 />
             );
         }
@@ -259,7 +330,7 @@ const Home = (props) => {
 
     return (
         <div className="home-container">
-            <div className="p-grid p-ai-center p-py-1 p-px-3">
+            <div className="p-grid p-ai-center p-py-1 p-px-2 p-mx-0">
                 <div className="p-col-2">
                     <div className="p-d-flex p-jc-end">
                         <TemplateSelector
@@ -295,13 +366,13 @@ const Home = (props) => {
             <Dialog
                 header={dialogHeader}
                 visible={displayDialog}
-                maximizable
+                maximized
                 style={{ width: '50vw' }}
                 onHide={closeDialog}
             >
                 {dialogContent}
             </Dialog>
-            <OverlayPanel ref={overlayPanel} showCloseIcon id="overlay_panel" style={{width: '450px'}}>
+            <OverlayPanel ref={overlayPanel} showCloseIcon id="overlay_panel" style={{width: '75vw'}}>
                 <DataView
                     value={dataViewCollection}
                     layout="grid"

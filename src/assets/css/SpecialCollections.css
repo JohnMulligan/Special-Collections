@@ -2,6 +2,24 @@
 	text-align: center !important;
 }
 
+.no-border {
+    border: 0 none !important;
+}
+
+.border-default {
+	border: 1px solid #808080;
+    border-radius: 3px;
+}
+
+.bg-white {
+	background-color: #ffffff !important;
+}
+
+.p-listbox .p-listbox-list .p-listbox-item.p-highlight {
+	background-color: #ffffff !important;
+	color: #000;
+}
+
 .header-title {
 	font-family: "Goudy Old Style";
 	font-style: italic;
@@ -9,4 +27,8 @@
 	font-weight: bolder;
 	line-height: 26.4px;
 	color: #093eba;
+}
+
+.p-w-100 {
+	width: 100%;
 }

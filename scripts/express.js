@@ -147,6 +147,7 @@ app.patch('/api', verifyJWT, createProxyMiddleware(apiProxyConfig));
 const omekaStaticProxy = createProxyMiddleware(baseProxyConfig);
 app.use('/files', readOnlyOmeka, omekaStaticProxy);
 app.use('/application', readOnlyOmeka, omekaStaticProxy);
+app.use('/iiif', readOnlyOmeka, omekaStaticProxy);
 
 app.post('/adduser', verifyJWT, express.json(), async (req, res) => {
   if (req.user?.role !== 'admin') return res.status(401).json(jwtFailure);
@@ -249,6 +250,10 @@ app.use('/react', [
     //theregottobeabetterway.gif
     next();
   }, express.static(path.join(__dirname, "..", "build"))]);
+
+// Map UV urls to the React App.
+app.use('/uv-dist-umd', express.static(path.join(__dirname, "..", "build/uv-dist-umd")));
+app.use('/uv-assets', express.static(path.join(__dirname, "..", "build/uv-assets")));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', '/build/index.html'));
