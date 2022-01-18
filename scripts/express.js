@@ -20,7 +20,7 @@ if (process.env.NODE_ENV !== 'production') {
 const omekaProtocol = process.env.OMEKA_PROTOCOL || 'http';
 const omekaUrl = process.env.OMEKA_URL || 'localhost';
 const port = process.env.SERVER_PORT || 3000;
-const baseUrl = `${process.env.BASE_URL || 'localhost'}:${port}`;
+const baseUrl = process.env.BASE_URL_OVERRIDE || `${process.env.BASE_URL || 'localhost'}:${port}`;
 
 // This approach was found in the GitHub post:
 // https://github.com/chimurai/http-proxy-middleware/issues/293#issuecomment-449548863
@@ -85,19 +85,8 @@ const apiProxyConfig = {
     // TODO: check if there is a configuration option in Omeka S to
     // disable the base url from being exported in the response.
     const response = responseBuffer.toString('utf8');
-    //console.log(response.code);
-    //console.log("replace this:",baseUrl);
-    //console.log("with this:",apiUrlReplace);
-    const x = replaceall(apiUrlReplace,baseUrl,response);
-    
-    //console.log(x);
-   //	 console.log(apiUrlRegex);
-    //const x = replaceall("10.134.196.127\\\/omeka",baseUrl,response);
-
-    return x;
-  //  console.log(response.replace(apiUrlRegex, baseUrl));
-//    return response.replace(apiUrlRegex, baseUrl);
-    
+    const replaced = replaceall(apiUrlReplace,baseUrl,response);
+    return replaced;    
   })
 };
 
@@ -225,7 +214,6 @@ app.post('/changepassword', verifyJWT, express.json(), async (req, res) => {
 
 // Login.
 app.post('/auth', express.json(), async (req, res) => {
-  console.log(req.body)
   const { userName, password } = req.body;
   
   let ok = false;
@@ -243,13 +231,16 @@ app.post('/auth', express.json(), async (req, res) => {
   return res.json({ auth: true, token });
 });
 
-// Map React urls to the React App.
-app.use('/react', [
-  function (req, res, next) {
-    req.url = req.url.replace('/react/', '/');
-    //theregottobeabetterway.gif
-    next();
-  }, express.static(path.join(__dirname, "..", "build"))]);
+
+if (process.env.REACT_DEV_ENV?.toLowerCase() !== "true") {
+  // Map React urls to the React App.
+  app.use('/react', [
+    function (req, res, next) {
+      req.url = req.url.replace('/react/', '/');
+      //theregottobeabetterway.gif
+      next();
+    }, express.static(path.join(__dirname, "..", "build"))]);
+}
 
 // Map UV urls to the React App.
 app.use('/uv-dist-umd', express.static(path.join(__dirname, "..", "build/uv-dist-umd")));

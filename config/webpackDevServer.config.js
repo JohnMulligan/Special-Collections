@@ -101,14 +101,20 @@ module.exports = function (proxy, allowedHost) {
     },
     public: allowedHost,
     // `proxy` is run between `before` and `after` `webpack-dev-server` hooks
-    proxy: {
-      // HOST_ADDRESS + "/api": {
-      //   target: HOST_ADDRESS + "HOST_ADDRESS/api", // the service
-      //   ws: true,
-      //   changeOrigin: true,
-      //   pathRewrite: { "^HOST_ADDRESS/api": "/" },
-      // },
-    },
+    proxy: [
+      {
+        context: [
+          "/auth",
+          "/api",
+          "/files",
+          "/application",
+          "/iiif",
+          "/uv-dist-umd",
+          "/uv-assets"
+        ],
+        target: 'http://localhost:3000'
+      }
+    ],
     before(app, server) {
       // Keep `evalSourceMapMiddleware` and `errorOverlayMiddleware`
       // middlewares before `redirectServedPath` otherwise will not have any effect
