@@ -121,7 +121,7 @@ const DataTableContainer = (props) => {
         builtColumns.push(<Column key="thumbnail" columnKey="thumbnail" header="Thumbnail" headerStyle={{ width: '150px' }} reorderable={false} className="p-datatable-column text-align-center" body={thumbnailTemplate} />);
 
         properties.map((property, i) => {
-            let fieldIsRelation = propertyIsRelation(property);
+            // let fieldIsRelation = propertyIsRelation(property);
             builtColumns.push(
                 <Column
                     key={property['o:id']}
@@ -131,18 +131,21 @@ const DataTableContainer = (props) => {
                     field={property['o:label']}
                     filterField={property['o:id'].toString()}
                     sortField={property['o:term']}
-                    sortable={!fieldIsRelation && props.screenMode === 'view' && !lazyParams.globalFilter}
-                    filter={!fieldIsRelation && props.screenMode === 'view'}
+                    //sortable={!fieldIsRelation && props.screenMode === 'view' && !lazyParams.globalFilter}
+                    //filter={!fieldIsRelation && props.screenMode === 'view'}
+                    sortable={props.screenMode === 'view' && !lazyParams.globalFilter}
+                    filter={props.screenMode === 'view'}
                     filterPlaceholder={"Search by " + property['o:label']}
                     className="p-datatable-column"
                     style={{ width: '200px' }}
                     body={cellTemplate}
                     editor={(columnProperties) => {
-                        if(!fieldIsRelation) {
+                        //if(!fieldIsRelation) {
                             return editorTemplate(columnProperties, property);
-                        }
+                        //}
                     }}
-                    exportable={!fieldIsRelation}
+                    //exportable={!fieldIsRelation}
+                    exportable={true}
                 />
             );
             return null;
@@ -175,7 +178,7 @@ const DataTableContainer = (props) => {
                 <React.Fragment>
                     <img
                         src={rowData['thumbnail_url']}
-                        class="border-default"
+                        className="border-default"
                         width="100"
                         height="100"
                         alt=""
@@ -207,7 +210,7 @@ const DataTableContainer = (props) => {
                 value = [value];
             }
             const editTypesAllowed = [genericEditableItemType];
-            if (cellProperty['o:data_type'].includes('resource:item')) {
+            if (value.length === 0 || value?.[0]?.itemTypeId === 2) {
                 editTypesAllowed.push(linkableItemType(props, (linkItem) => onRowLinkItem(columnProperties, linkItem, value)));
             }
             return (
@@ -318,7 +321,8 @@ const DataTableContainer = (props) => {
             props.availableProperties.map((property) => {
                 let editedValue = event.data[property['o:label']]
                 
-                if (!propertyIsRelation(property) && editedValue) {
+                // if (!propertyIsRelation(property) && editedValue) {
+                if (editedValue) {
                     if (editedValue instanceof Array) {
                         var newData = editedValue.map((value) => {
                             return props.getNewItem(property, value);

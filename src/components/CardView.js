@@ -7,7 +7,7 @@ import { Toolbar } from 'primereact/toolbar';
 
 import { propertyIsTitle, propertyIsNumericTimestamp, propertyIsRelation } from "../containers/Home";
 
-import AutoMultiValueField, { makeGenericItem, makeNumberItem, genericEditableItemType } from "../components/AutoMultiValueField";
+import AutoMultiValueField, { makeNumberItem, genericEditableItemType } from "../components/AutoMultiValueField";
 import { makeLinkItem, linkableItemType } from "../components/OmekaLinking";
 import UniversalViewer from "../components/UniversalViewer";
 
@@ -46,15 +46,16 @@ const CardView = (props) => {
         let rightToolbarItems = [];
 
         switch (singleItemMode) {
-            case 'view':
-                if(props.editModeEnabled && !!onCardSave) {
-                    rightToolbarItems.push(editModeBtn);
-                }
-            break;
-
             case 'edit':
                 leftToolbarItems.push(saveBtn);
                 leftToolbarItems.push(cancelBtn);
+            break;
+
+            case 'view':
+            default:
+                if(props.editModeEnabled && !!onCardSave) {
+                    rightToolbarItems.push(editModeBtn);
+                }
             break;
         }
 
@@ -76,8 +77,9 @@ const CardView = (props) => {
                 <React.Fragment>
                     <img
                         src={cardData['thumbnail_url']}
-                        class="border-default"
+                        className="border-default"
                         onError={(e) => e.target.src=PlaceHolder}
+                        alt=""
                     />
                 </React.Fragment>
             );
@@ -121,49 +123,45 @@ const CardView = (props) => {
     const editorTemplate = (property) => {
         let value = editCardData[property['o:label']] || "";
 
-        if (!propertyIsRelation(property)) {
-            if (propertyIsNumericTimestamp(property)) {
-                return (
-                    <div className="p-field p-col-6 p-p-2">
-                        <span className="p-float-label p-text-bold p-mb-3">
-                            <label htmlFor={property['o:label']}>{property['o:label']}</label>
-                        </span>
-                        <InputNumber
-                            value={value && value.length === 1 ? parseInt(value[0].text) : ""}
-                            onChange={(e) => onEditorValueChange(property['o:label'], [makeNumberItem(e.value)])}
-                            useGrouping={false}
-                            showButtons
-                            buttonLayout="vertical"
-                            style={{width: '75px'}}
-                        />
-                    </div>
-                );
-            } else {
-                if (!Array.isArray(value)) {
-                    value = [value];
-                }
-                
-                const editTypesAllowed = [genericEditableItemType];
-                if (property['o:data_type'].includes('resource:item')) {
-                    editTypesAllowed.push(linkableItemType(props, (linkItem) => onRowLinkItem(property['o:label'], linkItem, value)));
-                }
-
-                return (
-                    <div className={propertyIsTitle(property) ? 'p-field p-col-12 p-p-2' : 'p-field p-col-6 p-p-2'}>
-                        <span className="p-float-label p-text-bold p-mb-3">
-                            <label htmlFor={property['o:label']}>{property['o:label']}</label>
-                        </span>
-                        <AutoMultiValueField
-                            values={value}
-                            fieldClassName={props.fieldEditorClassName}
-                            onChange={(value) => onEditorValueChange(property['o:label'], value)} 
-                            itemTypesAllowed={editTypesAllowed}
-                        />
-                    </div>
-                );
-            }
+        if (propertyIsNumericTimestamp(property)) {
+            return (
+                <div className="p-field p-col-6 p-p-2">
+                    <span className="p-float-label p-text-bold p-mb-3">
+                        <label htmlFor={property['o:label']}>{property['o:label']}</label>
+                    </span>
+                    <InputNumber
+                        value={value && value.length === 1 ? parseInt(value[0].text) : ""}
+                        onChange={(e) => onEditorValueChange(property['o:label'], [makeNumberItem(e.value)])}
+                        useGrouping={false}
+                        showButtons
+                        buttonLayout="vertical"
+                        style={{width: '75px'}}
+                    />
+                </div>
+            );
         } else {
-            return null;
+            if (!Array.isArray(value)) {
+                value = [value];
+            }
+
+            const editTypesAllowed = [genericEditableItemType];
+            if (value.length === 0 || value?.[0]?.itemTypeId === 2) {
+                editTypesAllowed.push(linkableItemType(props, (linkItem) => onRowLinkItem(property['o:label'], linkItem, value)));
+            }
+
+            return (
+                <div className={propertyIsTitle(property) ? 'p-field p-col-12 p-p-2' : 'p-field p-col-6 p-p-2'}>
+                    <span className="p-float-label p-text-bold p-mb-3">
+                        <label htmlFor={property['o:label']}>{property['o:label']}</label>
+                    </span>
+                    <AutoMultiValueField
+                        values={value}
+                        fieldClassName={props.fieldEditorClassName}
+                        onChange={(value) => onEditorValueChange(property['o:label'], value)}
+                        itemTypesAllowed={editTypesAllowed}
+                    />
+                </div>
+            );
         }
     }
 
@@ -215,11 +213,11 @@ const CardView = (props) => {
         }
 
         let cardViewItems = props.properties.map((property, i) => {
-            if(singleItemMode == 'view') {
+            if(singleItemMode === 'view') {
                 if (propertyIsTitle(property)) {
                     if (typeof(editCardData[property['o:label']]) === 'string') {
                         cardViewTitle = editCardData[property['o:label']];
-                    } else if (!!editCardData[property['o:label']][0] && !!editCardData[property['o:label']][0]['text']) {
+                    } else if (!!editCardData[property['o:label']]?.[0] && !!editCardData[property['o:label']]?.[0]?.['text']) {
                         cardViewTitle = editCardData[property['o:label']][0]['text'] || "[Untitled]";
                     }
                 } else if (editCardData[property['o:label']]) {

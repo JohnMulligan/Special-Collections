@@ -122,7 +122,7 @@ const AutoMultiValueField = ({
         const { item } = option;
 
         for (const itemType of itemTypesAllowed) {
-            if (itemType.id == item.itemTypeId) {
+            if (itemType.id === item.itemTypeId) {
                 return itemType.itemTemplate(item);
             }
         }
@@ -144,9 +144,12 @@ const AutoMultiValueField = ({
 
     let singleItemTemplate = null;
     if (values.length === 1 && values[0].itemTypeId !== 0) {
-        const t = itemTypesAllowed[values[0].itemTypeId];
-        if (t.singleItemTemplate) {
-            singleItemTemplate = t.singleItemTemplate(values[0]);
+        for (const itemType of itemTypesAllowed) {
+            if (itemType.id === values[0].itemTypeId) {
+                if (itemType.singleItemTemplate) {
+                    singleItemTemplate = itemType.singleItemTemplate(values[0]);
+                }
+            }
         }
     }
 

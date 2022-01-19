@@ -3,7 +3,6 @@ import { connect } from "react-redux";
 
 import { DataView } from 'primereact/dataview';
 import { InputText } from 'primereact/inputtext';
-import { Button } from 'primereact/button';
 import { Chip } from 'primereact/chip';
 
 import { propertyIsTitle } from "../containers/Home";
@@ -28,64 +27,64 @@ const DataViewCardContainer = (props) => {
     });
 
     useEffect(() => {
-        loadLazyData();
-    }, [props.activeProperties, lazyParams]);
-
-    const loadLazyData = () => {
-        if (props.activeProperties && props.activeProperties.length > 0) {
-            setDisplayContent(true);
-            setLoading(true);
-        }
-
-        if (props.activeTemplate) {
-            fetchItems(
-                props.query.endpoint,
-                props.query.item_set_id,
-                props.query.params,
-                lazyParams.first,
-                lazyParams.rows,
-                lazyParams.sortField,
-                lazyParams.sortDirection,
-                lazyParams.globalFilter,
-                lazyParams.search,
-            ).then(data => {
-                setTotalRecords(data.total);
+        const loadLazyData = () => {
+            if (props.activeProperties && props.activeProperties.length > 0) {
                 setDisplayContent(true);
-                setCollection(data.items.map((row, key) => {
-                    return parseItem(row, props.activeProperties);
-                }));
-                setLoading(false);
-            });
-        }
-    }
-
-    const parseItem = (row, properties) => {
-        if (properties && properties.length > 0) {
-            let item = {'id': row['o:id']};
-            properties.map((property) => {
-                let label = property['o:label'];
-                if (row[property['o:term']] !== undefined && row[property['o:term']].length > 0) {
-                    if (propertyIsTitle(property)) {
-                        item[label] = row[property['o:term']][0]['@value'];
-                    } else if (row[property['o:term']][0]['type'] === 'resource') {
-                        item[label] = row[property['o:term']];
-                    } else {
-                        item[label] = itemChipsTemplate(row[property['o:term']]);
-                    }
-                } else {
-                    item[label] = null;
-                }
-                return null;
-            });
-
-            if (row['thumbnail_display_urls']['square']) {
-                item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
+                setLoading(true);
             }
 
-            return item;
+            if (props.activeTemplate) {
+                fetchItems(
+                    props.query.endpoint,
+                    props.query.item_set_id,
+                    props.query.params,
+                    lazyParams.first,
+                    lazyParams.rows,
+                    lazyParams.sortField,
+                    lazyParams.sortDirection,
+                    lazyParams.globalFilter,
+                    lazyParams.search,
+                ).then(data => {
+                    setTotalRecords(data.total);
+                    setDisplayContent(true);
+                    setCollection(data.items.map((row, key) => {
+                        return parseItem(row, props.activeProperties);
+                    }));
+                    setLoading(false);
+                });
+            }
         }
-        return [];
-    }
+
+        const parseItem = (row, properties) => {
+            if (properties && properties.length > 0) {
+                let item = {'id': row['o:id']};
+                properties.map((property) => {
+                    let label = property['o:label'];
+                    if (row[property['o:term']] !== undefined && row[property['o:term']].length > 0) {
+                        if (propertyIsTitle(property)) {
+                            item[label] = row[property['o:term']][0]['@value'];
+                        } else if (row[property['o:term']][0]['type'] === 'resource') {
+                            item[label] = row[property['o:term']];
+                        } else {
+                            item[label] = itemChipsTemplate(row[property['o:term']]);
+                        }
+                    } else {
+                        item[label] = null;
+                    }
+                    return null;
+                });
+
+                if (row['thumbnail_display_urls']['square']) {
+                    item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
+                }
+
+                return item;
+            }
+            return [];
+        }
+
+        loadLazyData();
+    }, [props, lazyParams]);
 
     const itemChipsTemplate = (rowData) => {
         let itemChips = [];

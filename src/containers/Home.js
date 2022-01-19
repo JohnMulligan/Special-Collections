@@ -163,8 +163,10 @@ const Home = (props) => {
 
     const getDataTableCellTemplate = (cellData, field, longTextOption, showRelatedItems = true) => {
         if (!cellData) return null;
-        if (field === 'Has Part') {
-            return showRelatedItems ? relatedItemsButtonTemplate(cellData) : null;
+        if ((typeof cellData) === 'object') {
+            if (Array.isArray(cellData) && cellData?.[0]?.itemTypeId === 2) {
+                return showRelatedItems ? relatedItemsButtonTemplate(cellData) : null;
+            }
         }
         return (
             <div className="p-d-flex p-ai-center p-flex-wrap">
@@ -184,10 +186,10 @@ const Home = (props) => {
 
     const getDataViewCardCellTemplate = (cellData, field, longTextOption, showRelatedItems) => {
         if (!cellData) return null;
-        if (field === 'Has Part') {
-            return showRelatedItems ? relatedItemsButtonTemplate(cellData) : null;
-        }
         if ((typeof cellData) === 'object') {
+            if (Array.isArray(cellData) && cellData?.[0]?.type === "resource") {
+                return showRelatedItems ? relatedItemsButtonTemplate(cellData) : null;
+            }
             return cellData;
         } else if ((typeof cellData) === 'string') {
             if (cellData.length > textMaxLength) {

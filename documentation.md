@@ -27,7 +27,7 @@ proper execution:
 - OMEKA_(ADMIN|CONTRIB|GUEST)_CREDENTIAL: the access key that should be used to
   connect to Omeka for the role.
 - SERVER_PORT: the port where the Special Collections web server should use.
-- BASE_URL: the base url of the Special Collections site.
+- BASE_URL: the base url of the Special Collections site (omitting the protocol).
 - JWT_SECRET: the secret key used in the JSON Web Token signing and
   verification. The documentation for the package we use can be found
   [here](https://www.npmjs.com/package/jsonwebtoken). A strong key should be
@@ -118,7 +118,7 @@ use port 8000 for the React frontend.
 
 ```
 REACT_DEV_ENV=true
-BASE_URL_OVERRIDE = 'http://localhost:8000'
+BASE_URL_OVERRIDE = 'localhost:8000'
 npm run express
 ```
 
