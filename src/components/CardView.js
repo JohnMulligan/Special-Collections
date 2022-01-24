@@ -5,9 +5,9 @@ import { Button } from 'primereact/button';
 import { InputNumber } from 'primereact/inputnumber';
 import { Toolbar } from 'primereact/toolbar';
 
-import { propertyIsTitle, propertyIsNumericTimestamp, propertyIsRelation } from "../containers/Home";
+import { propertyIsTitle, propertyIsNumericTimestamp, propertyIsNumericInteger, propertyPossibleTypes } from "../containers/Home";
 
-import AutoMultiValueField, { makeNumberItem, genericEditableItemType } from "../components/AutoMultiValueField";
+import AutoMultiValueField, { makeNumberItem, genericEditableItemType, externalLinkEditableItemType } from "../components/AutoMultiValueField";
 import { makeLinkItem, linkableItemType } from "../components/OmekaLinking";
 import UniversalViewer from "../components/UniversalViewer";
 
@@ -24,10 +24,6 @@ const CardView = (props) => {
     useEffect(() => {
         setEditCardData(cardData);
     }, [cardData]);
-
-    const viewModeBtn = (
-        <Button key="view-mode" label="View Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" icon="pi pi-eye" onClick={() => { setSingleItemMode('view'); }} />
-    );
 
     const editModeBtn = (
         <Button key="edit-mode" label="Edit Mode" className="p-button-sm p-button-raised p-button-info p-mr-2" icon="pi pi-pencil" onClick={() => { setSingleItemMode('edit'); }} />
@@ -90,7 +86,7 @@ const CardView = (props) => {
 
     const viewTemplate = (property) => {
         if (editCardData[property['o:label']]) {
-            let itemTemplate = props.getCellTemplate(editCardData[property['o:label']], property['o:label'], 'accordion', props.showRelatedItems);
+            let itemTemplate = props.getCellTemplate(editCardData[property['o:label']], property['o:label'], 'accordion', props.showRelatedItems, property);
             if (typeof(itemTemplate) === 'string' || ((editCardData[property['o:label']] instanceof Array) && typeof(editCardData[property['o:label']][0]) === 'string')) {
                 return (
                     <div className={props.fieldViewClassName || 'card-field p-col-6 p-p-2'}>
@@ -123,7 +119,7 @@ const CardView = (props) => {
     const editorTemplate = (property) => {
         let value = editCardData[property['o:label']] || "";
 
-        if (propertyIsNumericTimestamp(property)) {
+        if (propertyIsNumericTimestamp(property) || propertyIsNumericInteger(property)) {
             return (
                 <div className="p-field p-col-6 p-p-2">
                     <span className="p-float-label p-text-bold p-mb-3">
@@ -144,9 +140,16 @@ const CardView = (props) => {
                 value = [value];
             }
 
-            const editTypesAllowed = [genericEditableItemType];
-            if (value.length === 0 || value?.[0]?.itemTypeId === 2) {
+            const editTypesAllowed = [];
+            let propertyTypes = propertyPossibleTypes(property);
+            if (propertyTypes === "largeTextField" || propertyTypes === "hasResource") {
+                editTypesAllowed.push(genericEditableItemType);
+            }
+            if (propertyTypes === "resource" || propertyTypes === "hasResource") {
                 editTypesAllowed.push(linkableItemType(props, (linkItem) => onRowLinkItem(property['o:label'], linkItem, value)));
+            }
+            if (propertyTypes === "uri") {
+                editTypesAllowed.push(externalLinkEditableItemType);
             }
 
             return (

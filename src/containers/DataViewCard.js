@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { connect } from "react-redux";
 
 import { DataView } from 'primereact/dataview';
 import { InputText } from 'primereact/inputtext';
 import { Chip } from 'primereact/chip';
 
-import { propertyIsTitle } from "../containers/Home";
+import { propertyIsTitle, propertyPossibleTypes, DialogContext } from "../containers/Home";
 
 import CardView from "../components/CardView";
 
@@ -14,6 +14,8 @@ import { fetchItems } from "../utils/OmekaS";
 import '../assets/css/DataView.css';
 
 const DataViewCardContainer = (props) => {
+    const dialogContext = useContext(DialogContext);
+
     const [loading, setLoading] = useState(true);
     const [displayContent, setDisplayContent] = useState(false);
     const [collection, setCollection] = useState([]);
@@ -60,10 +62,11 @@ const DataViewCardContainer = (props) => {
                 let item = {'id': row['o:id']};
                 properties.map((property) => {
                     let label = property['o:label'];
+                    let propertyTypes = propertyPossibleTypes(property);
                     if (row[property['o:term']] !== undefined && row[property['o:term']].length > 0) {
                         if (propertyIsTitle(property)) {
                             item[label] = row[property['o:term']][0]['@value'];
-                        } else if (row[property['o:term']][0]['type'] === 'resource') {
+                        } else if (propertyTypes === 'resource') {
                             item[label] = row[property['o:term']];
                         } else {
                             item[label] = itemChipsTemplate(row[property['o:term']]);
@@ -88,8 +91,26 @@ const DataViewCardContainer = (props) => {
 
     const itemChipsTemplate = (rowData) => {
         let itemChips = [];
-        if (rowData !== undefined && rowData[0]['type'] !== 'resource') {
+        if (rowData !== undefined) {
             rowData.map((subItem) => {
+                if (subItem['type'] === 'resource' && subItem['@id'] !== undefined) {
+                    itemChips.push(<Chip template={<a className="p-chip-text" onClick={() => { dialogContext.fetchOneAndOpenDialogCard(subItem); } }>{subItem['display_title']}</a>} className="p-mr-2 p-mb-2" style={{ 'font-size': "12px" }} />);
+                    return null;
+                }
+                if (subItem['type'] === 'uri' && subItem['@id'] !== undefined) {
+                    itemChips.push(
+                        <Chip 
+                            template={<a 
+                                        href={subItem["@id"]}
+                                        className="p-chip-text" 
+                                        target="_blank"
+                                        onClick={() => { window.open(subItem["@id"], '_blank').focus(); } }>
+                                    {subItem["@id"]}</a>} 
+                            className="p-mr-2 p-mb-2" 
+                            style={{ 'font-size': "12px" }} />
+                    );
+                    return null;
+                }
                 if (subItem['@value'] !== undefined) {
                     itemChips.push(<Chip label={subItem['@value']} className="p-mr-2 p-mb-2" style={{ 'font-size': "12px" }} />);
                 }
