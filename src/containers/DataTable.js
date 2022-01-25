@@ -69,6 +69,17 @@ const DataTableContainer = (props) => {
         loadLazyData();
     }, [props.activeProperties, lazyParams]);
 
+    useEffect(() => {
+        let _lazyParams = {
+            first: 0,
+            rows: 10,
+            sortField: 'o:id',
+            sortOrder: 1,
+            sortDirection: 'asc',
+        };
+        setLazyParams(_lazyParams);
+    }, [props.activeTemplate]);
+
     const loadLazyData = () => {
         if (props.activeProperties && props.activeProperties.length > 0) {
             setDisplayContent(true);

@@ -87,7 +87,18 @@ const DataViewCardContainer = (props) => {
         }
 
         loadLazyData();
-    }, [props, lazyParams]);
+    }, [props.activeProperties, lazyParams]);
+
+    useEffect(() => {
+        let _lazyParams = {
+            first: 0,
+            rows: 12,
+            sortField: 'o:id',
+            sortDirection: 'asc',
+            filter: [],
+        };
+        setLazyParams(_lazyParams);
+    }, [props.activeTemplate]);
 
     const itemChipsTemplate = (rowData) => {
         let itemChips = [];
@@ -167,6 +178,7 @@ const DataViewCardContainer = (props) => {
                     <span className="p-input-icon-left">
                         <i className="pi pi-search" />
                         <InputText
+                            value={lazyParams.globalFilter || ''}
                             type="search"
                             className="p-d-block p-py-1"
                             onChange={onGlobalFilter}
