@@ -399,6 +399,13 @@ const DataTableContainer = (props) => {
         dt.current.exportCSV();
     }
 
+    const formatExportCSV = (event) => {
+        let values = event.data.map((rowData) => {
+            return rowData.text;
+        });
+        return values.join(' | ');
+    }
+
     const headerLeftContents = () => {
         return (
             <React.Fragment>
@@ -503,6 +510,7 @@ const DataTableContainer = (props) => {
                         onRowEditInit={onRowEditInit}
                         onRowEditCancel={onRowEditCancel}
                         onRowEditSave={onRowEditSave}
+                        exportFunction={formatExportCSV}
                     >
                         {buildColumns(props.activeProperties)}
                     </DataTable>
