@@ -27,7 +27,7 @@ proper execution:
 - OMEKA_(ADMIN|CONTRIB|GUEST)_CREDENTIAL: the access key that should be used to
   connect to Omeka for the role.
 - SERVER_PORT: the port where the Special Collections web server should use.
-- BASE_URL: the base url of the Special Collections site.
+- BASE_URL: the base url of the Special Collections site (omitting the protocol).
 - JWT_SECRET: the secret key used in the JSON Web Token signing and
   verification. The documentation for the package we use can be found
   [here](https://www.npmjs.com/package/jsonwebtoken). A strong key should be
@@ -94,3 +94,45 @@ This will package the React app into a build folder (which is excluded in
 ```
 npm run express
 ```
+
+## Development cycle
+
+To speed up the development cycle, `npm start` is a much faster alternative then
+compiling a production (minified/bundled) release and serving that to the local
+browser through our express.js server. However, the start command launches its
+own web server and our code uses express.js as a proxy for Omeka APIs which
+causes several incompatibilities.
+
+To work around these issues, we can use a few environment variables and launch
+both express and the WebPack dev servers using different ports. The dev server
+is now configured (see webpackDevServer.config.js) to forward the backend calls
+that should go to express on port 3000. If an additional path is added to
+express (e.g. through app.use), and the dev server needs to forward it, this
+configuration needs to be updated (see the *proxy* value in that configuration
+and it will be clear how to extend it).
+
+
+To launch express on "dev mode", ensure that the following environment variables
+are set (and check that the port 3000 is being used). For this example, we will
+use port 8000 for the React frontend.
+
+```
+REACT_DEV_ENV=true
+BASE_URL_OVERRIDE = 'localhost:8000'
+npm run express
+```
+
+With the setup above, the authentication and Omeka proxy will respond on port
+3000 and any data obtained from Omeka which produces URLs as part of the content
+will use the BASE_URL_OVERRIDE value as the root of the URL. That is, those
+links will point to the front-end dev server and thus avoid CORS issues.
+
+Now the React app can be launched in dev mode by first setting the port (which
+cannot be 3000 as this is occupied by express).
+
+```
+PORT=8000
+npm start
+```
+
+Happy development!

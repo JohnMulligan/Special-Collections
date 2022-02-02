@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, createContext } from 'react';
 
 import Axios from "axios";
 
@@ -15,13 +15,15 @@ import PropertySelector from "../components/PropertySelector";
 import DataTableContainer from "../containers/DataTable";
 import DataViewCardContainer from "../containers/DataViewCard";
 
-import AutoMultiValueField, { genericEditableItemType, makeGenericItem, makeNumberItem } from "../components/AutoMultiValueField";
+import AutoMultiValueField, { genericEditableItemType, externalLinkEditableItemType, makeGenericItem, makeNumberItem, makeExternalLinkItem } from "../components/AutoMultiValueField";
 import { linkableItemType, makeLinkItem } from '../components/OmekaLinking'
 
 import CardView from "../components/CardView";
 
 import { fetchOne } from "../utils/OmekaS";
 import { authGet } from "../utils/Utils";
+
+export const DialogContext = createContext();
 
 export const propertyIsTitle = (property) => {
     return property['o:label'] === 'Title' || property['o:label'] === 'name';
@@ -31,8 +33,27 @@ export const propertyIsNumericTimestamp = (property) => {
     return property['o:data_type'].length > 0 && property['o:data_type'].includes('numeric:timestamp');
 }
 
+export const propertyIsNumericInteger = (property) => {
+    return property['o:data_type'].length > 0 && property['o:data_type'].includes('numeric:integer');
+}
+
 export const propertyIsRelation = (property) => {
     return property['o:local_name'] && property['o:local_name'] === 'hasPart';
+}
+
+export const propertyPossibleTypes = (property) => {
+    let propertyDataTypeLength = property?.['o:data_type']?.length;
+    if (propertyDataTypeLength === 1 && property?.['o:data_type']?.includes('uri')) {
+        return 'uri';
+    }
+    let resourceTypeLength = property?.['o:data_type']?.filter(function (type) {return type.includes('resource')}).length;
+    if (resourceTypeLength > 0) {
+        if (resourceTypeLength === propertyDataTypeLength) {
+            return 'resource';
+        }
+        return 'hasResource';
+    }
+    return 'largeTextField';
 }
 
 const textMaxLength = 150;
@@ -137,10 +158,12 @@ const Home = (props) => {
                     for (const subItem of row[property['o:term']]) {
                         if (subItem.type === 'literal') {
                             value.push(makeGenericItem(subItem['@value'] || ""));
-                        } else if (subItem.type === 'numeric:timestamp') {
+                        } else if (subItem.type === 'numeric:timestamp' || subItem.type === 'numeric:integer') {
                             value.push(makeNumberItem(subItem['@value'] || ""));
                         } else if (subItem.type === 'resource') {
                             value.push(makeLinkItem({...subItem, 'text': subItem['display_title']}));
+                        } else if (subItem.type === 'uri') {
+                            value.push(makeExternalLinkItem(subItem['@id'] || ""));
                         }
                     }
                 }
@@ -161,10 +184,34 @@ const Home = (props) => {
         return [];
     }
 
-    const getDataTableCellTemplate = (cellData, field, longTextOption, showRelatedItems = true) => {
+    const fetchOneAndOpenDialogCard = (item) => {
+        fetchOne(
+            item['value_resource_name'],
+            item['value_resource_id']
+        ).then(data => {
+            let resourceTemplate = templates.filter(
+                (template) => template['o:resource_class']['o:id'] === data['o:resource_class']['o:id']
+            )[0];
+
+            const requests = resourceTemplate["o:resource_template_property"].map((property) =>
+                authGet(property["o:property"]["@id"])
+            );
+
+            Axios.all(requests).then(res => {
+                let properties = res.map((inner) => inner.data);
+                setDisplayDialog(true);
+                setDialogContent(cardViewTemplate(parseItem(data, properties), properties, false, null, false));
+                setDialogHeader(null);
+            });
+        });
+    }
+
+    const getDataTableCellTemplate = (cellData, field, longTextOption, showRelatedItems = true, property) => {
         if (!cellData) return null;
-        if (field === 'Has Part') {
-            return showRelatedItems ? relatedItemsButtonTemplate(cellData) : null;
+        if ((typeof cellData) === 'object') {
+            if (propertyPossibleTypes(property) === 'resource') {
+                return showRelatedItems ? relatedItemsButtonTemplate(cellData) : null;
+            }
         }
         return (
             <div className="p-d-flex p-ai-center p-flex-wrap">
@@ -175,19 +222,21 @@ const Home = (props) => {
                     itemTypesAllowed={[
                         genericEditableItemType,
                         {...genericEditableItemType, id: 1},
-                        {...linkableItemType(props, null), id: 2}]
+                        {...linkableItemType(props, null), id: 2},
+                        {...externalLinkEditableItemType, id: 3}]
                     }
                 />
             </div>
         );
     }
 
-    const getDataViewCardCellTemplate = (cellData, field, longTextOption, showRelatedItems) => {
+    const getDataViewCardCellTemplate = (cellData, field, longTextOption, showRelatedItems, property) => {
         if (!cellData) return null;
-        if (field === 'Has Part') {
-            return showRelatedItems ? relatedItemsButtonTemplate(cellData) : null;
-        }
         if ((typeof cellData) === 'object') {
+            let propertyTypes = propertyPossibleTypes(property);
+            if (propertyTypes === 'resource') {
+                return showRelatedItems ? relatedItemsButtonTemplate(cellData) : null;
+            }
             return cellData;
         } else if ((typeof cellData) === 'string') {
             if (cellData.length > textMaxLength) {
@@ -248,7 +297,7 @@ const Home = (props) => {
         return cardViewTemplate(rowData, dataViewProperties, false, null);
     }
 
-    const cardViewTemplate = (rowData, properties, showRelatedItems, onCardSave) => {
+    const cardViewTemplate = (rowData, properties, showRelatedItems, onCardSave, editModeEnabled = true) => {
         return (
             <CardView
                 cardData={rowData}
@@ -258,7 +307,7 @@ const Home = (props) => {
                 onCardSave={onCardSave}
                 availableProperties={availableProperties}
                 properties={properties}
-                editModeEnabled={true}
+                editModeEnabled={editModeEnabled}
                 showRelatedItems={showRelatedItems}
                 getCellTemplate={getDataTableCellTemplate}
                 getNewItem={getNewItem}
@@ -294,6 +343,14 @@ const Home = (props) => {
                 'property_label': property['o:label'],
                 'type': 'resource'
             };
+        } else if (value.itemTypeId === 3) {
+            return {
+                '@id': value.text,
+                'is_public': true,
+                'property_id': property['o:id'],
+                'property_label': property['o:label'],
+                'type': 'uri'
+            };
         }
     }
 
@@ -328,67 +385,71 @@ const Home = (props) => {
         }
     }
 
+    const dialogContext = {openDialog, cardViewTemplate, fetchOneAndOpenDialogCard};
+
     return (
-        <div className="home-container">
-            <div className="p-grid p-ai-center p-py-1 p-px-2 p-mx-0">
-                <div className="p-col-2">
-                    <div className="p-d-flex p-jc-end">
-                        <TemplateSelector
-                            screenMode={screenMode}
-                            templates={templates}
-                            setTemplates={setTemplates}
-                            setActiveTemplate={setActiveTemplate}
-                            setAvailableProperties={setAvailableProperties}
-                        />
+        <DialogContext.Provider value={dialogContext}>
+            <div className="home-container">
+                <div className="p-grid p-ai-center p-py-1 p-px-2 p-mx-0">
+                    <div className="p-col-2">
+                        <div className="p-d-flex p-jc-end">
+                            <TemplateSelector
+                                screenMode={screenMode}
+                                templates={templates}
+                                setTemplates={setTemplates}
+                                setActiveTemplate={setActiveTemplate}
+                                setAvailableProperties={setAvailableProperties}
+                            />
+                        </div>
+                    </div>
+                    <div className="p-col-8">
+                      <PropertySelector
+                          screenMode={screenMode}
+                          availableProperties={availableProperties}
+                          setActiveProperties={setActiveProperties}
+                      />
+                    </div>
+                    <div className="p-col-2">
+                        <div className="p-d-flex p-jc-end">
+                            <Button key="view-mode-table" label="Table" className="p-button-sm p-button-raised p-button-text" icon="pi pi-table" disabled={viewMode === 'table'} onClick={() => { toggleViewMode('table'); }} />
+                            <Button key="view-mode-card" label="Card" className="p-button-sm p-button-raised p-button-text" icon="pi pi-image" disabled={viewMode === 'card'} onClick={() => { toggleViewMode('card'); }} />
+                        </div>
+                    </div>
+                    <div className="p-col-12">
+                        {containerContent()}
                     </div>
                 </div>
-                <div className="p-col-8">
-                  <PropertySelector
-                      screenMode={screenMode}
-                      availableProperties={availableProperties}
-                      setActiveProperties={setActiveProperties}
-                  />
-                </div>
-                <div className="p-col-2">
-                    <div className="p-d-flex p-jc-end">
-                        <Button key="view-mode-table" label="Table" className="p-button-sm p-button-raised p-button-text" icon="pi pi-table" disabled={viewMode === 'table'} onClick={() => { toggleViewMode('table'); }} />
-                        <Button key="view-mode-card" label="Card" className="p-button-sm p-button-raised p-button-text" icon="pi pi-image" disabled={viewMode === 'card'} onClick={() => { toggleViewMode('card'); }} />
-                    </div>
-                </div>
-                <div className="p-col-12">
-                    {containerContent()}
-                </div>
-            </div>
-            <Toast
-                ref={toast}
-                position="top-left"
-            />
-            <Dialog
-                header={dialogHeader}
-                visible={displayDialog}
-                maximized
-                style={{ width: '50vw' }}
-                onHide={closeDialog}
-            >
-                {dialogContent}
-            </Dialog>
-            <OverlayPanel ref={overlayPanel} showCloseIcon id="overlay_panel" style={{width: '75vw'}}>
-                <DataView
-                    value={dataViewCollection}
-                    layout="grid"
-                    itemTemplate={dataViewGridTemplate}
-                    lazy
-                    paginator
-                    paginatorPosition={'both'}
-                    paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-                    rows={1}
-                    totalRecords={dataViewTotalRecords}
-                    first={dataViewFirst}
-                    onPage={onDataViewPage}
-                    loading={dataViewLoading}
+                <Toast
+                    ref={toast}
+                    position="top-left"
                 />
-            </OverlayPanel>
-        </div>
+                <Dialog
+                    header={dialogHeader}
+                    visible={displayDialog}
+                    maximized
+                    style={{ width: '50vw' }}
+                    onHide={closeDialog}
+                >
+                    {dialogContent}
+                </Dialog>
+                <OverlayPanel ref={overlayPanel} showCloseIcon id="overlay_panel" style={{width: '75vw'}}>
+                    <DataView
+                        value={dataViewCollection}
+                        layout="grid"
+                        itemTemplate={dataViewGridTemplate}
+                        lazy
+                        paginator
+                        paginatorPosition={'both'}
+                        paginatorTemplate="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+                        rows={1}
+                        totalRecords={dataViewTotalRecords}
+                        first={dataViewFirst}
+                        onPage={onDataViewPage}
+                        loading={dataViewLoading}
+                    />
+                </OverlayPanel>
+            </div>
+        </DialogContext.Provider>
     );
 };
 

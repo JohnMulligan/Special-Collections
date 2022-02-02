@@ -13,16 +13,46 @@ export const makeGenericItem = (value) => ({ itemTypeId: 0, text: value });
 
 export const makeNumberItem = (num) => ({ itemTypeId: 1, text: num });
 
+export const makeExternalLinkItem = (value) => ({ itemTypeId: 3, text: value });
+
 export const genericEditableItemType = {
     id: 0,
     customToolbarItems: [],
-    itemTemplate: (item) => (
+    itemTemplate: (item, _) => (
         <LargeTextField
             readonly={true}
             maxChars={20}
             text={item.text}
         />
     ),
+    singleItemTemplate: null
+};
+
+export const externalLinkEditableItemType = {
+    id: 3,
+    customToolbarItems: [],
+    itemTemplate: (item, readonly) => {
+        if (readonly) {
+            return (
+                <span>
+                    <a 
+                        href={item.text}
+                        target="_blank"
+                        onClick={() => { window.open(item.text, '_blank').focus(); } }
+                        >
+                        {item.text}
+                    </a>
+                </span>
+            );
+        }
+        return (
+            <LargeTextField
+            readonly={true}
+            maxChars={20}
+            text={item.text}
+        />
+        );
+    },
     singleItemTemplate: null
 };
 
@@ -57,6 +87,7 @@ const AutoMultiValueField = ({
     }
 
     const canHaveGenericItems = itemTypesAllowed.indexOf(genericEditableItemType) >= 0;
+    const canHaveExternalLinks = itemTypesAllowed.indexOf(externalLinkEditableItemType) >= 0;
 
     const disableActionBtn = (targetItemTypeId) =>
         selected === null ||
@@ -88,7 +119,7 @@ const AutoMultiValueField = ({
                     setEdit({ selected, text: values[index].text });
                 }
             }}
-            disabled={disableActionBtn(0)}
+            disabled={disableActionBtn(0) && disableActionBtn(3)}
         >
         </Button>
     );
@@ -113,24 +144,24 @@ const AutoMultiValueField = ({
                     onChange(changed);
                 }
             }}
-            disabled={disableActionBtn(0) && disableActionBtn(2)}
+            disabled={disableActionBtn(0) && disableActionBtn(2) && disableActionBtn(3)}
         >
         </Button>
     );
 
-    const listBoxItemTemplate = (option) => {
+    const listBoxItemTemplate = (option, readonly) => {
         const { item } = option;
 
         for (const itemType of itemTypesAllowed) {
-            if (itemType.id == item.itemTypeId) {
-                return itemType.itemTemplate(item);
+            if (itemType.id === item.itemTypeId) {
+                return itemType.itemTemplate(item, readonly);
             }
         }
     };
 
     const toolbarItems = [deleteItemBtn];
 
-    if (canHaveGenericItems) {
+    if (canHaveGenericItems || canHaveExternalLinks) {
         toolbarItems.unshift(editItemBtn);
         toolbarItems.unshift(addItemBtn);
     }
@@ -144,9 +175,12 @@ const AutoMultiValueField = ({
 
     let singleItemTemplate = null;
     if (values.length === 1 && values[0].itemTypeId !== 0) {
-        const t = itemTypesAllowed[values[0].itemTypeId];
-        if (t.singleItemTemplate) {
-            singleItemTemplate = t.singleItemTemplate(values[0]);
+        for (const itemType of itemTypesAllowed) {
+            if (itemType.id === values[0].itemTypeId) {
+                if (itemType.singleItemTemplate) {
+                    singleItemTemplate = itemType.singleItemTemplate(values[0]);
+                }
+            }
         }
     }
 
@@ -163,7 +197,7 @@ const AutoMultiValueField = ({
             </div>
             <div className="p-grid">
                 <div className="p-col-12">
-                    {singleItemTemplate || (
+                    {singleItemTemplate || ((canHaveGenericItems || canHaveExternalLinks) && (
                         <LargeTextField
                             className={fieldClassName}
                             onChange={setSingleItem}
@@ -175,15 +209,17 @@ const AutoMultiValueField = ({
                                 if (values.length === 1 && v === values[0]) {
                                     return;
                                 }
-                                onChange(v === "" ? [] : [makeGenericItem(v)]);
+                                onChange(v === "" ? [] : [canHaveExternalLinks ? makeExternalLinkItem(v) : makeGenericItem(v)]);
                             }}
                             text={singleItem || ""}
                             maxChars={30}
                             readonly={
                                 values.length > 1 ||
-                                (values.length === 1 && values[0].itemTypeId !== 0)
+                                (values.length === 1 && values[0].itemTypeId !== 0 && values[0].itemTypeId !== 3)
                             }
                         />
+                    )) || (
+                        <span>Select a link</span>
                     )}
                 </div>
             </div>
@@ -214,7 +250,7 @@ const AutoMultiValueField = ({
                         }}
                         value={selected}
                         options={options}
-                        itemTemplate={listBoxItemTemplate}
+                        itemTemplate={(item) => listBoxItemTemplate(item, readonly)}
                         onChange={(e) => readonly || setSelected(e.value)}
                     />
                 </div>
@@ -233,11 +269,19 @@ const AutoMultiValueField = ({
                             const changed = values.slice();
                             if (!edit.selected) {
                                 if (v !== "") {
-                                    changed.push(makeGenericItem(v));
+                                    if (canHaveExternalLinks) {
+                                        changed.push(makeExternalLinkItem(v));
+                                    } else {
+                                        changed.push(makeGenericItem(v));
+                                    }
                                 }
                             } else {
                                 if (v !== "") {
-                                    changed.splice(edit.selected.index, 1, makeGenericItem(v));
+                                    if (canHaveExternalLinks) {
+                                        changed.splice(edit.selected.index, 1, makeExternalLinkItem(v));
+                                    } else {
+                                        changed.splice(edit.selected.index, 1, makeGenericItem(v));
+                                    }
                                 } else {
                                     changed.splice(edit.selected.index, 1);
                                 }

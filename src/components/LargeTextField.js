@@ -72,7 +72,7 @@ export const LargeTextField = ({
         <div
             tabIndex="0"
             ref={displayArea}
-            class={className}
+            className={className}
             style={{
                 boxShadow: mode < 1 ? "" : "0 .15rem 0.3rem rgba(0,0,0,.35)",
                 cursor: !readonly || isTruncated ? "cell" : "default",

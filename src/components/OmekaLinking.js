@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useContext } from "react";
 import { connect } from "react-redux";
 
 import { Button } from "primereact/button";
@@ -10,6 +10,22 @@ import { LargeTextField } from "../components/LargeTextField";
 
 import { fetchItems } from "../utils/OmekaS";
 
+import { DialogContext } from "../containers/Home";
+
+const Link = ({item}) => {
+    const dialogContext = useContext(DialogContext);
+
+    return (
+        <span
+            onClick={() => { dialogContext.fetchOneAndOpenDialogCard(item); } }>
+            <a href="#" 
+                >
+                {item.text}
+            </a>
+        </span>
+      );
+}
+
 export const makeLinkItem = (subItem) => ({
     itemTypeId: 2,
     text: subItem['text'] || "",
@@ -17,15 +33,15 @@ export const makeLinkItem = (subItem) => ({
     value_resource_name: 'items',
 });
 
-export const linkableItemTemplate = (item) => (
-    <div>
-        <LargeTextField
-            readonly={true}
-            maxChars={30}
-            text={item.text}
-        />
-    </div>
-);
+export const linkableItemTemplate = (item, readonly) => {
+    if (readonly) {
+        return (<Link 
+                    item={item}
+                />);
+    }
+    return (<span>{item.text}</span>);
+
+}
 
 export const linkableItemType = (props, onLink) => ({
     id: 2,

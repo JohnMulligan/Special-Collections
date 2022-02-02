@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { connect } from "react-redux";
 
 import { DataView } from 'primereact/dataview';
 import { InputText } from 'primereact/inputtext';
-import { Button } from 'primereact/button';
 import { Chip } from 'primereact/chip';
 
-import { propertyIsTitle } from "../containers/Home";
+import { propertyIsTitle, propertyPossibleTypes, DialogContext } from "../containers/Home";
 
 import CardView from "../components/CardView";
 
@@ -15,6 +14,8 @@ import { fetchItems } from "../utils/OmekaS";
 import '../assets/css/DataView.css';
 
 const DataViewCardContainer = (props) => {
+    const dialogContext = useContext(DialogContext);
+
     const [loading, setLoading] = useState(true);
     const [displayContent, setDisplayContent] = useState(false);
     const [collection, setCollection] = useState([]);
@@ -28,69 +29,99 @@ const DataViewCardContainer = (props) => {
     });
 
     useEffect(() => {
+        const loadLazyData = () => {
+            if (props.activeProperties && props.activeProperties.length > 0) {
+                setDisplayContent(true);
+                setLoading(true);
+            }
+
+            if (props.activeTemplate) {
+                fetchItems(
+                    props.query.endpoint,
+                    props.query.item_set_id,
+                    props.query.params,
+                    lazyParams.first,
+                    lazyParams.rows,
+                    lazyParams.sortField,
+                    lazyParams.sortDirection,
+                    lazyParams.globalFilter,
+                    lazyParams.search,
+                ).then(data => {
+                    setTotalRecords(data.total);
+                    setDisplayContent(true);
+                    setCollection(data.items.map((row, key) => {
+                        return parseItem(row, props.activeProperties);
+                    }));
+                    setLoading(false);
+                });
+            }
+        }
+
+        const parseItem = (row, properties) => {
+            if (properties && properties.length > 0) {
+                let item = {'id': row['o:id']};
+                properties.map((property) => {
+                    let label = property['o:label'];
+                    let propertyTypes = propertyPossibleTypes(property);
+                    if (row[property['o:term']] !== undefined && row[property['o:term']].length > 0) {
+                        if (propertyIsTitle(property)) {
+                            item[label] = row[property['o:term']][0]['@value'];
+                        } else if (propertyTypes === 'resource') {
+                            item[label] = row[property['o:term']];
+                        } else {
+                            item[label] = itemChipsTemplate(row[property['o:term']]);
+                        }
+                    } else {
+                        item[label] = null;
+                    }
+                    return null;
+                });
+
+                if (row['thumbnail_display_urls']['square']) {
+                    item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
+                }
+
+                return item;
+            }
+            return [];
+        }
+
         loadLazyData();
     }, [props.activeProperties, lazyParams]);
 
-    const loadLazyData = () => {
-        if (props.activeProperties && props.activeProperties.length > 0) {
-            setDisplayContent(true);
-            setLoading(true);
-        }
-
-        if (props.activeTemplate) {
-            fetchItems(
-                props.query.endpoint,
-                props.query.item_set_id,
-                props.query.params,
-                lazyParams.first,
-                lazyParams.rows,
-                lazyParams.sortField,
-                lazyParams.sortDirection,
-                lazyParams.globalFilter,
-                lazyParams.search,
-            ).then(data => {
-                setTotalRecords(data.total);
-                setDisplayContent(true);
-                setCollection(data.items.map((row, key) => {
-                    return parseItem(row, props.activeProperties);
-                }));
-                setLoading(false);
-            });
-        }
-    }
-
-    const parseItem = (row, properties) => {
-        if (properties && properties.length > 0) {
-            let item = {'id': row['o:id']};
-            properties.map((property) => {
-                let label = property['o:label'];
-                if (row[property['o:term']] !== undefined && row[property['o:term']].length > 0) {
-                    if (propertyIsTitle(property)) {
-                        item[label] = row[property['o:term']][0]['@value'];
-                    } else if (row[property['o:term']][0]['type'] === 'resource') {
-                        item[label] = row[property['o:term']];
-                    } else {
-                        item[label] = itemChipsTemplate(row[property['o:term']]);
-                    }
-                } else {
-                    item[label] = null;
-                }
-                return null;
-            });
-
-            if (row['thumbnail_display_urls']['square']) {
-                item['thumbnail_url'] = row['thumbnail_display_urls']['square'];
-            }
-
-            return item;
-        }
-        return [];
-    }
+    useEffect(() => {
+        let _lazyParams = {
+            first: 0,
+            rows: 12,
+            sortField: 'o:id',
+            sortDirection: 'asc',
+            filter: [],
+        };
+        setLazyParams(_lazyParams);
+    }, [props.activeTemplate]);
 
     const itemChipsTemplate = (rowData) => {
         let itemChips = [];
-        if (rowData !== undefined && rowData[0]['type'] !== 'resource') {
+        if (rowData !== undefined) {
             rowData.map((subItem) => {
+                if (subItem['type'] === 'resource' && subItem['@id'] !== undefined) {
+                    itemChips.push(<Chip template={<a className="p-chip-text" onClick={() => { dialogContext.fetchOneAndOpenDialogCard(subItem); } }>{subItem['display_title']}</a>} className="p-mr-2 p-mb-2" style={{ 'font-size': "12px" }} />);
+                    return null;
+                }
+                if (subItem['type'] === 'uri' && subItem['@id'] !== undefined) {
+                    itemChips.push(
+                        <Chip 
+                            template={<a 
+                                        href={subItem["@id"]}
+                                        className="p-chip-text" 
+                                        target="_blank"
+                                        onClick={() => { window.open(subItem["@id"], '_blank').focus(); } }>
+                                    {subItem["@id"]}</a>} 
+                            className="p-mr-2 p-mb-2" 
+                            style={{ 'font-size': "12px" }} />
+                    );
+                    return null;
+                }
                 if (subItem['@value'] !== undefined) {
                     itemChips.push(<Chip label={subItem['@value']} className="p-mr-2 p-mb-2" style={{ 'font-size': "12px" }} />);
                 }
@@ -147,6 +178,7 @@ const DataViewCardContainer = (props) => {
                     <span className="p-input-icon-left">
                         <i className="pi pi-search" />
                         <InputText
+                            value={lazyParams.globalFilter || ''}
                             type="search"
                             className="p-d-block p-py-1"
                             onChange={onGlobalFilter}

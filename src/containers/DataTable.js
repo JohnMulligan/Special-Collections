@@ -10,9 +10,9 @@ import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
 import { Toolbar } from 'primereact/toolbar';
 
-import { propertyIsNumericTimestamp, propertyIsRelation } from "../containers/Home";
+import { propertyIsNumericTimestamp, propertyIsNumericInteger, propertyIsRelation, propertyPossibleTypes } from "../containers/Home";
 
-import AutoMultiValueField, { genericEditableItemType, makeNumberItem } from "../components/AutoMultiValueField";
+import AutoMultiValueField, { genericEditableItemType, externalLinkEditableItemType, makeNumberItem } from "../components/AutoMultiValueField";
 import { makeLinkItem, linkableItemType } from "../components/OmekaLinking";
 
 import { fetchItems, fetchOne, patchResourceItem } from "../utils/OmekaS";
@@ -69,6 +69,17 @@ const DataTableContainer = (props) => {
         loadLazyData();
     }, [props.activeProperties, lazyParams]);
 
+    useEffect(() => {
+        let _lazyParams = {
+            first: 0,
+            rows: 10,
+            sortField: 'o:id',
+            sortOrder: 1,
+            sortDirection: 'asc',
+        };
+        setLazyParams(_lazyParams);
+    }, [props.activeTemplate]);
+
     const loadLazyData = () => {
         if (props.activeProperties && props.activeProperties.length > 0) {
             setDisplayContent(true);
@@ -121,7 +132,6 @@ const DataTableContainer = (props) => {
         builtColumns.push(<Column key="thumbnail" columnKey="thumbnail" header="Thumbnail" headerStyle={{ width: '150px' }} reorderable={false} className="p-datatable-column text-align-center" body={thumbnailTemplate} />);
 
         properties.map((property, i) => {
-            let fieldIsRelation = propertyIsRelation(property);
             builtColumns.push(
                 <Column
                     key={property['o:id']}
@@ -131,18 +141,15 @@ const DataTableContainer = (props) => {
                     field={property['o:label']}
                     filterField={property['o:id'].toString()}
                     sortField={property['o:term']}
-                    sortable={!fieldIsRelation && props.screenMode === 'view' && !lazyParams.globalFilter}
-                    filter={!fieldIsRelation && props.screenMode === 'view'}
+                    sortable={propertyPossibleTypes(property) === 'largeTextField' && props.screenMode === 'view' && !lazyParams.globalFilter}
+                    filter={props.screenMode === 'view'}
                     filterPlaceholder={"Search by " + property['o:label']}
                     className="p-datatable-column"
                     style={{ width: '200px' }}
-                    body={cellTemplate}
-                    editor={(columnProperties) => {
-                        if(!fieldIsRelation) {
-                            return editorTemplate(columnProperties, property);
-                        }
-                    }}
-                    exportable={!fieldIsRelation}
+                    body={(rowData, index) => cellTemplate(rowData, index, property) }
+                    editor={(columnProperties) => editorTemplate(columnProperties, property)}
+                    //exportable={!fieldIsRelation}
+                    exportable={true}
                 />
             );
             return null;
@@ -151,9 +158,9 @@ const DataTableContainer = (props) => {
         return builtColumns;
     }
 
-    const cellTemplate = (rowData, index) => {
+    const cellTemplate = (rowData, index, property) => {
         if (rowData !== undefined) {
-            return props.getCellTemplate(rowData[index.field], index.field, true);            
+            return props.getCellTemplate(rowData[index.field], index.field, true, true, property);            
         }
         return null;
     }
@@ -175,7 +182,7 @@ const DataTableContainer = (props) => {
                 <React.Fragment>
                     <img
                         src={rowData['thumbnail_url']}
-                        class="border-default"
+                        className="border-default"
                         width="100"
                         height="100"
                         alt=""
@@ -191,7 +198,7 @@ const DataTableContainer = (props) => {
     const editorTemplate = (columnProperties, cellProperty) => {
         let value = columnProperties.rowData[cellProperty['o:label']] ? columnProperties.rowData[cellProperty['o:label']] : "";
 
-        if (propertyIsNumericTimestamp(cellProperty)) {
+        if (propertyIsNumericTimestamp(cellProperty) || propertyIsNumericInteger(cellProperty)) {
             return (
                 <InputNumber
                     value={value && value.length === 1 ? parseInt(value[0].text) : ""}
@@ -206,10 +213,19 @@ const DataTableContainer = (props) => {
             if (!Array.isArray(value)) {
                 value = [value];
             }
-            const editTypesAllowed = [genericEditableItemType];
-            if (cellProperty['o:data_type'].includes('resource:item')) {
+
+            const editTypesAllowed = [];
+            let propertyTypes = propertyPossibleTypes(cellProperty);
+            if (propertyTypes === "largeTextField" || propertyTypes === "hasResource") {
+                editTypesAllowed.push(genericEditableItemType);
+            }
+            if (propertyTypes === "resource" || propertyTypes === "hasResource") {
                 editTypesAllowed.push(linkableItemType(props, (linkItem) => onRowLinkItem(columnProperties, linkItem, value)));
             }
+            if (propertyTypes === "uri") {
+                editTypesAllowed.push(externalLinkEditableItemType);
+            }
+
             return (
                 <AutoMultiValueField
                     values={value}
@@ -318,7 +334,7 @@ const DataTableContainer = (props) => {
             props.availableProperties.map((property) => {
                 let editedValue = event.data[property['o:label']]
                 
-                if (!propertyIsRelation(property) && editedValue) {
+                if (editedValue) {
                     if (editedValue instanceof Array) {
                         var newData = editedValue.map((value) => {
                             return props.getNewItem(property, value);
@@ -392,6 +408,13 @@ const DataTableContainer = (props) => {
 
     const exportData = () => {
         dt.current.exportCSV();
+    }
+
+    const formatExportCSV = (event) => {
+        let values = event.data.map((rowData) => {
+            return rowData.text;
+        });
+        return values.join(' | ');
     }
 
     const headerLeftContents = () => {
@@ -498,6 +521,7 @@ const DataTableContainer = (props) => {
                         onRowEditInit={onRowEditInit}
                         onRowEditCancel={onRowEditCancel}
                         onRowEditSave={onRowEditSave}
+                        exportFunction={formatExportCSV}
                     >
                         {buildColumns(props.activeProperties)}
                     </DataTable>
