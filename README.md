@@ -1,3 +1,6 @@
+![special collections tabular](https://github.com/JohnMulligan/Special-Collections/blob/master/screenshots/tabular.png?raw=true)
+
+
 # Documentation
 
 This repository contains the code for the Special Collections app, which
@@ -98,7 +101,4 @@ Kill this with ```pm2 kill```
 ## Log in
 
 Navigate to HOSTNAME:5000, and use your new username and password to access the interface.
-
-
-
 
